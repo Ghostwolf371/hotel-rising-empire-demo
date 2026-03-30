@@ -47,6 +47,11 @@ const dict = {
     maybeLater: "Maybe later",
     addTime: "Add time",
     endNow: "End now",
+    confirmEndTitle: "End your session?",
+    confirmEndSub:
+      "Are you sure you want to end your stay now? Any remaining time will not be refunded.",
+    confirmEndYes: "Yes, end my stay",
+    confirmEndCancel: "Cancel",
 
     menu: "Menu",
     all: "All",
@@ -141,6 +146,11 @@ const dict = {
     maybeLater: "Misschien later",
     addTime: "Tijd toevoegen",
     endNow: "Nu beëindigen",
+    confirmEndTitle: "Sessie beëindigen?",
+    confirmEndSub:
+      "Weet u zeker dat u uw verblijf nu wilt beëindigen? Resterende tijd wordt niet terugbetaald.",
+    confirmEndYes: "Ja, beëindig mijn verblijf",
+    confirmEndCancel: "Annuleren",
 
     menu: "Menu",
     all: "Alles",

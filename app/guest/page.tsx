@@ -15,7 +15,7 @@ import {
 import { t } from "@/lib/i18n";
 import type { ProductCategory } from "@/lib/types";
 
-type Modal = "expired" | "extend" | null;
+type Modal = "expired" | "extend" | "confirm-end" | null;
 
 const PROMO_SLIDES = [
   {
@@ -192,7 +192,7 @@ export default function GuestMainPage() {
             </button>
             <button
               type="button"
-              onClick={endSession}
+              onClick={() => setModal("confirm-end")}
               className="flex items-center gap-2 rounded-2xl bg-[var(--gold)] px-6 py-4 text-base font-bold text-[var(--dark)] shadow-lg transition-all duration-200 hover:bg-[var(--gold-light)] active:scale-95"
             >
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -439,6 +439,44 @@ export default function GuestMainPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
                 {t(locale, "endStay")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm end modal */}
+      {modal === "confirm-end" && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6 backdrop-blur-md">
+          <div className="animate-fade-in-scale w-full max-w-md rounded-3xl border border-[var(--border)] bg-[var(--card)] px-8 py-10 text-center shadow-2xl">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-red-500/10 text-red-400">
+              <svg className="h-11 w-11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </div>
+            <h3 className="mt-6 text-2xl font-bold tracking-tight text-[var(--foreground)]">
+              {t(locale, "confirmEndTitle")}
+            </h3>
+            <p className="mt-3 text-base leading-relaxed text-[var(--muted)]">
+              {t(locale, "confirmEndSub")}
+            </p>
+            <div className="mt-10 flex flex-col gap-4">
+              <button
+                type="button"
+                onClick={endSession}
+                className="flex w-full items-center justify-center gap-3 rounded-2xl bg-red-600 py-5 text-lg font-bold text-white shadow-lg transition hover:bg-red-700 active:scale-[0.99]"
+              >
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                {t(locale, "confirmEndYes")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setModal(null)}
+                className="flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-[var(--border-light)] bg-transparent py-5 text-lg font-bold text-[var(--foreground)] transition hover:bg-[var(--surface)] active:scale-[0.99]"
+              >
+                {t(locale, "confirmEndCancel")}
               </button>
             </div>
           </div>
