@@ -4,9 +4,11 @@ import { useMemo } from "react";
 import { ManagementShell } from "@/components/management-shell";
 import { useDemo } from "@/contexts/demo-context";
 import { formatSrd } from "@/lib/format";
+import { t } from "@/lib/i18n";
 
 export default function ManagementOrdersPage() {
-  const { orders, dispatch, panicAlerts } = useDemo();
+  const { orders, dispatch, panicAlerts, locale } = useDemo();
+  const timeLoc = locale === "nl" ? "nl-NL" : "en-US";
 
   const sorted = useMemo(
     () => [...orders].sort((a, b) => b.createdAt - a.createdAt),
@@ -25,18 +27,17 @@ export default function ManagementOrdersPage() {
       <div className="px-8 py-8">
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-black text-[var(--gold)]">Active Orders</h1>
+            <h1 className="text-3xl font-black text-[var(--gold)]">{t(locale, "mgmtActiveOrders")}</h1>
             <p className="mt-1 text-sm text-[var(--muted)]">
-              {processingCount} processing · {orders.length - processingCount} completed
+              {processingCount} {t(locale, "mgmtProcessing")} · {orders.length - processingCount} {t(locale, "mgmtCompleted")}
             </p>
           </div>
           <div className="flex items-center gap-2 rounded-full bg-[var(--gold)]/10 px-4 py-2">
             <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-[var(--gold)]" />
-            <span className="text-sm font-bold text-[var(--gold)]">Live</span>
+            <span className="text-sm font-bold text-[var(--gold)]">{t(locale, "mgmtLive")}</span>
           </div>
         </div>
 
-        {/* Panic alerts */}
         {panicAlerts.length > 0 && (
           <div className="mb-6 space-y-3">
             {panicAlerts.map((alert) => (
@@ -51,9 +52,9 @@ export default function ManagementOrdersPage() {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-lg font-bold text-red-400">Panic Alert — Room {alert.roomNumber}</p>
+                    <p className="text-lg font-bold text-red-400">{t(locale, "mgmtPanicAlert")} — {t(locale, "mgmtRoom")} {alert.roomNumber}</p>
                     <p className="text-sm text-[var(--muted)]">
-                      {new Date(alert.at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+                      {new Date(alert.at).toLocaleTimeString(timeLoc, { hour: "numeric", minute: "2-digit" })}
                     </p>
                   </div>
                 </div>
@@ -62,7 +63,7 @@ export default function ManagementOrdersPage() {
                   onClick={() => dispatch({ type: "CLEAR_PANICS" })}
                   className="rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-red-700"
                 >
-                  Dismiss
+                  {t(locale, "mgmtDismiss")}
                 </button>
               </div>
             ))}
@@ -90,11 +91,11 @@ export default function ManagementOrdersPage() {
                       <span className="text-xl font-black text-[var(--gold)]">{order.roomNumber}</span>
                     </div>
                     <div>
-                      <p className="text-lg font-bold text-[var(--foreground)]">Room {order.roomNumber}</p>
+                      <p className="text-lg font-bold text-[var(--foreground)]">{t(locale, "mgmtRoom")} {order.roomNumber}</p>
                       <p className="text-sm text-[var(--muted)]">
-                        {time.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+                        {time.toLocaleTimeString(timeLoc, { hour: "numeric", minute: "2-digit" })}
                         {" · "}
-                        {time.toLocaleDateString("en-US", { day: "numeric", month: "short" })}
+                        {time.toLocaleDateString(timeLoc, { day: "numeric", month: "short" })}
                       </p>
                     </div>
                   </div>
@@ -104,7 +105,7 @@ export default function ManagementOrdersPage() {
                         ? "bg-amber-500/15 text-amber-400"
                         : "bg-emerald-500/15 text-emerald-400"
                     }`}>
-                      {order.status}
+                      {isProcessing ? t(locale, "mgmtProcessing") : t(locale, "mgmtCompleted")}
                     </span>
                     <button
                       type="button"
@@ -115,7 +116,7 @@ export default function ManagementOrdersPage() {
                           : "bg-[var(--surface)] text-[var(--muted)] ring-1 ring-[var(--border-light)] hover:text-[var(--foreground)]"
                       }`}
                     >
-                      {isProcessing ? "Mark Done" : "Reopen"}
+                      {isProcessing ? t(locale, "mgmtMarkDone") : t(locale, "mgmtReopen")}
                     </button>
                   </div>
                 </div>
@@ -144,7 +145,7 @@ export default function ManagementOrdersPage() {
 
           {sorted.length === 0 && (
             <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-12 text-center text-[var(--muted)]">
-              No orders yet.
+              {t(locale, "mgmtNoOrdersYet")}
             </div>
           )}
         </div>

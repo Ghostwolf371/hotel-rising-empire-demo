@@ -3,9 +3,12 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useDemo } from "@/contexts/demo-context";
+import { t } from "@/lib/i18n";
 
 export default function ManagementLoginPage() {
   const router = useRouter();
+  const { locale } = useDemo();
   const [email, setEmail] = useState("admin@empire.sr");
   const [password, setPassword] = useState("••••••••");
 
@@ -22,16 +25,16 @@ export default function ManagementLoginPage() {
           <div className="flex flex-col items-center">
             <Image src="/logo.png" alt="Empire Apartments" width={64} height={64} className="rounded-xl" />
             <h1 className="mt-5 text-2xl font-black uppercase tracking-wider text-[var(--gold)]">
-              Management Login
+              {t(locale, "mgmtLoginTitle")}
             </h1>
             <p className="mt-2 text-sm text-[var(--muted)]">
-              Empire Apartments Paramaribo — Staff Portal
+              {t(locale, "mgmtLoginSub")}
             </p>
           </div>
 
           <form onSubmit={handleLogin} className="mt-8 space-y-5">
             <div>
-              <label className="mb-2 block text-sm font-semibold text-[var(--gold-light)]">Email</label>
+              <label className="mb-2 block text-sm font-semibold text-[var(--gold-light)]">{t(locale, "mgmtEmail")}</label>
               <input
                 type="text"
                 value={email}
@@ -40,7 +43,7 @@ export default function ManagementLoginPage() {
               />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-semibold text-[var(--gold-light)]">Password</label>
+              <label className="mb-2 block text-sm font-semibold text-[var(--gold-light)]">{t(locale, "mgmtPassword")}</label>
               <input
                 type="password"
                 value={password}
@@ -52,11 +55,11 @@ export default function ManagementLoginPage() {
               type="submit"
               className="w-full rounded-xl bg-[var(--gold)] py-4 text-lg font-bold text-[var(--dark)] shadow-lg transition hover:bg-[var(--gold-light)] active:scale-[0.98]"
             >
-              Sign in
+              {t(locale, "mgmtSignIn")}
             </button>
           </form>
           <p className="mt-6 text-center text-xs text-[var(--muted)]">
-            Demo mode — click Sign in to continue
+            {t(locale, "mgmtLoginHint")}
           </p>
         </div>
       </div>

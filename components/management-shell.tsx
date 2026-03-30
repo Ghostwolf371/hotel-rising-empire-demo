@@ -6,10 +6,11 @@ import { usePathname, useRouter } from "next/navigation";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useTimeLeft } from "@/components/room-timer";
 import { useDemo } from "@/contexts/demo-context";
+import { t, type TKey } from "@/lib/i18n";
 
-const NAV = [
+const NAV: { key: TKey; href: string; icon: React.ReactNode }[] = [
   {
-    label: "Rooms",
+    key: "mgmtNavRooms",
     href: "/management/rooms",
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
@@ -18,7 +19,7 @@ const NAV = [
     ),
   },
   {
-    label: "Orders",
+    key: "mgmtNavOrders",
     href: "/management/orders",
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
@@ -27,7 +28,7 @@ const NAV = [
     ),
   },
   {
-    label: "Reports",
+    key: "mgmtNavReports",
     href: "/management/reports",
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
@@ -36,7 +37,7 @@ const NAV = [
     ),
   },
   {
-    label: "Settings",
+    key: "mgmtNavSettings",
     href: "/management/settings",
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
@@ -77,15 +78,15 @@ export function ManagementShell({ children }: { children: ReactNode }) {
   const notifications = useMemo<Notification[]>(() => {
     const items: Notification[] = [];
     for (const a of panicAlerts) {
-      items.push({ id: a.id, type: "panic", title: `Panic — Room ${a.roomNumber}`, body: "Guest triggered emergency alert", time: a.at });
+      items.push({ id: a.id, type: "panic", title: `${t(locale, "mgmtPanicRoom")} ${a.roomNumber}`, body: t(locale, "mgmtPanicBody"), time: a.at });
     }
     for (const o of orders.slice(0, 5)) {
       if (o.status === "processing") {
-        items.push({ id: o.id, type: "order", title: `New Order — Room ${o.roomNumber}`, body: o.items.map((i) => `${i.qty}× ${i.name}`).join(", "), time: o.createdAt });
+        items.push({ id: o.id, type: "order", title: `${t(locale, "mgmtNewOrderRoom")} ${o.roomNumber}`, body: o.items.map((i) => `${i.qty}× ${i.name}`).join(", "), time: o.createdAt });
       }
     }
     return items.sort((a, b) => b.time - a.time).slice(0, 10);
-  }, [panicAlerts, orders]);
+  }, [panicAlerts, orders, locale]);
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
@@ -110,7 +111,7 @@ export function ManagementShell({ children }: { children: ReactNode }) {
           <Image src="/logo.png" alt="Empire Apartments" width={36} height={36} className="rounded-lg" />
           <div>
             <p className="text-xs font-black uppercase tracking-wider text-[var(--gold)]">Empire</p>
-            <p className="text-[10px] text-[var(--muted)]">Concierge</p>
+            <p className="text-[10px] text-[var(--muted)]">{t(locale, "mgmtConcierge")}</p>
           </div>
         </div>
         <nav className="flex-1 space-y-1 px-2 py-4">
@@ -127,7 +128,7 @@ export function ManagementShell({ children }: { children: ReactNode }) {
                 }`}
               >
                 {item.icon}
-                {item.label}
+                {t(locale, item.key)}
               </Link>
             );
           })}
@@ -140,7 +141,7 @@ export function ManagementShell({ children }: { children: ReactNode }) {
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
             </svg>
-            Guest Tablet
+            {t(locale, "mgmtGuestTablet")}
           </Link>
           <button
             type="button"
@@ -150,7 +151,7 @@ export function ManagementShell({ children }: { children: ReactNode }) {
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
-            Logout
+            {t(locale, "mgmtLogout")}
           </button>
         </div>
       </aside>
@@ -199,11 +200,11 @@ export function ManagementShell({ children }: { children: ReactNode }) {
             {notifOpen && (
               <div className="absolute right-0 top-full z-50 mt-2 w-80 animate-fade-in-scale rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-2xl shadow-black/40">
                 <div className="border-b border-[var(--border)] px-4 py-3">
-                  <p className="text-sm font-bold text-[var(--gold)]">Notifications</p>
+                  <p className="text-sm font-bold text-[var(--gold)]">{t(locale, "mgmtNotifications")}</p>
                 </div>
                 <div className="max-h-80 overflow-y-auto">
                   {notifications.length === 0 ? (
-                    <p className="px-4 py-6 text-center text-sm text-[var(--muted)]">No notifications</p>
+                    <p className="px-4 py-6 text-center text-sm text-[var(--muted)]">{t(locale, "mgmtNoNotifications")}</p>
                   ) : (
                     notifications.map((n) => (
                       <div key={n.id} className="flex gap-3 border-b border-[var(--border)] px-4 py-3 last:border-0">
@@ -230,7 +231,7 @@ export function ManagementShell({ children }: { children: ReactNode }) {
                           <p className="text-xs font-bold text-[var(--foreground)]">{n.title}</p>
                           <p className="mt-0.5 truncate text-[11px] text-[var(--muted)]">{n.body}</p>
                           <p className="mt-1 text-[10px] text-[var(--muted)]">
-                            {new Date(n.time).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+                            {new Date(n.time).toLocaleTimeString(locale === "nl" ? "nl-NL" : "en-US", { hour: "numeric", minute: "2-digit" })}
                           </p>
                         </div>
                       </div>

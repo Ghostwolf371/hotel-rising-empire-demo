@@ -4,11 +4,13 @@ import { useCallback, useMemo, useState } from "react";
 import { ManagementShell } from "@/components/management-shell";
 import { useDemo } from "@/contexts/demo-context";
 import { formatSrd } from "@/lib/format";
+import { t, type TKey } from "@/lib/i18n";
 import type { Order } from "@/lib/types";
 
 type Period = "today" | "week" | "month";
 
-const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const DAY_KEYS: TKey[] = ["mgmtDaySun", "mgmtDayMon", "mgmtDayTue", "mgmtDayWed", "mgmtDayThu", "mgmtDayFri", "mgmtDaySat"];
+const PERIOD_KEYS: Record<Period, TKey> = { today: "mgmtToday", week: "mgmtWeek", month: "mgmtMonth" };
 
 function orderTotal(o: Order): number {
   return o.items.reduce((s, i) => s + i.qty * i.unitPrice, 0);
@@ -31,7 +33,7 @@ function isWithinPeriod(ts: number, period: Period): boolean {
 }
 
 export default function ManagementReportsPage() {
-  const { orders } = useDemo();
+  const { orders, locale } = useDemo();
   const [period, setPeriod] = useState<Period>("month");
 
   const filtered = useMemo(
@@ -88,7 +90,7 @@ export default function ManagementReportsPage() {
       const day = new Date(o.createdAt).getDay();
       counts[day]++;
     }
-    return DAY_NAMES.map((name, i) => ({ name, count: counts[i] }));
+    return DAY_KEYS.map((key, i) => ({ key, count: counts[i] }));
   }, [filtered]);
 
   const bestSellingMax = Math.max(1, ...bestSelling.map((b) => b.units));
@@ -126,8 +128,8 @@ export default function ManagementReportsPage() {
       <div className="px-8 py-8">
         <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-black text-[var(--gold)]">Management Reporting</h1>
-            <p className="mt-1 text-sm text-[var(--muted)]">Revenue, products, and analytics</p>
+            <h1 className="text-3xl font-black text-[var(--gold)]">{t(locale, "mgmtReporting")}</h1>
+            <p className="mt-1 text-sm text-[var(--muted)]">{t(locale, "mgmtReportingSub")}</p>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex rounded-xl bg-[var(--surface)] p-1">
@@ -136,13 +138,13 @@ export default function ManagementReportsPage() {
                   key={p}
                   type="button"
                   onClick={() => setPeriod(p)}
-                  className={`rounded-lg px-4 py-2 text-sm font-bold capitalize transition ${
+                  className={`rounded-lg px-4 py-2 text-sm font-bold transition ${
                     period === p
                       ? "bg-[var(--gold)] text-[var(--dark)] shadow"
                       : "text-[var(--muted)] hover:text-[var(--foreground)]"
                   }`}
                 >
-                  {p}
+                  {t(locale, PERIOD_KEYS[p])}
                 </button>
               ))}
             </div>
@@ -171,17 +173,17 @@ export default function ManagementReportsPage() {
 
         {/* KPI cards */}
         <div className="mb-10 grid grid-cols-1 gap-5 sm:grid-cols-3">
-          <KpiCard label={`Revenue (${period})`} value={formatSrd(stats.totalRevenue)} icon="revenue" />
-          <KpiCard label="Total Orders" value={String(stats.totalOrders)} icon="orders" />
-          <KpiCard label="Avg. per Order" value={formatSrd(stats.avgOrder)} icon="avg" />
+          <KpiCard label={`${t(locale, "mgmtRevenue")} (${t(locale, PERIOD_KEYS[period])})`} value={formatSrd(stats.totalRevenue)} icon="revenue" />
+          <KpiCard label={t(locale, "mgmtTotalOrders")} value={String(stats.totalOrders)} icon="orders" />
+          <KpiCard label={t(locale, "mgmtAvgPerOrder")} value={formatSrd(stats.avgOrder)} icon="avg" />
         </div>
 
         <div className="grid gap-8 lg:grid-cols-2">
           {/* Best Selling */}
           <section className="animate-fade-in rounded-2xl border border-[var(--border)] bg-[var(--card)] p-6 shadow-lg">
-            <h2 className="text-lg font-bold text-[var(--gold)]">Best Selling Products</h2>
+            <h2 className="text-lg font-bold text-[var(--gold)]">{t(locale, "mgmtBestSelling")}</h2>
             {bestSelling.length === 0 ? (
-              <p className="mt-4 text-sm text-[var(--muted)]">No orders in this period.</p>
+              <p className="mt-4 text-sm text-[var(--muted)]">{t(locale, "mgmtNoOrdersPeriod")}</p>
             ) : (
               <ul className="mt-5 space-y-4">
                 {bestSelling.map((item, i) => (
@@ -192,7 +194,7 @@ export default function ManagementReportsPage() {
                     <div className="flex-1">
                       <div className="flex justify-between">
                         <span className="text-sm font-semibold text-[var(--foreground)]">{item.name}</span>
-                        <span className="text-sm font-bold text-[var(--gold)]">{item.units} units</span>
+                        <span className="text-sm font-bold text-[var(--gold)]">{item.units} {t(locale, "mgmtUnits")}</span>
                       </div>
                       <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-[var(--surface)]">
                         <div
@@ -209,9 +211,9 @@ export default function ManagementReportsPage() {
 
           {/* Revenue per Room */}
           <section className="animate-fade-in rounded-2xl border border-[var(--border)] bg-[var(--card)] p-6 shadow-lg">
-            <h2 className="text-lg font-bold text-[var(--gold)]">Revenue per Room</h2>
+            <h2 className="text-lg font-bold text-[var(--gold)]">{t(locale, "mgmtRevenuePerRoom")}</h2>
             {revenuePerRoom.length === 0 ? (
-              <p className="mt-4 text-sm text-[var(--muted)]">No orders in this period.</p>
+              <p className="mt-4 text-sm text-[var(--muted)]">{t(locale, "mgmtNoOrdersPeriod")}</p>
             ) : (
               <ul className="mt-5 space-y-4">
                 {revenuePerRoom.map((item) => (
@@ -221,7 +223,7 @@ export default function ManagementReportsPage() {
                     </span>
                     <div className="flex-1">
                       <div className="flex justify-between">
-                        <span className="text-sm text-[var(--muted)]">Room {item.room}</span>
+                        <span className="text-sm text-[var(--muted)]">{t(locale, "mgmtRoom")} {item.room}</span>
                         <span className="text-sm font-bold text-[var(--gold)]">{formatSrd(item.srd)}</span>
                       </div>
                       <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-[var(--surface)]">
@@ -239,9 +241,9 @@ export default function ManagementReportsPage() {
 
           {/* Busiest Hours */}
           <section className="animate-fade-in rounded-2xl border border-[var(--border)] bg-[var(--card)] p-6 shadow-lg">
-            <h2 className="text-lg font-bold text-[var(--gold)]">Busiest Hours</h2>
+            <h2 className="text-lg font-bold text-[var(--gold)]">{t(locale, "mgmtBusiestHours")}</h2>
             {busiestHours.length === 0 ? (
-              <p className="mt-4 text-sm text-[var(--muted)]">No data.</p>
+              <p className="mt-4 text-sm text-[var(--muted)]">{t(locale, "mgmtNoData")}</p>
             ) : (
               <div className="mt-5 flex items-end gap-3">
                 {busiestHours.map((item) => (
@@ -262,10 +264,10 @@ export default function ManagementReportsPage() {
 
           {/* Busiest Days */}
           <section className="animate-fade-in rounded-2xl border border-[var(--border)] bg-[var(--card)] p-6 shadow-lg">
-            <h2 className="text-lg font-bold text-[var(--gold)]">Busiest Days</h2>
+            <h2 className="text-lg font-bold text-[var(--gold)]">{t(locale, "mgmtBusiestDays")}</h2>
             <div className="mt-5 flex items-end gap-3">
               {busiestDays.map((item) => (
-                <div key={item.name} className="flex flex-1 flex-col items-center gap-2">
+                <div key={item.key} className="flex flex-1 flex-col items-center gap-2">
                   <span className="text-xs font-bold text-[var(--gold)]">{item.count}</span>
                   <div className="w-full overflow-hidden rounded-t-lg bg-[var(--surface)]" style={{ height: "140px" }}>
                     <div
@@ -273,7 +275,7 @@ export default function ManagementReportsPage() {
                       style={{ height: `${busiestDaysMax > 0 ? (item.count / busiestDaysMax) * 100 : 0}%`, marginTop: `${busiestDaysMax > 0 ? 100 - (item.count / busiestDaysMax) * 100 : 100}%` }}
                     />
                   </div>
-                  <span className="text-xs font-semibold text-[var(--muted)]">{item.name}</span>
+                  <span className="text-xs font-semibold text-[var(--muted)]">{t(locale, item.key)}</span>
                 </div>
               ))}
             </div>
