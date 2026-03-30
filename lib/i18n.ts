@@ -53,6 +53,9 @@ const dict = {
     confirmEndYes: "Yes, end my stay",
     confirmEndCancel: "Cancel",
 
+    darkMode: "Dark",
+    lightMode: "Light",
+
     menu: "Menu",
     all: "All",
     snacks: "Snacks",
@@ -186,6 +189,8 @@ const dict = {
     mgmtNotifSoundsSub: "Play sounds for new alerts",
     mgmtAutoEnd: "Auto-end Expired Sessions",
     mgmtAutoEndSub: "Automatically end sessions when timer reaches 0",
+    mgmtTheme: "Theme",
+    mgmtThemeSub: "Switch between dark and light mode",
     mgmtPricing: "Pricing",
     mgmtHourlyRate: "Hourly Rate",
     mgmt2HourStay: "2-Hour Stay",
@@ -257,6 +262,9 @@ const dict = {
       "Weet u zeker dat u uw verblijf nu wilt beëindigen? Resterende tijd wordt niet terugbetaald.",
     confirmEndYes: "Ja, beëindig mijn verblijf",
     confirmEndCancel: "Annuleren",
+
+    darkMode: "Donker",
+    lightMode: "Licht",
 
     menu: "Menu",
     all: "Alles",
@@ -391,6 +399,8 @@ const dict = {
     mgmtNotifSoundsSub: "Geluiden afspelen bij nieuwe meldingen",
     mgmtAutoEnd: "Verlopen sessies automatisch beëindigen",
     mgmtAutoEndSub: "Beëindig sessies automatisch wanneer de timer op 0 staat",
+    mgmtTheme: "Thema",
+    mgmtThemeSub: "Wissel tussen donkere en lichte modus",
     mgmtPricing: "Prijzen",
     mgmtHourlyRate: "Uurtarief",
     mgmt2HourStay: "2-uurs verblijf",

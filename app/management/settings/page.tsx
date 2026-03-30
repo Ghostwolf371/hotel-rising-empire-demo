@@ -8,7 +8,7 @@ import { t } from "@/lib/i18n";
 import { HOURLY_RATE_SRD } from "@/lib/mock-data";
 
 export default function ManagementSettingsPage() {
-  const { locale, setLocale, rooms, orders } = useDemo();
+  const { locale, setLocale, theme, setTheme, rooms, orders } = useDemo();
   const [notifSound, setNotifSound] = useState(true);
   const [autoEndSessions, setAutoEndSessions] = useState(false);
 
@@ -41,6 +41,26 @@ export default function ManagementSettingsPage() {
                 <div className="flex rounded-lg bg-[var(--surface)] p-0.5">
                   <button type="button" onClick={() => setLocale("en")} className={`rounded-md px-4 py-2 text-sm font-bold transition ${locale === "en" ? "bg-[var(--gold)] text-[var(--dark)]" : "text-[var(--muted)]"}`}>English</button>
                   <button type="button" onClick={() => setLocale("nl")} className={`rounded-md px-4 py-2 text-sm font-bold transition ${locale === "nl" ? "bg-[var(--gold)] text-[var(--dark)]" : "text-[var(--muted)]"}`}>Nederlands</button>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-[var(--foreground)]">{t(locale, "mgmtTheme")}</p>
+                  <p className="text-xs text-[var(--muted)]">{t(locale, "mgmtThemeSub")}</p>
+                </div>
+                <div className="flex rounded-lg bg-[var(--surface)] p-0.5">
+                  <button type="button" onClick={() => setTheme("dark")} className={`flex items-center gap-1.5 rounded-md px-4 py-2 text-sm font-bold transition ${theme === "dark" ? "bg-[var(--gold)] text-[var(--dark)]" : "text-[var(--muted)]"}`}>
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                    {t(locale, "darkMode")}
+                  </button>
+                  <button type="button" onClick={() => setTheme("light")} className={`flex items-center gap-1.5 rounded-md px-4 py-2 text-sm font-bold transition ${theme === "light" ? "bg-[var(--gold)] text-[var(--dark)]" : "text-[var(--muted)]"}`}>
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    {t(locale, "lightMode")}
+                  </button>
                 </div>
               </div>
               <div className="flex items-center justify-between">

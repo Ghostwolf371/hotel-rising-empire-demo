@@ -45,3 +45,5 @@ export interface PanicAlert {
 }
 
 export type Locale = "en" | "nl";
+
+export type Theme = "dark" | "light";

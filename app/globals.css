@@ -15,6 +15,31 @@
   --border-light: #3a3630;
 }
 
+[data-theme="light"] {
+  --background: #f7f4ef;
+  --foreground: #1a1814;
+  --dark: #111111;
+  --card: #ffffff;
+  --card-hover: #f5f2ec;
+  --gold: #a6841e;
+  --gold-light: #c49e30;
+  --gold-dim: #7d6316;
+  --muted: #78736a;
+  --surface: #efe9de;
+  --border: #ddd7cb;
+  --border-light: #cec7b9;
+}
+
+[data-theme="light"] .shadow-2xl {
+  --tw-shadow-color: rgba(0, 0, 0, 0.08);
+}
+[data-theme="light"] .shadow-lg {
+  --tw-shadow-color: rgba(0, 0, 0, 0.06);
+}
+[data-theme="light"] .shadow-md {
+  --tw-shadow-color: rgba(0, 0, 0, 0.05);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

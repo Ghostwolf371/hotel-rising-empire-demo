@@ -22,6 +22,7 @@ import type {
   Product,
   Room,
   RoomStatus,
+  Theme,
 } from "@/lib/types";
 
 const STORAGE_KEY = "hre-demo-v2";
@@ -44,11 +45,13 @@ interface PersistedState {
   panicAlerts: PanicAlert[];
   guestSession: GuestSession | null;
   locale: Locale;
+  theme: Theme;
 }
 
 type Action =
   | { type: "HYDRATE"; payload: Partial<PersistedState> }
   | { type: "SET_LOCALE"; locale: Locale }
+  | { type: "SET_THEME"; theme: Theme }
   | { type: "START_GUEST_SESSION"; roomNumber: string; durationHours: 2 | 3 }
   | { type: "EXTEND_GUEST_SESSION"; extraHours: number }
   | { type: "END_GUEST_SESSION" }
@@ -77,6 +80,7 @@ function defaultState(): DemoState {
     panicAlerts: [],
     guestSession: null,
     locale: "en",
+    theme: "dark",
     cart: [],
   };
 }
@@ -87,6 +91,8 @@ function reducer(state: DemoState, action: Action): DemoState {
       return { ...state, ...action.payload, cart: state.cart };
     case "SET_LOCALE":
       return { ...state, locale: action.locale };
+    case "SET_THEME":
+      return { ...state, theme: action.theme };
     case "START_GUEST_SESSION": {
       const now = Date.now();
       const ms = action.durationHours * 60 * 60 * 1000;
@@ -216,6 +222,9 @@ function reducer(state: DemoState, action: Action): DemoState {
 interface DemoContextValue {
   locale: Locale;
   setLocale: (l: Locale) => void;
+  theme: Theme;
+  setTheme: (t: Theme) => void;
+  toggleTheme: () => void;
   rooms: Room[];
   orders: Order[];
   panicAlerts: PanicAlert[];
@@ -254,6 +263,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       panicAlerts: state.panicAlerts,
       guestSession: state.guestSession,
       locale: state.locale,
+      theme: state.theme,
     };
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
@@ -266,6 +276,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     state.panicAlerts,
     state.guestSession,
     state.locale,
+    state.theme,
   ]);
 
   const productById = useCallback(
@@ -307,10 +318,25 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     dispatch({ type: "SET_LOCALE", locale });
   }, []);
 
+  const setTheme = useCallback((theme: Theme) => {
+    dispatch({ type: "SET_THEME", theme });
+  }, []);
+
+  const toggleTheme = useCallback(() => {
+    dispatch({ type: "SET_THEME", theme: state.theme === "dark" ? "light" : "dark" });
+  }, [state.theme]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", state.theme);
+  }, [state.theme]);
+
   const value = useMemo<DemoContextValue>(
     () => ({
       locale: state.locale,
       setLocale,
+      theme: state.theme,
+      setTheme,
+      toggleTheme,
       rooms: state.rooms,
       orders: state.orders,
       panicAlerts: state.panicAlerts,
@@ -327,12 +353,15 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     }),
     [
       state.locale,
+      state.theme,
       state.rooms,
       state.orders,
       state.panicAlerts,
       state.guestSession,
       state.cart,
       setLocale,
+      setTheme,
+      toggleTheme,
       productById,
       addToCart,
       setCartQty,
