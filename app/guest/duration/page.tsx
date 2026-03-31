@@ -12,7 +12,7 @@ function DurationContent() {
   const router = useRouter();
   const params = useSearchParams();
   const room = params.get("room") ?? "";
-  const { dispatch, hourlyRate, locale } = useDemo();
+  const { hourlyRate, locale } = useDemo();
   const [hours, setHours] = useState<2 | 3>(2);
 
   const cost = useMemo(() => hours * hourlyRate, [hours, hourlyRate]);
@@ -30,9 +30,10 @@ function DurationContent() {
     );
   }
 
-  function start() {
-    dispatch({ type: "START_GUEST_SESSION", roomNumber: room, durationHours: hours });
-    router.push("/guest");
+  function goToWelcome() {
+    router.push(
+      `/guest/welcome?room=${encodeURIComponent(room)}&hours=${hours}`
+    );
   }
 
   return (
@@ -77,10 +78,10 @@ function DurationContent() {
 
           <button
             type="button"
-            onClick={start}
+            onClick={goToWelcome}
             className="mt-10 w-full rounded-2xl bg-[var(--gold)] py-6 text-xl font-bold text-[var(--dark)] shadow-lg transition-all duration-200 hover:bg-[var(--gold-light)] hover:shadow-xl active:scale-[0.98]"
           >
-            {t(locale, "startSession")}
+            {t(locale, "continue")}
           </button>
           <p className="mt-8 text-center text-base">
             <Link href="/" className="text-[var(--gold)] underline">

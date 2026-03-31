@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import {
-  catalog,
+  defaultCatalog,
   HOURLY_RATE_SRD,
   initialOrders,
   initialRooms,
@@ -46,9 +46,11 @@ interface PersistedState {
   guestSession: GuestSession | null;
   locale: Locale;
   theme: Theme;
+  catalog: Product[];
+  hourlyRate: number;
 }
 
-type Action =
+export type Action =
   | { type: "HYDRATE"; payload: Partial<PersistedState> }
   | { type: "SET_LOCALE"; locale: Locale }
   | { type: "SET_THEME"; theme: Theme }
@@ -56,18 +58,24 @@ type Action =
   | { type: "EXTEND_GUEST_SESSION"; extraHours: number }
   | { type: "END_GUEST_SESSION" }
   | { type: "UPDATE_ROOM_STATUS"; roomId: string; status: RoomStatus }
-  | {
-      type: "START_ROOM_SESSION";
-      roomId: string;
-      durationHours: number;
-    }
+  | { type: "START_ROOM_SESSION"; roomId: string; durationHours: number }
   | { type: "END_ROOM_SESSION"; roomId: string }
   | { type: "PANIC"; roomNumber: string }
   | { type: "CLEAR_PANICS" }
   | { type: "ADD_ORDER"; order: Order }
   | { type: "SET_ORDER_STATUS"; orderId: string; status: Order["status"] }
   | { type: "CART_SET"; lines: CartLine[] }
-  | { type: "CART_ADD"; productId: string; qty?: number };
+  | { type: "CART_ADD"; productId: string; qty?: number }
+  // Pricing
+  | { type: "SET_HOURLY_RATE"; rate: number }
+  // Inventory / Catalog
+  | { type: "ADD_PRODUCT"; product: Product }
+  | { type: "UPDATE_PRODUCT"; product: Product }
+  | { type: "DELETE_PRODUCT"; productId: string }
+  | { type: "TOGGLE_PRODUCT_AVAILABILITY"; productId: string }
+  // Room management
+  | { type: "ADD_ROOM"; room: Room }
+  | { type: "DELETE_ROOM"; roomId: string };
 
 interface DemoState extends PersistedState {
   cart: CartLine[];
@@ -81,6 +89,8 @@ function defaultState(): DemoState {
     guestSession: null,
     locale: "en",
     theme: "dark",
+    catalog: defaultCatalog,
+    hourlyRate: HOURLY_RATE_SRD,
     cart: [],
   };
 }
@@ -214,6 +224,39 @@ function reducer(state: DemoState, action: Action): DemoState {
       }));
       return { ...state, cart: lines };
     }
+    // Pricing
+    case "SET_HOURLY_RATE":
+      return { ...state, hourlyRate: action.rate };
+    // Inventory
+    case "ADD_PRODUCT":
+      return { ...state, catalog: [...state.catalog, action.product] };
+    case "UPDATE_PRODUCT":
+      return {
+        ...state,
+        catalog: state.catalog.map((p) =>
+          p.id === action.product.id ? action.product : p
+        ),
+      };
+    case "DELETE_PRODUCT":
+      return {
+        ...state,
+        catalog: state.catalog.filter((p) => p.id !== action.productId),
+      };
+    case "TOGGLE_PRODUCT_AVAILABILITY":
+      return {
+        ...state,
+        catalog: state.catalog.map((p) =>
+          p.id === action.productId ? { ...p, available: !p.available } : p
+        ),
+      };
+    // Room management
+    case "ADD_ROOM":
+      return { ...state, rooms: [...state.rooms, action.room] };
+    case "DELETE_ROOM":
+      return {
+        ...state,
+        rooms: state.rooms.filter((r) => r.id !== action.roomId),
+      };
     default:
       return state;
   }
@@ -250,6 +293,13 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
       const parsed = JSON.parse(raw) as Partial<PersistedState>;
+      // Ensure catalog products have the `available` field (migration)
+      if (parsed.catalog) {
+        parsed.catalog = parsed.catalog.map((p) => ({
+          ...p,
+          available: p.available ?? true,
+        }));
+      }
       dispatch({ type: "HYDRATE", payload: parsed });
     } catch {
       /* ignore */
@@ -264,6 +314,8 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       guestSession: state.guestSession,
       locale: state.locale,
       theme: state.theme,
+      catalog: state.catalog,
+      hourlyRate: state.hourlyRate,
     };
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
@@ -277,11 +329,13 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     state.guestSession,
     state.locale,
     state.theme,
+    state.catalog,
+    state.hourlyRate,
   ]);
 
   const productById = useCallback(
-    (id: string) => catalog.find((p) => p.id === id),
-    []
+    (id: string) => state.catalog.find((p) => p.id === id),
+    [state.catalog]
   );
 
   const addToCart = useCallback((productId: string, qty = 1) => {
@@ -341,9 +395,9 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       orders: state.orders,
       panicAlerts: state.panicAlerts,
       guestSession: state.guestSession,
-      catalog,
+      catalog: state.catalog,
       cart: state.cart,
-      hourlyRate: HOURLY_RATE_SRD,
+      hourlyRate: state.hourlyRate,
       dispatch,
       productById,
       addToCart,
@@ -358,7 +412,9 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       state.orders,
       state.panicAlerts,
       state.guestSession,
+      state.catalog,
       state.cart,
+      state.hourlyRate,
       setLocale,
       setTheme,
       toggleTheme,

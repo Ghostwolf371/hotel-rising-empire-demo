@@ -26,6 +26,11 @@ const dict = {
     startSession: "Start session",
     back: "Back",
 
+    welcomeTitle: "Welcome",
+    welcomeSub:
+      "Relax and enjoy your stay. When you're ready, continue to your in-room experience.",
+    welcomeBannerAlt: "Empire Apartments — welcome",
+
     cart: "Cart",
     timeLeft: "Time left",
     panic: "Staff alert",
@@ -61,6 +66,7 @@ const dict = {
     snacks: "Snacks",
     drinks: "Drinks",
     add: "Add",
+    removeOneFromCart: "Remove one from cart",
     continueToCart: "Continue to Cart",
     ads: "Promotions",
     summaryOrder: "Order summary",
@@ -205,6 +211,54 @@ const dict = {
     mgmtResetDemo: "Reset Demo Data",
     mgmtResetConfirm: "Reset all demo data? This will clear rooms, orders, and sessions.",
 
+    // Settings — tabs
+    mgmtTabGeneral: "General",
+    mgmtTabPricing: "Pricing",
+    mgmtTabInventory: "Inventory",
+    mgmtTabRooms: "Rooms",
+    mgmtTabSystem: "System",
+
+    // Settings — pricing (editable)
+    mgmtHourlyRateSub: "Base rate per hour for guest stays",
+    mgmtPerHour: "per hour",
+    mgmtSave: "Save",
+    mgmtSaved: "Saved!",
+    mgmtStayPricing: "Stay Pricing",
+    mgmtExtensionRate: "Extension Rate",
+    mgmtExtensionRateSub: "Same hourly rate applies for session extensions",
+
+    // Settings — inventory
+    mgmtInventory: "Inventory",
+    mgmtInventorySub: "Manage products, prices, and availability",
+    mgmtAddProduct: "Add Product",
+    mgmtEditProduct: "Edit Product",
+    mgmtProductName: "Name (EN)",
+    mgmtProductNameNl: "Name (NL)",
+    mgmtProductPrice: "Price (SRD)",
+    mgmtProductCategory: "Category",
+    mgmtProductImage: "Image URL",
+    mgmtProductAvailable: "Available",
+    mgmtProductUnavailable: "Unavailable",
+    mgmtDeleteProduct: "Delete Product",
+    mgmtDeleteProductConfirm: "Delete this product? This cannot be undone.",
+    mgmtNoProducts: "No products in catalog.",
+    mgmtCatDrink: "Drink",
+    mgmtCatSnack: "Snack",
+    mgmtCatOther: "Other",
+    mgmtCancel: "Cancel",
+    mgmtSearchProducts: "Search products…",
+    mgmtAllCategories: "All",
+    mgmtItems: "items",
+
+    // Settings — rooms management
+    mgmtRoomManagement: "Room Management",
+    mgmtRoomManagementSub: "Add, remove, and configure rooms",
+    mgmtAddRoom: "Add Room",
+    mgmtRoomNumberLabel: "Room Number",
+    mgmtDeleteRoom: "Delete",
+    mgmtDeleteRoomConfirm: "Delete this room? This cannot be undone.",
+    mgmtCannotDeleteOccupied: "Cannot delete an occupied room.",
+
     // Management — nav labels
     mgmtNavRooms: "Rooms",
     mgmtNavOrders: "Orders",
@@ -235,6 +289,11 @@ const dict = {
     total: "Totaal",
     startSession: "Start sessie",
     back: "Terug",
+
+    welcomeTitle: "Welkom",
+    welcomeSub:
+      "Ontspan en geniet van uw verblijf. Ga verder naar uw kamerervaring wanneer u er klaar voor bent.",
+    welcomeBannerAlt: "Empire Apartments — welkom",
 
     cart: "Winkelwagen",
     timeLeft: "Resterende tijd",
@@ -271,6 +330,7 @@ const dict = {
     snacks: "Snacks",
     drinks: "Dranken",
     add: "Toevoegen",
+    removeOneFromCart: "Eén uit winkelwagen",
     continueToCart: "Naar winkelwagen",
     ads: "Aanbiedingen",
     summaryOrder: "Bestelling",
@@ -414,6 +474,54 @@ const dict = {
     mgmtDangerText: "Reset alle demogegevens naar de oorspronkelijke staat. Dit kan niet ongedaan worden gemaakt.",
     mgmtResetDemo: "Demogegevens resetten",
     mgmtResetConfirm: "Alle demogegevens resetten? Dit verwijdert kamers, bestellingen en sessies.",
+
+    // Settings — tabs
+    mgmtTabGeneral: "Algemeen",
+    mgmtTabPricing: "Prijzen",
+    mgmtTabInventory: "Inventaris",
+    mgmtTabRooms: "Kamers",
+    mgmtTabSystem: "Systeem",
+
+    // Settings — pricing (editable)
+    mgmtHourlyRateSub: "Basistarief per uur voor gastverblijven",
+    mgmtPerHour: "per uur",
+    mgmtSave: "Opslaan",
+    mgmtSaved: "Opgeslagen!",
+    mgmtStayPricing: "Verblijfstarieven",
+    mgmtExtensionRate: "Verlengingstarief",
+    mgmtExtensionRateSub: "Hetzelfde uurtarief geldt voor sessieverlengingen",
+
+    // Settings — inventory
+    mgmtInventory: "Inventaris",
+    mgmtInventorySub: "Beheer producten, prijzen en beschikbaarheid",
+    mgmtAddProduct: "Product toevoegen",
+    mgmtEditProduct: "Product bewerken",
+    mgmtProductName: "Naam (EN)",
+    mgmtProductNameNl: "Naam (NL)",
+    mgmtProductPrice: "Prijs (SRD)",
+    mgmtProductCategory: "Categorie",
+    mgmtProductImage: "Afbeelding URL",
+    mgmtProductAvailable: "Beschikbaar",
+    mgmtProductUnavailable: "Niet beschikbaar",
+    mgmtDeleteProduct: "Product verwijderen",
+    mgmtDeleteProductConfirm: "Dit product verwijderen? Dit kan niet ongedaan worden.",
+    mgmtNoProducts: "Geen producten in catalogus.",
+    mgmtCatDrink: "Drank",
+    mgmtCatSnack: "Snack",
+    mgmtCatOther: "Overig",
+    mgmtCancel: "Annuleren",
+    mgmtSearchProducts: "Producten zoeken…",
+    mgmtAllCategories: "Alles",
+    mgmtItems: "artikelen",
+
+    // Settings — rooms management
+    mgmtRoomManagement: "Kamerbeheer",
+    mgmtRoomManagementSub: "Kamers toevoegen, verwijderen en configureren",
+    mgmtAddRoom: "Kamer toevoegen",
+    mgmtRoomNumberLabel: "Kamernummer",
+    mgmtDeleteRoom: "Verwijderen",
+    mgmtDeleteRoomConfirm: "Deze kamer verwijderen? Dit kan niet ongedaan worden.",
+    mgmtCannotDeleteOccupied: "Een bezette kamer kan niet worden verwijderd.",
 
     // Management — nav labels
     mgmtNavRooms: "Kamers",

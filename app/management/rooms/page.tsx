@@ -6,7 +6,6 @@ import { RoomTimer, useTimeLeft } from "@/components/room-timer";
 import { useDemo } from "@/contexts/demo-context";
 import { formatCountdown, formatSrd, formatTimeRange } from "@/lib/format";
 import { t, type TKey } from "@/lib/i18n";
-import { HOURLY_RATE_SRD } from "@/lib/mock-data";
 import type { Locale, Room, RoomStatus } from "@/lib/types";
 
 const STATUS_STYLE: Record<RoomStatus, { key: TKey; dot: string; bg: string; text: string }> = {
@@ -25,12 +24,12 @@ function statusButtons(locale: Locale): { value: RoomStatus; label: string }[] {
 }
 
 function RoomModal({ room, onClose }: { room: Room; onClose: () => void }) {
-  const { orders, dispatch, locale } = useDemo();
+  const { orders, dispatch, locale, hourlyRate } = useDemo();
   const [durationHours, setDurationHours] = useState(2);
   const endsAt = room.sessionEndsAt ?? 0;
   const leftMs = useTimeLeft(endsAt);
   const roomOrders = orders.filter((o) => o.roomNumber === room.number);
-  const cost = durationHours * HOURLY_RATE_SRD;
+  const cost = durationHours * hourlyRate;
   const isOccupied = room.status === "occupied";
   const timeLoc = locale === "nl" ? "nl-NL" : "en-US";
 
@@ -91,7 +90,7 @@ function RoomModal({ room, onClose }: { room: Room; onClose: () => void }) {
                     </div>
                     <div className="mt-2 flex justify-between text-sm">
                       <span className="text-[var(--muted)]">{t(locale, "total")}</span>
-                      <span className="font-bold text-[var(--gold)]">{formatSrd(room.durationHours * HOURLY_RATE_SRD)}</span>
+                      <span className="font-bold text-[var(--gold)]">{formatSrd(room.durationHours * hourlyRate)}</span>
                     </div>
                   </div>
                 )}
@@ -103,31 +102,68 @@ function RoomModal({ room, onClose }: { room: Room; onClose: () => void }) {
             ) : (
               <>
                 <p className="text-sm font-semibold text-[var(--gold-light)]">{t(locale, "mgmtStartNewSession")}</p>
-                <div className="mt-3 grid grid-cols-6 gap-2">
-                  {[1, 2, 3, 4, 5, 6].map((h) => (
-                    <button
-                      key={h}
-                      type="button"
-                      onClick={() => setDurationHours(h)}
-                      className={`rounded-xl py-3 text-base font-bold transition ${
-                        durationHours === h
-                          ? "bg-[var(--gold)] text-[var(--dark)] shadow-lg"
-                          : "bg-[var(--surface)] text-[var(--foreground)] ring-1 ring-[var(--border-light)] hover:ring-[var(--gold)]/30"
-                      }`}
-                    >
-                      {h}h
-                    </button>
-                  ))}
+
+                {/* Hour slider */}
+                <div className="mt-4 px-1">
+                  <div className="flex justify-between px-[2px]">
+                    {[1, 2, 3, 4, 5, 6].map((h) => (
+                      <button
+                        key={h}
+                        type="button"
+                        onClick={() => setDurationHours(h)}
+                        className={`flex w-10 flex-col items-center gap-1 transition-all duration-200 ${
+                          durationHours === h ? "scale-110" : ""
+                        }`}
+                      >
+                        <span className={`text-base font-black transition-colors duration-200 ${
+                          h <= durationHours ? "text-[var(--gold)]" : "text-[var(--muted)]"
+                        }`}>
+                          +{h}u
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="relative mt-3">
+                    <input
+                      type="range"
+                      min={1}
+                      max={6}
+                      step={1}
+                      value={durationHours}
+                      onChange={(e) => setDurationHours(Number(e.target.value))}
+                      className="gold-slider"
+                      style={{ "--slider-pct": `${((durationHours - 1) / 5) * 100}%` } as React.CSSProperties}
+                    />
+                    <div className="pointer-events-none absolute top-1/2 left-[2px] right-[2px] -translate-y-1/2">
+                      <div className="flex justify-between">
+                        {[1, 2, 3, 4, 5, 6].map((h) => (
+                          <span
+                            key={h}
+                            className={`block h-2 w-2 rounded-full transition-all duration-200 ${
+                              h <= durationHours
+                                ? "bg-[var(--gold)] shadow-sm shadow-[var(--gold)]/40"
+                                : "bg-[var(--border-light)]"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="mt-4 rounded-xl bg-[var(--surface)] px-4 py-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-[var(--muted)]">{t(locale, "mgmtRate")}</span>
-                    <span className="text-[var(--foreground)]">{formatSrd(HOURLY_RATE_SRD)} / {locale === "nl" ? "uur" : "hr"}</span>
-                  </div>
-                  <div className="mt-2 flex justify-between text-lg font-black">
-                    <span className="text-[var(--foreground)]">{t(locale, "total")}</span>
-                    <span className="text-[var(--gold)]">{formatSrd(cost)}</span>
+                {/* Cost display */}
+                <div className="mt-5 overflow-hidden rounded-xl border border-[var(--gold)]/20 bg-[var(--gold)]/5">
+                  <div className="flex items-center justify-between px-5 py-4">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">{t(locale, "mgmtRate")}</p>
+                      <p className="mt-0.5 text-sm text-[var(--muted)]">
+                        {durationHours} × {formatSrd(hourlyRate)}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">{t(locale, "total")}</p>
+                      <p className="mt-0.5 text-2xl font-black text-[var(--gold)]">{formatSrd(cost)}</p>
+                    </div>
                   </div>
                 </div>
 

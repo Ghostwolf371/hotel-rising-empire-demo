@@ -100,18 +100,83 @@ body {
 .stagger-5 { animation-delay: 0.25s; }
 .stagger-6 { animation-delay: 0.3s; }
 
-.extend-hours-slider {
-  accent-color: var(--gold);
-  height: 0.5rem;
+/* ── Premium range slider ─────────────────────────── */
+.gold-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
   border-radius: 9999px;
+  background: var(--surface);
+  outline: none;
+  position: relative;
+  cursor: pointer;
 }
-.extend-hours-slider::-webkit-slider-thumb {
-  width: 1.35rem; height: 1.35rem; border-radius: 9999px;
-  border: 3px solid var(--card); background: var(--gold);
-  box-shadow: 0 2px 8px rgba(201,165,78,0.4); cursor: pointer;
+.gold-slider::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 9999px;
+  background: linear-gradient(
+    to right,
+    var(--gold) 0%,
+    var(--gold) var(--slider-pct, 0%),
+    var(--surface) var(--slider-pct, 0%),
+    var(--surface) 100%
+  );
 }
-.extend-hours-slider::-moz-range-thumb {
-  width: 1.35rem; height: 1.35rem; border-radius: 9999px;
-  border: 3px solid var(--card); background: var(--gold);
-  box-shadow: 0 2px 8px rgba(201,165,78,0.4); cursor: pointer;
+.gold-slider::-moz-range-track {
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--surface);
 }
+.gold-slider::-moz-range-progress {
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--gold);
+}
+.gold-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  background: var(--gold);
+  border: 4px solid var(--card);
+  box-shadow:
+    0 0 0 2px var(--gold),
+    0 4px 12px rgba(201, 165, 78, 0.4);
+  cursor: grab;
+  margin-top: -11px;
+  transition: box-shadow 0.2s, transform 0.15s;
+}
+.gold-slider::-webkit-slider-thumb:hover {
+  box-shadow:
+    0 0 0 2px var(--gold-light),
+    0 4px 16px rgba(201, 165, 78, 0.55);
+  transform: scale(1.1);
+}
+.gold-slider::-webkit-slider-thumb:active {
+  cursor: grabbing;
+  transform: scale(0.95);
+  box-shadow:
+    0 0 0 3px var(--gold),
+    0 2px 8px rgba(201, 165, 78, 0.5);
+}
+.gold-slider::-moz-range-thumb {
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  background: var(--gold);
+  border: 4px solid var(--card);
+  box-shadow:
+    0 0 0 2px var(--gold),
+    0 4px 12px rgba(201, 165, 78, 0.4);
+  cursor: grab;
+  transition: box-shadow 0.2s, transform 0.15s;
+}
+.gold-slider::-moz-range-thumb:hover {
+  box-shadow:
+    0 0 0 2px var(--gold-light),
+    0 4px 16px rgba(201, 165, 78, 0.55);
+  transform: scale(1.1);
+}
+

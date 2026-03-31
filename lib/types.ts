@@ -11,6 +11,7 @@ export interface Product {
   priceSrd: number;
   category: ProductCategory;
   image: string;
+  available: boolean;
 }
 
 export interface OrderLine {

@@ -27,7 +27,7 @@ export const initialRooms = (): Room[] =>
     return { id, number: String(n), status: "available" as const };
   });
 
-export const catalog: Product[] = [
+export const defaultCatalog: Product[] = [
   {
     id: "p1",
     name: "Coca Cola",
@@ -35,6 +35,7 @@ export const catalog: Product[] = [
     priceSrd: 21,
     category: "drink",
     image: "https://images.unsplash.com/photo-1629203851122-3726ecdf080e?w=400&h=300&fit=crop",
+    available: true,
   },
   {
     id: "p2",
@@ -43,6 +44,7 @@ export const catalog: Product[] = [
     priceSrd: 18,
     category: "drink",
     image: "https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w=400&h=300&fit=crop",
+    available: true,
   },
   {
     id: "p3",
@@ -51,6 +53,7 @@ export const catalog: Product[] = [
     priceSrd: 12,
     category: "drink",
     image: "https://images.unsplash.com/photo-1559839914-17aae19cec71?w=400&h=300&fit=crop",
+    available: true,
   },
   {
     id: "p4",
@@ -59,6 +62,7 @@ export const catalog: Product[] = [
     priceSrd: 13,
     category: "snack",
     image: "https://images.unsplash.com/photo-1549007994-cb92caebd54b?w=400&h=300&fit=crop",
+    available: true,
   },
   {
     id: "p5",
@@ -67,6 +71,7 @@ export const catalog: Product[] = [
     priceSrd: 22,
     category: "snack",
     image: "https://images.unsplash.com/photo-1599599810769-bcde5a160d32?w=400&h=300&fit=crop",
+    available: true,
   },
   {
     id: "p6",
@@ -75,6 +80,7 @@ export const catalog: Product[] = [
     priceSrd: 15,
     category: "snack",
     image: "https://images.unsplash.com/photo-1622484212850-eb596d769edc?w=400&h=300&fit=crop",
+    available: true,
   },
 ];
 
