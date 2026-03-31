@@ -22,13 +22,22 @@ function WelcomeContent() {
 
   useEffect(() => {
     if (!room || !hours) {
-      router.replace("/");
+      router.replace("/guest/duration");
       return;
     }
     setReady(true);
-    const id = setTimeout(() => setVisible(true), 80);
-    return () => clearTimeout(id);
+    const showId = setTimeout(() => setVisible(true), 80);
+    return () => clearTimeout(showId);
   }, [room, hours, router]);
+
+  useEffect(() => {
+    if (!ready || !room || !hours) return;
+    const autoId = setTimeout(() => {
+      dispatch({ type: "START_GUEST_SESSION", roomNumber: room, durationHours: hours });
+      router.push("/guest");
+    }, 5000);
+    return () => clearTimeout(autoId);
+  }, [ready, room, hours, dispatch, router]);
 
   function onContinue() {
     if (!room || !hours) return;
@@ -45,7 +54,13 @@ function WelcomeContent() {
   }
 
   return (
-    <div className="relative flex min-h-dvh flex-col overflow-hidden bg-black">
+    <div
+      className="relative flex min-h-dvh flex-col overflow-hidden bg-black cursor-pointer"
+      onClick={onContinue}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onContinue(); }}
+    >
       {/* Full-screen background image with slow zoom */}
       <div className="absolute inset-0">
         <Image
@@ -149,19 +164,28 @@ function WelcomeContent() {
             </div>
           </div>
 
-          {/* CTA button */}
-          <button
-            type="button"
-            onClick={onContinue}
-            className="animate-gold-pulse mt-10 w-full max-w-sm rounded-2xl bg-[var(--gold)] py-5 text-xl font-bold text-[var(--dark)] shadow-xl shadow-[var(--gold)]/20 transition-all duration-300 hover:bg-[var(--gold-light)] hover:shadow-2xl hover:shadow-[var(--gold)]/30 active:scale-[0.97]"
+          {/* Auto-continue indicator */}
+          <div
+            className="mt-10 flex w-full max-w-sm flex-col items-center gap-3"
             style={{
               opacity: visible ? 1 : 0,
               transform: visible ? "translateY(0)" : "translateY(15px)",
               transition: "opacity 0.8s ease-out 1s, transform 0.8s ease-out 1s",
             }}
           >
-            {t(locale, "startSession")} →
-          </button>
+            <span className="text-sm font-bold uppercase tracking-wider text-white/40">
+              {t(locale, "tapToContinue")}
+            </span>
+            <div className="h-1 w-48 overflow-hidden rounded-full bg-white/10">
+              <div
+                className="h-full rounded-full bg-[var(--gold)]"
+                style={{
+                  width: visible ? "100%" : "0%",
+                  transition: "width 5s linear 0.5s",
+                }}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>

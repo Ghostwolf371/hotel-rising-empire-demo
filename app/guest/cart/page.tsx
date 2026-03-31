@@ -22,9 +22,10 @@ export default function GuestCartPage() {
     locale,
   } = useDemo();
   const [notes, setNotes] = useState("");
+  const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
-    if (!guestSession) router.replace("/");
+    if (!guestSession) router.replace("/guest/duration");
   }, [guestSession, router]);
 
   const lines = useMemo(() => {
@@ -69,13 +70,30 @@ export default function GuestCartPage() {
     });
     clearCart();
     setNotes("");
-    window.alert(t(locale, "orderPlaced"));
-    router.push("/guest");
+    setShowSuccess(true);
   }
 
   return (
     <div className="flex min-h-dvh flex-col bg-[var(--background)]">
       <GuestHeader showCart={false} />
+
+      {/* Page header */}
+      <div className="border-b border-[var(--border)] bg-[var(--card)] px-6 py-6">
+        <div className="mx-auto max-w-5xl">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--gold)]/10 text-[var(--gold)]">
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-2xl font-black text-[var(--gold)]">{t(locale, "orderSummaryTitle")}</h1>
+              <p className="text-sm text-[var(--muted)]">Room {guestSession.roomNumber}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="mx-auto grid w-full max-w-5xl flex-1 gap-8 px-6 py-8 lg:grid-cols-[1fr_360px]">
         <div className="animate-fade-in">
           <div className="mb-5 flex items-center justify-between">
@@ -138,7 +156,7 @@ export default function GuestCartPage() {
                 </div>
               </li>
             ))}
-            {lines.length === 0 && (
+            {lines.length === 0 && !showSuccess && (
               <p className="rounded-2xl bg-[var(--card)] p-10 text-center text-lg text-[var(--muted)] ring-1 ring-[var(--border)]">
                 Cart is empty.{" "}
                 <Link href="/guest" className="text-[var(--gold)] underline">
@@ -147,16 +165,18 @@ export default function GuestCartPage() {
               </p>
             )}
           </ul>
-          <div className="mt-8">
-            <label className="mb-3 block text-base font-bold text-[var(--gold)]">
-              {t(locale, "notes")}
-            </label>
-            <textarea
-              className="min-h-[120px] w-full rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 text-base text-[var(--foreground)] outline-none transition placeholder:text-[var(--muted)] focus:ring-4 focus:ring-[var(--gold)]/20"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-          </div>
+          {lines.length > 0 && (
+            <div className="mt-8">
+              <label className="mb-3 block text-base font-bold text-[var(--gold)]">
+                {t(locale, "notes")}
+              </label>
+              <textarea
+                className="min-h-[120px] w-full rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 text-base text-[var(--foreground)] outline-none transition placeholder:text-[var(--muted)] focus:ring-4 focus:ring-[var(--gold)]/20"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+              />
+            </div>
+          )}
         </div>
 
         <aside className="animate-slide-up h-fit rounded-3xl border border-[var(--border)] bg-[var(--card)] p-8 shadow-xl">
@@ -185,6 +205,32 @@ export default function GuestCartPage() {
           </button>
         </aside>
       </div>
+
+      {/* Success overlay */}
+      {showSuccess && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6 backdrop-blur-md">
+          <div className="animate-fade-in-scale w-full max-w-sm rounded-3xl border border-[var(--border)] bg-[var(--card)] px-8 py-10 text-center shadow-2xl">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400">
+              <svg className="h-11 w-11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h3 className="mt-6 text-2xl font-bold tracking-tight text-[var(--foreground)]">
+              {t(locale, "orderSuccessTitle")}
+            </h3>
+            <p className="mt-3 text-base leading-relaxed text-[var(--muted)]">
+              {t(locale, "orderSuccessSub")}
+            </p>
+            <button
+              type="button"
+              onClick={() => router.push("/guest")}
+              className="mt-8 w-full rounded-2xl bg-[var(--gold)] py-4 text-lg font-bold text-[var(--dark)] shadow-lg transition hover:bg-[var(--gold-light)] active:scale-[0.98]"
+            >
+              {t(locale, "orderSuccessOk")}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -2,7 +2,14 @@ export type RoomStatus = "available" | "occupied" | "cleaning" | "maintenance";
 
 export type OrderStatus = "processing" | "completed";
 
-export type ProductCategory = "drink" | "snack" | "other";
+export type ProductCategory = string;
+
+export interface Category {
+  id: string;
+  name: string;
+  nameNl: string;
+  color: string;
+}
 
 export interface Product {
   id: string;

@@ -11,11 +11,13 @@ import {
 } from "react";
 import {
   defaultCatalog,
+  defaultCategories,
   HOURLY_RATE_SRD,
   initialOrders,
   initialRooms,
 } from "@/lib/mock-data";
 import type {
+  Category,
   Locale,
   Order,
   PanicAlert,
@@ -47,6 +49,7 @@ interface PersistedState {
   locale: Locale;
   theme: Theme;
   catalog: Product[];
+  categories: Category[];
   hourlyRate: number;
 }
 
@@ -73,6 +76,10 @@ export type Action =
   | { type: "UPDATE_PRODUCT"; product: Product }
   | { type: "DELETE_PRODUCT"; productId: string }
   | { type: "TOGGLE_PRODUCT_AVAILABILITY"; productId: string }
+  // Categories
+  | { type: "ADD_CATEGORY"; category: Category }
+  | { type: "UPDATE_CATEGORY"; category: Category }
+  | { type: "DELETE_CATEGORY"; categoryId: string }
   // Room management
   | { type: "ADD_ROOM"; room: Room }
   | { type: "DELETE_ROOM"; roomId: string };
@@ -90,6 +97,7 @@ function defaultState(): DemoState {
     locale: "en",
     theme: "dark",
     catalog: defaultCatalog,
+    categories: defaultCategories,
     hourlyRate: HOURLY_RATE_SRD,
     cart: [],
   };
@@ -249,6 +257,21 @@ function reducer(state: DemoState, action: Action): DemoState {
           p.id === action.productId ? { ...p, available: !p.available } : p
         ),
       };
+    // Categories
+    case "ADD_CATEGORY":
+      return { ...state, categories: [...state.categories, action.category] };
+    case "UPDATE_CATEGORY":
+      return {
+        ...state,
+        categories: state.categories.map((c) =>
+          c.id === action.category.id ? action.category : c
+        ),
+      };
+    case "DELETE_CATEGORY":
+      return {
+        ...state,
+        categories: state.categories.filter((c) => c.id !== action.categoryId),
+      };
     // Room management
     case "ADD_ROOM":
       return { ...state, rooms: [...state.rooms, action.room] };
@@ -273,6 +296,7 @@ interface DemoContextValue {
   panicAlerts: PanicAlert[];
   guestSession: GuestSession | null;
   catalog: Product[];
+  categories: Category[];
   cart: CartLine[];
   hourlyRate: number;
   dispatch: React.Dispatch<Action>;
@@ -293,12 +317,14 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
       const parsed = JSON.parse(raw) as Partial<PersistedState>;
-      // Ensure catalog products have the `available` field (migration)
       if (parsed.catalog) {
         parsed.catalog = parsed.catalog.map((p) => ({
           ...p,
           available: p.available ?? true,
         }));
+      }
+      if (!parsed.categories || parsed.categories.length === 0) {
+        parsed.categories = defaultCategories;
       }
       dispatch({ type: "HYDRATE", payload: parsed });
     } catch {
@@ -315,6 +341,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       locale: state.locale,
       theme: state.theme,
       catalog: state.catalog,
+      categories: state.categories,
       hourlyRate: state.hourlyRate,
     };
     try {
@@ -330,6 +357,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     state.locale,
     state.theme,
     state.catalog,
+    state.categories,
     state.hourlyRate,
   ]);
 
@@ -396,6 +424,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       panicAlerts: state.panicAlerts,
       guestSession: state.guestSession,
       catalog: state.catalog,
+      categories: state.categories,
       cart: state.cart,
       hourlyRate: state.hourlyRate,
       dispatch,
@@ -413,6 +442,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       state.panicAlerts,
       state.guestSession,
       state.catalog,
+      state.categories,
       state.cart,
       state.hourlyRate,
       setLocale,

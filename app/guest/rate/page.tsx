@@ -47,7 +47,7 @@ function RateContent() {
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    router.push("/guest/thank-you");
+    router.push("/guest/duration");
   }
 
   const comfortOpts = [

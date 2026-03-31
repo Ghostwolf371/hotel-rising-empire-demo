@@ -1,4 +1,4 @@
-import type { Order, Product, Room } from "./types";
+import type { Category, Order, Product, Room } from "./types";
 
 export const HOURLY_RATE_SRD = 75;
 
@@ -26,6 +26,12 @@ export const initialRooms = (): Room[] =>
     }
     return { id, number: String(n), status: "available" as const };
   });
+
+export const defaultCategories: Category[] = [
+  { id: "drink", name: "Drinks", nameNl: "Dranken", color: "sky" },
+  { id: "snack", name: "Snacks", nameNl: "Snacks", color: "amber" },
+  { id: "other", name: "Other", nameNl: "Overig", color: "purple" },
+];
 
 export const defaultCatalog: Product[] = [
   {

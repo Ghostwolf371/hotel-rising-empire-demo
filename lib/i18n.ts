@@ -8,6 +8,8 @@ const dict = {
       "Welcome to Empire Apartments Paramaribo. Enter your room details to begin your stay.",
     roomNumber: "Room Number",
     roomPlaceholder: "e.g. 402",
+    roomNotFound: "Room not found. Please enter a valid room number.",
+    roomNotAvailable: "This room is currently occupied.",
     continue: "Continue",
     copyright: "© 2026 EMPIRE APARTMENTS PARAMARIBO. ALL RIGHTS RESERVED.",
     privacy: "Privacy Policy",
@@ -19,6 +21,9 @@ const dict = {
     invalidCode: "Invalid code. For this demo use 000-000.",
 
     chooseStay: "Choose your stay duration",
+    selectYourRoom: "Select your room",
+    yourStay: "Your stay",
+    tapToContinue: "Tap anywhere to continue",
     hours2: "2 hours",
     hours3: "3 hours",
     perHour: "per hour",
@@ -28,8 +33,15 @@ const dict = {
 
     welcomeTitle: "Welcome",
     welcomeSub:
-      "Relax and enjoy your stay. When you're ready, continue to your in-room experience.",
+      "Relax and enjoy your stay. Your in-room experience starts in a moment.",
     welcomeBannerAlt: "Empire Apartments — welcome",
+
+    menuSectionTitle: "Order from our menu",
+    menuSectionSub: "Tap any item to add it to your cart",
+    orderSummaryTitle: "Order Summary",
+    orderSuccessTitle: "Order placed!",
+    orderSuccessSub: "Your order will be delivered to your room shortly.",
+    orderSuccessOk: "Back to menu",
 
     cart: "Cart",
     timeLeft: "Time left",
@@ -188,6 +200,7 @@ const dict = {
     // Management — settings
     mgmtSettings: "Settings",
     mgmtSettingsSub: "Configuration and preferences",
+    mgmtInventorySub: "Manage products, pricing and availability",
     mgmtGeneral: "General",
     mgmtLanguage: "Language",
     mgmtLanguageSub: "Set the interface language",
@@ -229,7 +242,15 @@ const dict = {
 
     // Settings — inventory
     mgmtInventory: "Inventory",
-    mgmtInventorySub: "Manage products, prices, and availability",
+    mgmtCategories: "Categories",
+    mgmtAddCategory: "Add Category",
+    mgmtEditCategory: "Edit Category",
+    mgmtCategoryName: "Name (EN)",
+    mgmtCategoryNameNl: "Name (NL)",
+    mgmtCategoryColor: "Color",
+    mgmtDeleteCategory: "Delete",
+    mgmtDeleteCategoryConfirm: "Delete this category? Products using it will keep their category tag.",
+    mgmtNoCategoriesYet: "No categories yet.",
     mgmtAddProduct: "Add Product",
     mgmtEditProduct: "Edit Product",
     mgmtProductName: "Name (EN)",
@@ -263,6 +284,7 @@ const dict = {
     mgmtNavRooms: "Rooms",
     mgmtNavOrders: "Orders",
     mgmtNavReports: "Reports",
+    mgmtNavInventory: "Inventory",
     mgmtNavSettings: "Settings",
   },
   nl: {
@@ -272,6 +294,8 @@ const dict = {
       "Welkom bij Empire Apartments Paramaribo. Voer uw kamergegevens in om uw verblijf te starten.",
     roomNumber: "Kamernummer",
     roomPlaceholder: "bijv. 402",
+    roomNotFound: "Kamer niet gevonden. Voer een geldig kamernummer in.",
+    roomNotAvailable: "Deze kamer is momenteel bezet.",
     continue: "Doorgaan",
     copyright: "© 2026 EMPIRE APARTMENTS PARAMARIBO. ALLE RECHTEN VOORBEHOUDEN.",
     privacy: "Privacybeleid",
@@ -283,6 +307,9 @@ const dict = {
     invalidCode: "Ongeldige code. Voor deze demo gebruik 000-000.",
 
     chooseStay: "Kies uw verblijfsduur",
+    selectYourRoom: "Selecteer uw kamer",
+    yourStay: "Uw verblijf",
+    tapToContinue: "Tik ergens om door te gaan",
     hours2: "2 uur",
     hours3: "3 uur",
     perHour: "per uur",
@@ -292,8 +319,15 @@ const dict = {
 
     welcomeTitle: "Welkom",
     welcomeSub:
-      "Ontspan en geniet van uw verblijf. Ga verder naar uw kamerervaring wanneer u er klaar voor bent.",
+      "Ontspan en geniet van uw verblijf. Uw kamerervaring begint zo.",
     welcomeBannerAlt: "Empire Apartments — welkom",
+
+    menuSectionTitle: "Bestel van ons menu",
+    menuSectionSub: "Tik op een item om het aan uw winkelwagen toe te voegen",
+    orderSummaryTitle: "Besteloverzicht",
+    orderSuccessTitle: "Bestelling geplaatst!",
+    orderSuccessSub: "Uw bestelling wordt binnenkort bij uw kamer afgeleverd.",
+    orderSuccessOk: "Terug naar menu",
 
     cart: "Winkelwagen",
     timeLeft: "Resterende tijd",
@@ -452,6 +486,7 @@ const dict = {
     // Management — settings
     mgmtSettings: "Instellingen",
     mgmtSettingsSub: "Configuratie en voorkeuren",
+    mgmtInventorySub: "Beheer producten, prijzen en beschikbaarheid",
     mgmtGeneral: "Algemeen",
     mgmtLanguage: "Taal",
     mgmtLanguageSub: "Stel de interfacetaal in",
@@ -493,7 +528,15 @@ const dict = {
 
     // Settings — inventory
     mgmtInventory: "Inventaris",
-    mgmtInventorySub: "Beheer producten, prijzen en beschikbaarheid",
+    mgmtCategories: "Categorieën",
+    mgmtAddCategory: "Categorie toevoegen",
+    mgmtEditCategory: "Categorie bewerken",
+    mgmtCategoryName: "Naam (EN)",
+    mgmtCategoryNameNl: "Naam (NL)",
+    mgmtCategoryColor: "Kleur",
+    mgmtDeleteCategory: "Verwijderen",
+    mgmtDeleteCategoryConfirm: "Deze categorie verwijderen? Producten met deze categorie behouden hun tag.",
+    mgmtNoCategoriesYet: "Nog geen categorieën.",
     mgmtAddProduct: "Product toevoegen",
     mgmtEditProduct: "Product bewerken",
     mgmtProductName: "Naam (EN)",
@@ -527,6 +570,7 @@ const dict = {
     mgmtNavRooms: "Kamers",
     mgmtNavOrders: "Bestellingen",
     mgmtNavReports: "Rapportages",
+    mgmtNavInventory: "Inventaris",
     mgmtNavSettings: "Instellingen",
   },
 } as const;
