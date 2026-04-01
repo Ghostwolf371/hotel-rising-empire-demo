@@ -4,7 +4,11 @@ import Image from "next/image";
 import { useCallback, useMemo, useState } from "react";
 import { ManagementShell } from "@/components/management-shell";
 import { useDemo, type Action } from "@/contexts/demo-context";
-import { categoryBadgeClass, categoryLabel, CATEGORY_COLOR_OPTIONS } from "@/lib/category-styles";
+import {
+  categoryBadgeClass,
+  categoryLabel,
+  CATEGORY_COLOR_OPTIONS,
+} from "@/lib/category-styles";
 import { formatSrd } from "@/lib/format";
 import { t } from "@/lib/i18n";
 import type { Category, Locale, Product, ProductCategory } from "@/lib/types";
@@ -13,8 +17,14 @@ type Dispatch = React.Dispatch<Action>;
 
 function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   return (
-    <button type="button" onClick={onToggle} className={`relative h-7 w-12 rounded-full transition ${on ? "bg-[var(--gold)]" : "bg-[var(--surface)]"}`}>
-      <span className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-all ${on ? "left-[calc(100%-1.625rem)]" : "left-0.5"}`} />
+    <button
+      type="button"
+      onClick={onToggle}
+      className={`relative h-7 w-12 rounded-full transition ${on ? "bg-[var(--gold)]" : "bg-[var(--surface)]"}`}
+    >
+      <span
+        className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-all ${on ? "left-[calc(100%-1.625rem)]" : "left-0.5"}`}
+      />
     </button>
   );
 }
@@ -26,18 +36,33 @@ export default function ManagementInventoryPage() {
     <ManagementShell>
       <div className="px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-black text-[var(--gold)]">{t(locale, "mgmtTabInventory")}</h1>
-          <p className="mt-1 text-sm text-[var(--muted)]">{t(locale, "mgmtInventorySub")}</p>
+          <h1 className="text-3xl font-black text-[var(--gold)]">
+            {t(locale, "mgmtTabInventory")}
+          </h1>
+          <p className="mt-1 text-sm text-[var(--muted)]">
+            {t(locale, "mgmtInventorySub")}
+          </p>
         </div>
-        <CategoriesPanel locale={locale} categories={categories} dispatch={dispatch} />
-        <InventoryContent locale={locale} catalog={catalog} categories={categories} dispatch={dispatch} />
+        <CategoriesPanel
+          locale={locale}
+          categories={categories}
+          dispatch={dispatch}
+        />
+        <InventoryContent
+          locale={locale}
+          catalog={catalog}
+          categories={categories}
+          dispatch={dispatch}
+        />
       </div>
     </ManagementShell>
   );
 }
 
 function CategoriesPanel({
-  locale, categories, dispatch,
+  locale,
+  categories,
+  dispatch,
 }: {
   locale: Locale;
   categories: Category[];
@@ -76,30 +101,49 @@ function CategoriesPanel({
   return (
     <section className="mb-8 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-6 shadow-lg">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-bold text-[var(--gold)]">{t(locale, "mgmtCategories")}</h2>
+        <h2 className="text-lg font-bold text-[var(--gold)]">
+          {t(locale, "mgmtCategories")}
+        </h2>
         <button
           type="button"
           onClick={openNew}
           className="flex items-center gap-2 rounded-xl border border-[var(--gold)]/40 bg-[var(--gold)]/10 px-4 py-2 text-sm font-bold text-[var(--gold)] transition hover:bg-[var(--gold)]/20"
         >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2.5}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 4v16m8-8H4"
+            />
           </svg>
           {t(locale, "mgmtAddCategory")}
         </button>
       </div>
       {categories.length === 0 ? (
-        <p className="text-sm text-[var(--muted)]">{t(locale, "mgmtNoCategoriesYet")}</p>
+        <p className="text-sm text-[var(--muted)]">
+          {t(locale, "mgmtNoCategoriesYet")}
+        </p>
       ) : (
         <div className="flex flex-wrap gap-2">
           {categories.map((c) => (
             <button
               key={c.id}
               type="button"
-              onClick={() => { setEditing({ ...c }); setIsNew(false); }}
+              onClick={() => {
+                setEditing({ ...c });
+                setIsNew(false);
+              }}
               className={`flex items-center gap-2 rounded-xl border border-[var(--border)] px-4 py-2 text-sm font-bold transition hover:bg-[var(--surface)]`}
             >
-              <span className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase ${categoryBadgeClass(c.color)}`}>
+              <span
+                className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase ${categoryBadgeClass(c.color)}`}
+              >
                 {locale === "nl" ? c.nameNl : c.name}
               </span>
               <span className="text-[var(--muted)]">·</span>
@@ -125,7 +169,13 @@ function CategoriesPanel({
 }
 
 function CategoryModal({
-  category, setCategory, isNew, locale, onSave, onDelete, onClose,
+  category,
+  setCategory,
+  isNew,
+  locale,
+  onSave,
+  onDelete,
+  onClose,
 }: {
   category: Category;
   setCategory: (c: Category | null) => void;
@@ -135,7 +185,8 @@ function CategoryModal({
   onDelete: () => void;
   onClose: () => void;
 }) {
-  const set = (patch: Partial<Category>) => setCategory({ ...category, ...patch });
+  const set = (patch: Partial<Category>) =>
+    setCategory({ ...category, ...patch });
   const canSave = category.name.trim() && category.nameNl.trim();
 
   return (
@@ -143,48 +194,104 @@ function CategoryModal({
       <div className="animate-fade-in-scale w-full max-w-md rounded-3xl border border-[var(--border)] bg-[var(--card)] shadow-2xl">
         <div className="flex items-center justify-between border-b border-[var(--border)] px-6 py-4">
           <h3 className="text-lg font-bold text-[var(--gold)]">
-            {isNew ? t(locale, "mgmtAddCategory") : t(locale, "mgmtEditCategory")}
+            {isNew
+              ? t(locale, "mgmtAddCategory")
+              : t(locale, "mgmtEditCategory")}
           </h3>
-          <button type="button" onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--muted)] transition hover:bg-[var(--surface)]">
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--muted)] transition hover:bg-[var(--surface)]"
+          >
+            <svg
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
           </button>
         </div>
         <div className="space-y-4 px-6 py-5">
           <div>
-            <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">{t(locale, "mgmtCategoryName")}</label>
-            <input type="text" value={category.name} onChange={(e) => set({ name: e.target.value })} className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20" />
+            <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+              {t(locale, "mgmtCategoryName")}
+            </label>
+            <input
+              type="text"
+              value={category.name}
+              onChange={(e) => set({ name: e.target.value })}
+              className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20"
+            />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">{t(locale, "mgmtCategoryNameNl")}</label>
-            <input type="text" value={category.nameNl} onChange={(e) => set({ nameNl: e.target.value })} className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20" />
+            <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+              {t(locale, "mgmtCategoryNameNl")}
+            </label>
+            <input
+              type="text"
+              value={category.nameNl}
+              onChange={(e) => set({ nameNl: e.target.value })}
+              className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20"
+            />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">{t(locale, "mgmtCategoryColor")}</label>
-            <select value={category.color} onChange={(e) => set({ color: e.target.value })} className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20">
+            <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+              {t(locale, "mgmtCategoryColor")}
+            </label>
+            <select
+              value={category.color}
+              onChange={(e) => set({ color: e.target.value })}
+              className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20"
+            >
               {CATEGORY_COLOR_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
               ))}
             </select>
           </div>
           {!isNew && (
             <p className="text-xs text-[var(--muted)]">
-              ID: <code className="rounded bg-[var(--surface)] px-1.5 py-0.5 font-mono text-[11px]">{category.id}</code>
+              ID:{" "}
+              <code className="rounded bg-[var(--surface)] px-1.5 py-0.5 font-mono text-[11px]">
+                {category.id}
+              </code>
             </p>
           )}
         </div>
         <div className="flex items-center justify-between border-t border-[var(--border)] px-6 py-4">
           <div>
             {!isNew && (
-              <button type="button" onClick={onDelete} className="text-sm font-bold text-red-400 transition hover:text-red-300">
+              <button
+                type="button"
+                onClick={onDelete}
+                className="text-sm font-bold text-red-400 transition hover:text-red-300"
+              >
                 {t(locale, "mgmtDeleteCategory")}
               </button>
             )}
           </div>
           <div className="flex gap-3">
-            <button type="button" onClick={onClose} className="rounded-xl border border-[var(--border)] px-5 py-2.5 text-sm font-bold text-[var(--foreground)] transition hover:bg-[var(--surface)]">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-xl border border-[var(--border)] px-5 py-2.5 text-sm font-bold text-[var(--foreground)] transition hover:bg-[var(--surface)]"
+            >
               {t(locale, "mgmtCancel")}
             </button>
-            <button type="button" onClick={onSave} disabled={!canSave} className={`rounded-xl px-5 py-2.5 text-sm font-bold transition ${canSave ? "bg-[var(--gold)] text-[var(--dark)] hover:bg-[var(--gold-light)]" : "cursor-not-allowed bg-[var(--surface)] text-[var(--muted)]"}`}>
+            <button
+              type="button"
+              onClick={onSave}
+              disabled={!canSave}
+              className={`rounded-xl px-5 py-2.5 text-sm font-bold transition ${canSave ? "bg-[var(--gold)] text-[var(--dark)] hover:bg-[var(--gold-light)]" : "cursor-not-allowed bg-[var(--surface)] text-[var(--muted)]"}`}
+            >
               {t(locale, "mgmtSave")}
             </button>
           </div>
@@ -195,7 +302,10 @@ function CategoryModal({
 }
 
 function InventoryContent({
-  locale, catalog, categories, dispatch,
+  locale,
+  catalog,
+  categories,
+  dispatch,
 }: {
   locale: Locale;
   catalog: Product[];
@@ -216,10 +326,15 @@ function InventoryContent({
 
   const filtered = useMemo(() => {
     let list = catalog;
-    if (effectiveCatFilter !== "all") list = list.filter((p) => p.category === effectiveCatFilter);
+    if (effectiveCatFilter !== "all")
+      list = list.filter((p) => p.category === effectiveCatFilter);
     if (search.trim()) {
       const q = search.toLowerCase();
-      list = list.filter((p) => p.name.toLowerCase().includes(q) || p.nameNl.toLowerCase().includes(q));
+      list = list.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          p.nameNl.toLowerCase().includes(q),
+      );
     }
     return list;
   }, [catalog, effectiveCatFilter, search]);
@@ -259,13 +374,18 @@ function InventoryContent({
     }
   }
 
-  const toggleAvailability = useCallback((id: string) => {
-    dispatch({ type: "TOGGLE_PRODUCT_AVAILABILITY", productId: id });
-  }, [dispatch]);
+  const toggleAvailability = useCallback(
+    (id: string) => {
+      dispatch({ type: "TOGGLE_PRODUCT_AVAILABILITY", productId: id });
+    },
+    [dispatch],
+  );
 
   const catCounts = useMemo(() => {
     const map: Record<string, number> = { all: catalog.length };
-    catalog.forEach((p) => { map[p.category] = (map[p.category] ?? 0) + 1; });
+    catalog.forEach((p) => {
+      map[p.category] = (map[p.category] ?? 0) + 1;
+    });
     return map;
   }, [catalog]);
 
@@ -284,8 +404,18 @@ function InventoryContent({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative min-w-0 flex-1">
-          <svg className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          <svg
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted)]"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
           </svg>
           <input
             type="text"
@@ -316,8 +446,18 @@ function InventoryContent({
           onClick={openNew}
           className="flex items-center gap-2 rounded-xl bg-[var(--gold)] px-4 py-2.5 text-sm font-bold text-[var(--dark)] transition hover:bg-[var(--gold-light)] active:scale-[0.98]"
         >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2.5}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 4v16m8-8H4"
+            />
           </svg>
           {t(locale, "mgmtAddProduct")}
         </button>
@@ -325,7 +465,9 @@ function InventoryContent({
 
       {filtered.length === 0 ? (
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] px-6 py-12 text-center">
-          <p className="text-sm text-[var(--muted)]">{t(locale, "mgmtNoProducts")}</p>
+          <p className="text-sm text-[var(--muted)]">
+            {t(locale, "mgmtNoProducts")}
+          </p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -337,15 +479,35 @@ function InventoryContent({
               <div
                 key={p.id}
                 className={`group flex items-center gap-4 rounded-2xl border bg-[var(--card)] px-4 py-3 shadow-sm transition hover:shadow-md ${
-                  p.available ? "border-[var(--border)]" : "border-red-500/20 opacity-60"
+                  p.available
+                    ? "border-[var(--border)]"
+                    : "border-red-500/20 opacity-60"
                 }`}
               >
                 <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-[var(--surface)]">
                   {p.image ? (
-                    <Image src={p.image} alt={p.name} fill className="object-cover" sizes="56px" />
+                    <Image
+                      src={p.image}
+                      alt={p.name}
+                      fill
+                      className="object-cover"
+                      sizes="56px"
+                    />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-[var(--muted)]">
-                      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                      <svg
+                        className="h-6 w-6"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={1.5}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
                     </div>
                   )}
                 </div>
@@ -354,21 +516,40 @@ function InventoryContent({
                     <p className="truncate text-sm font-bold text-[var(--foreground)]">
                       {locale === "nl" ? p.nameNl : p.name}
                     </p>
-                    <span className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase ${badgeClass}`}>
+                    <span
+                      className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase ${badgeClass}`}
+                    >
                       {badgeLabel}
                     </span>
                   </div>
-                  <p className="mt-0.5 text-xs text-[var(--muted)]">{locale === "nl" ? p.name : p.nameNl}</p>
+                  <p className="mt-0.5 text-xs text-[var(--muted)]">
+                    {locale === "nl" ? p.name : p.nameNl}
+                  </p>
                 </div>
-                <p className="text-base font-black text-[var(--gold)]">{formatSrd(p.priceSrd)}</p>
-                <Toggle on={p.available} onToggle={() => toggleAvailability(p.id)} />
+                <p className="text-base font-black text-[var(--gold)]">
+                  {formatSrd(p.priceSrd)}
+                </p>
+                <Toggle
+                  on={p.available}
+                  onToggle={() => toggleAvailability(p.id)}
+                />
                 <button
                   type="button"
                   onClick={() => openEdit(p)}
                   className="flex h-9 w-9 items-center justify-center rounded-lg text-[var(--muted)] transition hover:bg-[var(--surface)] hover:text-[var(--gold)]"
                 >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={1.75}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                    />
                   </svg>
                 </button>
               </div>
@@ -394,7 +575,14 @@ function InventoryContent({
 }
 
 function ProductModal({
-  product, setProduct, categories, isNew, locale, onSave, onDelete, onClose,
+  product,
+  setProduct,
+  categories,
+  isNew,
+  locale,
+  onSave,
+  onDelete,
+  onClose,
 }: {
   product: Product;
   setProduct: (p: Product | null) => void;
@@ -406,7 +594,11 @@ function ProductModal({
   onClose: () => void;
 }) {
   const set = (patch: Partial<Product>) => setProduct({ ...product, ...patch });
-  const canSave = product.name.trim() && product.nameNl.trim() && product.priceSrd > 0 && categories.length > 0;
+  const canSave =
+    product.name.trim() &&
+    product.nameNl.trim() &&
+    product.priceSrd > 0 &&
+    categories.length > 0;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6 backdrop-blur-md">
@@ -415,62 +607,140 @@ function ProductModal({
           <h3 className="text-lg font-bold text-[var(--gold)]">
             {isNew ? t(locale, "mgmtAddProduct") : t(locale, "mgmtEditProduct")}
           </h3>
-          <button type="button" onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--muted)] transition hover:bg-[var(--surface)] hover:text-[var(--foreground)]">
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--muted)] transition hover:bg-[var(--surface)] hover:text-[var(--foreground)]"
+          >
+            <svg
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
           </button>
         </div>
         <div className="space-y-4 px-6 py-5">
           {product.image && (
             <div className="relative h-32 w-full overflow-hidden rounded-xl bg-[var(--surface)]">
-              <Image src={product.image} alt={product.name || "Preview"} fill className="object-cover" sizes="500px" />
+              <Image
+                src={product.image}
+                alt={product.name || "Preview"}
+                fill
+                className="object-cover"
+                sizes="500px"
+              />
             </div>
           )}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">{t(locale, "mgmtProductName")}</label>
-              <input type="text" value={product.name} onChange={(e) => set({ name: e.target.value })} className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20" />
+              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+                {t(locale, "mgmtProductName")}
+              </label>
+              <input
+                type="text"
+                value={product.name}
+                onChange={(e) => set({ name: e.target.value })}
+                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20"
+              />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">{t(locale, "mgmtProductNameNl")}</label>
-              <input type="text" value={product.nameNl} onChange={(e) => set({ nameNl: e.target.value })} className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20" />
+              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+                {t(locale, "mgmtProductNameNl")}
+              </label>
+              <input
+                type="text"
+                value={product.nameNl}
+                onChange={(e) => set({ nameNl: e.target.value })}
+                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20"
+              />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">{t(locale, "mgmtProductPrice")}</label>
-              <input type="number" min={0} step={0.5} value={product.priceSrd} onChange={(e) => set({ priceSrd: Number(e.target.value) })} className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20" />
+              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+                {t(locale, "mgmtProductPrice")}
+              </label>
+              <input
+                type="number"
+                min={0}
+                step={0.5}
+                value={product.priceSrd}
+                onChange={(e) => set({ priceSrd: Number(e.target.value) })}
+                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20"
+              />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">{t(locale, "mgmtProductCategory")}</label>
+              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+                {t(locale, "mgmtProductCategory")}
+              </label>
               {categories.length === 0 ? (
-                <p className="text-xs text-amber-400">{t(locale, "mgmtNoCategoriesYet")}</p>
+                <p className="text-xs text-amber-400">
+                  {t(locale, "mgmtNoCategoriesYet")}
+                </p>
               ) : (
-                <select value={product.category} onChange={(e) => set({ category: e.target.value as ProductCategory })} className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20">
+                <select
+                  value={product.category}
+                  onChange={(e) =>
+                    set({ category: e.target.value as ProductCategory })
+                  }
+                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20"
+                >
                   {categories.map((c) => (
-                    <option key={c.id} value={c.id}>{locale === "nl" ? c.nameNl : c.name}</option>
+                    <option key={c.id} value={c.id}>
+                      {locale === "nl" ? c.nameNl : c.name}
+                    </option>
                   ))}
                 </select>
               )}
             </div>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">{t(locale, "mgmtProductImage")}</label>
-            <input type="text" value={product.image} onChange={(e) => set({ image: e.target.value })} placeholder="https://images.unsplash.com/…" className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--foreground)] outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20" />
+            <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+              {t(locale, "mgmtProductImage")}
+            </label>
+            <input
+              type="text"
+              value={product.image}
+              onChange={(e) => set({ image: e.target.value })}
+              placeholder="https://images.unsplash.com/…"
+              className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--foreground)] outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20"
+            />
           </div>
         </div>
         <div className="flex items-center justify-between border-t border-[var(--border)] px-6 py-4">
           <div>
             {!isNew && (
-              <button type="button" onClick={onDelete} className="text-sm font-bold text-red-400 transition hover:text-red-300">
+              <button
+                type="button"
+                onClick={onDelete}
+                className="text-sm font-bold text-red-400 transition hover:text-red-300"
+              >
                 {t(locale, "mgmtDeleteProduct")}
               </button>
             )}
           </div>
           <div className="flex gap-3">
-            <button type="button" onClick={onClose} className="rounded-xl border border-[var(--border)] px-5 py-2.5 text-sm font-bold text-[var(--foreground)] transition hover:bg-[var(--surface)]">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-xl border border-[var(--border)] px-5 py-2.5 text-sm font-bold text-[var(--foreground)] transition hover:bg-[var(--surface)]"
+            >
               {t(locale, "mgmtCancel")}
             </button>
-            <button type="button" onClick={onSave} disabled={!canSave} className={`rounded-xl px-5 py-2.5 text-sm font-bold transition ${canSave ? "bg-[var(--gold)] text-[var(--dark)] hover:bg-[var(--gold-light)] active:scale-[0.98]" : "cursor-not-allowed bg-[var(--surface)] text-[var(--muted)]"}`}>
+            <button
+              type="button"
+              onClick={onSave}
+              disabled={!canSave}
+              className={`rounded-xl px-5 py-2.5 text-sm font-bold transition ${canSave ? "bg-[var(--gold)] text-[var(--dark)] hover:bg-[var(--gold-light)] active:scale-[0.98]" : "cursor-not-allowed bg-[var(--surface)] text-[var(--muted)]"}`}
+            >
               {t(locale, "mgmtSave")}
             </button>
           </div>
