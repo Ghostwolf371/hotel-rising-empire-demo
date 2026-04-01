@@ -5,6 +5,7 @@ import { ManagementShell } from "@/components/management-shell";
 import { RoomTimer, useTimeLeft } from "@/components/room-timer";
 import { useDemo } from "@/contexts/demo-context";
 import { formatCountdown, formatSrd, formatTimeRange } from "@/lib/format";
+import { bcp47ForLocale } from "@/lib/locale-intl";
 import { t, type TKey } from "@/lib/i18n";
 import type { Locale, Room, RoomStatus } from "@/lib/types";
 
@@ -31,7 +32,7 @@ function RoomModal({ room, onClose }: { room: Room; onClose: () => void }) {
   const roomOrders = orders.filter((o) => o.roomNumber === room.number);
   const cost = durationHours * hourlyRate;
   const isOccupied = room.status === "occupied";
-  const timeLoc = locale === "nl" ? "nl-NL" : "en-US";
+  const timeLoc = bcp47ForLocale(locale);
 
   function startSession() {
     dispatch({ type: "START_ROOM_SESSION", roomId: room.id, durationHours });

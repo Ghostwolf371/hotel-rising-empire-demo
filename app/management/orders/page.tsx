@@ -4,11 +4,12 @@ import { useMemo } from "react";
 import { ManagementShell } from "@/components/management-shell";
 import { useDemo } from "@/contexts/demo-context";
 import { formatSrd } from "@/lib/format";
+import { bcp47ForLocale } from "@/lib/locale-intl";
 import { t } from "@/lib/i18n";
 
 export default function ManagementOrdersPage() {
   const { orders, dispatch, panicAlerts, locale } = useDemo();
-  const timeLoc = locale === "nl" ? "nl-NL" : "en-US";
+  const timeLoc = bcp47ForLocale(locale);
 
   const sorted = useMemo(
     () => [...orders].sort((a, b) => b.createdAt - a.createdAt),

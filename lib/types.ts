@@ -52,6 +52,11 @@ export interface PanicAlert {
   at: number;
 }
 
-export type Locale = "en" | "nl";
+export const LOCALES = ["en", "nl", "es", "pt"] as const;
+export type Locale = (typeof LOCALES)[number];
+
+export function isLocale(value: unknown): value is Locale {
+  return (LOCALES as readonly string[]).includes(value as string);
+}
 
 export type Theme = "dark" | "light";

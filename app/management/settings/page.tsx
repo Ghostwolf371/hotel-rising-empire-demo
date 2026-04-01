@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { LanguageToggle } from "@/components/language-toggle";
 import { ManagementShell } from "@/components/management-shell";
 import { useDemo, type Action } from "@/contexts/demo-context";
 import { formatSrd } from "@/lib/format";
 import { t } from "@/lib/i18n";
+import type { Locale } from "@/lib/types";
 
 type Dispatch = React.Dispatch<Action>;
 
@@ -71,7 +73,7 @@ function SettingRow({ label, sub, children }: { label: string; sub?: string; chi
 }
 
 export default function ManagementSettingsPage() {
-  const { locale, setLocale, theme, setTheme, rooms, orders, hourlyRate, dispatch } = useDemo();
+  const { locale, theme, setTheme, rooms, orders, hourlyRate, dispatch } = useDemo();
   const [tab, setTab] = useState<Tab>("general");
   const [notifSound, setNotifSound] = useState(true);
   const [autoEndSessions, setAutoEndSessions] = useState(false);
@@ -114,7 +116,7 @@ export default function ManagementSettingsPage() {
         <div>
           {tab === "general" && (
             <GeneralTab
-              locale={locale} setLocale={setLocale}
+              locale={locale}
               theme={theme} setTheme={setTheme}
               notifSound={notifSound} setNotifSound={setNotifSound}
               autoEndSessions={autoEndSessions} setAutoEndSessions={setAutoEndSessions}
@@ -132,9 +134,9 @@ export default function ManagementSettingsPage() {
 }
 
 function GeneralTab({
-  locale, setLocale, theme, setTheme, notifSound, setNotifSound, autoEndSessions, setAutoEndSessions,
+  locale, theme, setTheme, notifSound, setNotifSound, autoEndSessions, setAutoEndSessions,
 }: {
-  locale: "en" | "nl"; setLocale: (l: "en" | "nl") => void;
+  locale: Locale;
   theme: "dark" | "light"; setTheme: (t: "dark" | "light") => void;
   notifSound: boolean; setNotifSound: (v: boolean | ((p: boolean) => boolean)) => void;
   autoEndSessions: boolean; setAutoEndSessions: (v: boolean | ((p: boolean) => boolean)) => void;
@@ -145,10 +147,7 @@ function GeneralTab({
         <h2 className="text-lg font-bold text-[var(--gold)]">{t(locale, "mgmtGeneral")}</h2>
 
         <SettingRow label={t(locale, "mgmtLanguage")} sub={t(locale, "mgmtLanguageSub")}>
-          <div className="flex rounded-lg bg-[var(--surface)] p-0.5">
-            <button type="button" onClick={() => setLocale("en")} className={`rounded-md px-4 py-2 text-sm font-bold transition ${locale === "en" ? "bg-[var(--gold)] text-[var(--dark)]" : "text-[var(--muted)]"}`}>English</button>
-            <button type="button" onClick={() => setLocale("nl")} className={`rounded-md px-4 py-2 text-sm font-bold transition ${locale === "nl" ? "bg-[var(--gold)] text-[var(--dark)]" : "text-[var(--muted)]"}`}>Nederlands</button>
-          </div>
+          <LanguageToggle variant="settings" />
         </SettingRow>
 
         <SettingRow label={t(locale, "mgmtTheme")} sub={t(locale, "mgmtThemeSub")}>
@@ -179,7 +178,7 @@ function GeneralTab({
 function PricingTab({
   locale, hourlyRate, dispatch,
 }: {
-  locale: "en" | "nl"; hourlyRate: number; dispatch: Dispatch;
+  locale: Locale; hourlyRate: number; dispatch: Dispatch;
 }) {
   const [rate, setRate] = useState(hourlyRate);
   const [saved, setSaved] = useState(false);
@@ -266,7 +265,7 @@ function PricingTab({
 function RoomsTab({
   locale, rooms, dispatch,
 }: {
-  locale: "en" | "nl";
+  locale: Locale;
   rooms: { id: string; number: string; status: string }[];
   dispatch: Dispatch;
 }) {
@@ -376,7 +375,7 @@ function RoomsTab({
 function SystemTab({
   locale, rooms, orders, occupiedCount, resetDemo,
 }: {
-  locale: "en" | "nl";
+  locale: Locale;
   rooms: { length: number };
   orders: { length: number };
   occupiedCount: number;

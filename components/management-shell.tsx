@@ -4,8 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { LanguageToggle } from "@/components/language-toggle";
 import { useTimeLeft } from "@/components/room-timer";
 import { useDemo } from "@/contexts/demo-context";
+import { bcp47ForLocale } from "@/lib/locale-intl";
 import { t, type TKey } from "@/lib/i18n";
 
 const NAV: { key: TKey; href: string; icon: React.ReactNode }[] = [
@@ -80,7 +82,7 @@ function ExpiryWatcher({ endsAt, roomNumber, onExpiry }: { endsAt: number; roomN
 export function ManagementShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { panicAlerts, orders, rooms, locale, setLocale, theme, toggleTheme } = useDemo();
+  const { panicAlerts, orders, rooms, locale, theme, toggleTheme } = useDemo();
   const [notifOpen, setNotifOpen] = useState(false);
   const bellRef = useRef<HTMLDivElement>(null);
 
@@ -168,26 +170,7 @@ export function ManagementShell({ children }: { children: ReactNode }) {
       <div className="flex flex-1 flex-col overflow-y-auto">
         {/* Topbar */}
         <header className="sticky top-0 z-20 flex items-center justify-end gap-3 border-b border-[var(--border)] bg-[var(--card)]/95 px-6 py-3 backdrop-blur">
-          <div className="flex rounded-lg bg-[var(--surface)] p-0.5">
-            <button
-              type="button"
-              onClick={() => setLocale("en")}
-              className={`rounded-md px-3 py-1.5 text-xs font-bold transition ${
-                locale === "en" ? "bg-[var(--gold)] text-[var(--dark)]" : "text-[var(--muted)]"
-              }`}
-            >
-              EN
-            </button>
-            <button
-              type="button"
-              onClick={() => setLocale("nl")}
-              className={`rounded-md px-3 py-1.5 text-xs font-bold transition ${
-                locale === "nl" ? "bg-[var(--gold)] text-[var(--dark)]" : "text-[var(--muted)]"
-              }`}
-            >
-              NL
-            </button>
-          </div>
+          <LanguageToggle variant="shell" />
 
           {/* Theme toggle */}
           <button
@@ -258,7 +241,7 @@ export function ManagementShell({ children }: { children: ReactNode }) {
                           <p className="text-xs font-bold text-[var(--foreground)]">{n.title}</p>
                           <p className="mt-0.5 truncate text-[11px] text-[var(--muted)]">{n.body}</p>
                           <p className="mt-1 text-[10px] text-[var(--muted)]">
-                            {new Date(n.time).toLocaleTimeString(locale === "nl" ? "nl-NL" : "en-US", { hour: "numeric", minute: "2-digit" })}
+                            {new Date(n.time).toLocaleTimeString(bcp47ForLocale(locale), { hour: "numeric", minute: "2-digit" })}
                           </p>
                         </div>
                       </div>

@@ -1,3 +1,6 @@
+import type { Locale } from "./types";
+import { bcp47ForLocale } from "./locale-intl";
+
 export function formatSrd(n: number): string {
   return `SRD ${n.toFixed(2)}`;
 }
@@ -5,21 +8,22 @@ export function formatSrd(n: number): string {
 export function formatTimeRange(
   start: Date,
   end: Date,
-  locale: string
+  locale: Locale
 ): string {
   const opts: Intl.DateTimeFormatOptions = {
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
   };
-  const a = start.toLocaleTimeString(locale === "nl" ? "nl-NL" : "en-US", opts);
-  const b = end.toLocaleTimeString(locale === "nl" ? "nl-NL" : "en-US", opts);
+  const loc = bcp47ForLocale(locale);
+  const a = start.toLocaleTimeString(loc, opts);
+  const b = end.toLocaleTimeString(loc, opts);
   return `${a} – ${b}`;
 }
 
-export function formatDateTime(ts: number, locale: string): string {
+export function formatDateTime(ts: number, locale: Locale): string {
   const d = new Date(ts);
-  return d.toLocaleString(locale === "nl" ? "nl-NL" : "en-US", {
+  return d.toLocaleString(bcp47ForLocale(locale), {
     day: "numeric",
     month: "numeric",
     year: "numeric",

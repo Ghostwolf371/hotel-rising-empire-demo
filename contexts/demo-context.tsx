@@ -16,15 +16,16 @@ import {
   initialOrders,
   initialRooms,
 } from "@/lib/mock-data";
-import type {
-  Category,
-  Locale,
-  Order,
-  PanicAlert,
-  Product,
-  Room,
-  RoomStatus,
-  Theme,
+import {
+  isLocale,
+  type Category,
+  type Locale,
+  type Order,
+  type PanicAlert,
+  type Product,
+  type Room,
+  type RoomStatus,
+  type Theme,
 } from "@/lib/types";
 
 const STORAGE_KEY = "hre-demo-v2";
@@ -325,6 +326,9 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       }
       if (!parsed.categories || parsed.categories.length === 0) {
         parsed.categories = defaultCategories;
+      }
+      if (parsed.locale !== undefined && !isLocale(parsed.locale)) {
+        parsed.locale = "en";
       }
       dispatch({ type: "HYDRATE", payload: parsed });
     } catch {

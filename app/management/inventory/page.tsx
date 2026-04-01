@@ -7,7 +7,7 @@ import { useDemo, type Action } from "@/contexts/demo-context";
 import { categoryBadgeClass, categoryLabel, CATEGORY_COLOR_OPTIONS } from "@/lib/category-styles";
 import { formatSrd } from "@/lib/format";
 import { t } from "@/lib/i18n";
-import type { Category, Product, ProductCategory } from "@/lib/types";
+import type { Category, Locale, Product, ProductCategory } from "@/lib/types";
 
 type Dispatch = React.Dispatch<Action>;
 
@@ -39,7 +39,7 @@ export default function ManagementInventoryPage() {
 function CategoriesPanel({
   locale, categories, dispatch,
 }: {
-  locale: "en" | "nl";
+  locale: Locale;
   categories: Category[];
   dispatch: Dispatch;
 }) {
@@ -130,7 +130,7 @@ function CategoryModal({
   category: Category;
   setCategory: (c: Category | null) => void;
   isNew: boolean;
-  locale: "en" | "nl";
+  locale: Locale;
   onSave: () => void;
   onDelete: () => void;
   onClose: () => void;
@@ -197,7 +197,7 @@ function CategoryModal({
 function InventoryContent({
   locale, catalog, categories, dispatch,
 }: {
-  locale: "en" | "nl";
+  locale: Locale;
   catalog: Product[];
   categories: Category[];
   dispatch: Dispatch;
@@ -400,7 +400,7 @@ function ProductModal({
   setProduct: (p: Product | null) => void;
   categories: Category[];
   isNew: boolean;
-  locale: "en" | "nl";
+  locale: Locale;
   onSave: () => void;
   onDelete: () => void;
   onClose: () => void;

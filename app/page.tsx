@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCallback, useRef, useState } from "react";
+import { LanguageToggle } from "@/components/language-toggle";
 import { useDemo } from "@/contexts/demo-context";
 import { t } from "@/lib/i18n";
 
@@ -11,7 +12,7 @@ const DIGITS = 6;
 
 export default function RoomEntryPage() {
   const router = useRouter();
-  const { locale, setLocale, theme, toggleTheme } = useDemo();
+  const { locale, theme, toggleTheme } = useDemo();
   const [room, setRoom] = useState("");
   const [showVerify, setShowVerify] = useState(false);
   const [digits, setDigits] = useState<string[]>(Array(DIGITS).fill(""));
@@ -64,18 +65,15 @@ export default function RoomEntryPage() {
 
   return (
     <div className="flex min-h-dvh flex-col bg-[var(--background)]">
-      <header className="flex items-center justify-between bg-[var(--card)] px-8 py-5 shadow-sm shadow-black/30">
-        <div className="flex items-center gap-3">
-          <Image src="/logo.png" alt="Empire Apartments" width={48} height={48} className="rounded-lg" />
-          <span className="text-2xl font-black uppercase tracking-wider text-[var(--gold)]">
+      <header className="flex items-center justify-between gap-3 bg-[var(--card)] px-4 py-4 shadow-sm shadow-black/30 sm:px-8 sm:py-5">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <Image src="/logo.png" alt="Empire Apartments" width={48} height={48} className="h-10 w-10 shrink-0 rounded-lg sm:h-12 sm:w-12" />
+          <span className="truncate text-lg font-black uppercase tracking-wider text-[var(--gold)] sm:text-2xl">
             {t(locale, "brand")}
           </span>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex rounded-full bg-[var(--surface)] p-1">
-            <button type="button" onClick={() => setLocale("en")} className={`rounded-full px-5 py-2.5 text-base font-medium transition ${locale === "en" ? "bg-[var(--gold)] text-[var(--dark)] shadow-sm" : "text-[var(--muted)]"}`}>EN</button>
-            <button type="button" onClick={() => setLocale("nl")} className={`rounded-full px-5 py-2.5 text-base font-medium transition ${locale === "nl" ? "bg-[var(--gold)] text-[var(--dark)] shadow-sm" : "text-[var(--muted)]"}`}>NL</button>
-          </div>
+          <LanguageToggle variant="landing" />
           <button
             type="button"
             onClick={toggleTheme}
@@ -95,9 +93,9 @@ export default function RoomEntryPage() {
         </div>
       </header>
 
-      <main className="relative flex flex-1 items-center justify-center px-6 py-12">
+      <main className="relative flex flex-1 items-center justify-center px-4 py-8 sm:px-6 sm:py-12">
         <div className="pointer-events-none absolute inset-0 opacity-40" style={{ background: "radial-gradient(circle at 30% 20%, rgba(201,165,78,0.08) 0%, transparent 50%), radial-gradient(circle at 70% 80%, rgba(201,165,78,0.05) 0%, transparent 45%)" }} />
-        <div className="animate-fade-in-scale relative w-full max-w-lg rounded-3xl border border-[var(--border)] bg-[var(--card)] p-12 shadow-2xl shadow-black/30">
+        <div className="animate-fade-in-scale relative w-full max-w-lg rounded-3xl border border-[var(--border)] bg-[var(--card)] p-8 shadow-2xl shadow-black/30 sm:p-12">
           <h1 className="text-center text-3xl font-black text-[var(--gold)]">{t(locale, "guestLoginTitle")}</h1>
           <p className="mt-4 text-center text-base leading-relaxed text-[var(--muted)]">{t(locale, "guestLoginSubtitle")}</p>
           <form onSubmit={onSubmitRoom} className="mt-10 space-y-8">
@@ -118,7 +116,7 @@ export default function RoomEntryPage() {
         </div>
       </main>
 
-      <footer className="flex flex-wrap items-center justify-between gap-4 border-t border-[var(--border)] bg-[var(--card)] px-8 py-5 text-xs uppercase tracking-wide text-[var(--muted)]">
+      <footer className="flex flex-wrap items-center justify-between gap-4 border-t border-[var(--border)] bg-[var(--card)] px-4 py-4 text-xs uppercase tracking-wide text-[var(--muted)] sm:px-8 sm:py-5">
         <span>{t(locale, "copyright")}</span>
         <nav className="flex flex-wrap items-center gap-6">
           <span className="cursor-default">{t(locale, "privacy")}</span>
@@ -132,15 +130,15 @@ export default function RoomEntryPage() {
 
       {/* Verify code modal */}
       {showVerify && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6 backdrop-blur-sm" onClick={() => setShowVerify(false)}>
-          <div className="animate-fade-in-scale w-full max-w-lg rounded-3xl border border-[var(--border)] bg-[var(--card)] p-10 text-center shadow-2xl shadow-black/30" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-3xl font-black text-[var(--gold)]">{t(locale, "enterCode")}</h2>
-            <p className="mt-3 text-base text-[var(--muted)]">{t(locale, "codeHint")}</p>
-            <form onSubmit={onSubmitCode} className="mt-8">
-              <div className="flex items-center justify-center gap-3" onPaste={handlePaste}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm sm:p-6" onClick={() => setShowVerify(false)}>
+          <div className="animate-fade-in-scale w-full max-w-lg rounded-3xl border border-[var(--border)] bg-[var(--card)] p-6 text-center shadow-2xl shadow-black/30 sm:p-10" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-2xl font-black text-[var(--gold)] sm:text-3xl">{t(locale, "enterCode")}</h2>
+            <p className="mt-3 text-sm text-[var(--muted)] sm:text-base">{t(locale, "codeHint")}</p>
+            <form onSubmit={onSubmitCode} className="mt-6 sm:mt-8">
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3" onPaste={handlePaste}>
                 {digits.map((d, i) => (
                   <span key={i} className="contents">
-                    {i === 3 && <span className="mx-2 text-3xl font-black text-[var(--gold)]">–</span>}
+                    {i === 3 && <span className="mx-1 text-2xl font-black text-[var(--gold)] sm:mx-2 sm:text-3xl">–</span>}
                     <input
                       ref={setRef(i)}
                       type="text"
@@ -149,7 +147,7 @@ export default function RoomEntryPage() {
                       value={d}
                       onChange={(e) => handleChange(i, e.target.value)}
                       onKeyDown={(e) => handleKeyDown(i, e)}
-                      className={`h-20 w-16 rounded-2xl border-2 bg-[var(--surface)] text-center text-3xl font-black text-[var(--foreground)] outline-none transition-all duration-200 ${
+                      className={`h-14 w-11 rounded-2xl border-2 bg-[var(--surface)] text-center text-2xl font-black text-[var(--foreground)] outline-none transition-all duration-200 sm:h-20 sm:w-16 sm:text-3xl ${
                         error ? "border-red-500 bg-red-500/10" : d ? "border-[var(--gold)] bg-[var(--gold)]/5" : "border-[var(--border-light)]"
                       } focus:border-[var(--gold)] focus:ring-4 focus:ring-[var(--gold)]/20`}
                     />

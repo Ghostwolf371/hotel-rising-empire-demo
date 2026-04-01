@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
+import { LanguageToggle } from "@/components/language-toggle";
 import { useDemo } from "@/contexts/demo-context";
 import { formatSrd } from "@/lib/format";
 import { t } from "@/lib/i18n";
@@ -19,7 +20,7 @@ function DurationContent() {
   const router = useRouter();
   const params = useSearchParams();
   const room = params.get("room") || DEMO_ROOM;
-  const { hourlyRate, locale, setLocale, theme, toggleTheme } = useDemo();
+  const { hourlyRate, locale, theme, toggleTheme } = useDemo();
   const [hours, setHours] = useState<2 | 3>(2);
   const [visible, setVisible] = useState(false);
   const [bgIdx, setBgIdx] = useState(0);
@@ -64,7 +65,7 @@ function DurationContent() {
       <div className="absolute inset-0 z-[1] bg-gradient-to-r from-black/60 via-transparent to-black/40" />
 
       {/* Top bar */}
-      <div className="absolute left-0 right-0 top-0 z-20 flex items-center justify-between px-8 py-5">
+      <div className="absolute left-0 right-0 top-0 z-20 flex items-center justify-between gap-3 px-4 py-4 sm:px-8 sm:py-5">
         <div className="flex items-center gap-3">
           <Image src="/logo.png" alt="Empire Apartments" width={40} height={40} className="rounded-lg shadow-lg" />
           <span className="text-sm font-black uppercase tracking-[0.2em] text-[var(--gold)]">
@@ -72,11 +73,8 @@ function DurationContent() {
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex rounded-full bg-white/10 p-0.5 backdrop-blur-sm">
-            <button type="button" onClick={() => setLocale("en")} className={`rounded-full px-4 py-1.5 text-xs font-bold transition ${locale === "en" ? "bg-[var(--gold)] text-black" : "text-white/60"}`}>EN</button>
-            <button type="button" onClick={() => setLocale("nl")} className={`rounded-full px-4 py-1.5 text-xs font-bold transition ${locale === "nl" ? "bg-[var(--gold)] text-black" : "text-white/60"}`}>NL</button>
-          </div>
-          <button type="button" onClick={toggleTheme} className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/60 backdrop-blur-sm transition hover:text-[var(--gold)]">
+          <LanguageToggle variant="duration" />
+          <button type="button" onClick={toggleTheme} className="flex h-11 w-11 min-h-[44px] min-w-[44px] touch-manipulation items-center justify-center rounded-full bg-white/10 text-white/60 backdrop-blur-sm transition hover:text-[var(--gold)]">
             {theme === "dark" ? (
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
             ) : (
@@ -87,7 +85,7 @@ function DurationContent() {
       </div>
 
       {/* Main content */}
-      <div className="relative z-10 flex min-h-dvh w-full flex-col items-center justify-center px-6 py-24">
+      <div className="relative z-10 flex min-h-dvh w-full flex-col items-center justify-center px-4 py-20 sm:px-6 sm:py-24">
         <div
           className="flex w-full max-w-lg flex-col items-center transition-all duration-1000 ease-out"
           style={{ opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(30px)" }}

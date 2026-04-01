@@ -1,4 +1,4 @@
-import type { Category } from "./types";
+import type { Category, Locale } from "./types";
 
 const COLOR_BADGE: Record<string, string> = {
   sky: "bg-sky-500/10 text-sky-400",
@@ -31,7 +31,7 @@ export function categoryBadgeClass(color: string): string {
 export function categoryLabel(
   categories: Category[],
   categoryId: string,
-  locale: "en" | "nl"
+  locale: Locale
 ): string {
   const c = categories.find((x) => x.id === categoryId);
   if (c) return locale === "nl" ? c.nameNl : c.name;

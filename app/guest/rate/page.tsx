@@ -74,8 +74,8 @@ function RateContent() {
       />
       <div className="absolute inset-0 bg-black/80 backdrop-blur-md" />
 
-      <main className="relative z-10 flex flex-1 items-center justify-center px-5 py-10 md:px-8">
-        <div className="animate-fade-in-scale w-full max-w-xl rounded-3xl border border-[var(--border)] bg-[var(--card)] p-8 shadow-2xl md:p-12">
+      <main className="relative z-10 flex min-h-0 flex-1 items-center justify-center overflow-y-auto px-4 py-8 sm:px-5 sm:py-10 md:px-8">
+        <div className="animate-fade-in-scale my-auto w-full max-w-xl rounded-3xl border border-[var(--border)] bg-[var(--card)] p-6 shadow-2xl sm:p-8 md:p-12">
           <h1 className="text-center text-3xl font-bold tracking-tight text-[var(--gold)] md:text-4xl">
             {t(locale, "rateTitle")}
           </h1>
