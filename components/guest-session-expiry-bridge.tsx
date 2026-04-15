@@ -27,6 +27,9 @@ export function GuestSessionExpiryBridge() {
   useEffect(() => {
     if (!guestSession || endsAt === 0) return;
     if (pathname === "/guest/rate") return;
+    // Booking flow: a stale persisted session (already expired) must not hijack
+    // navigation to /guest/duration or /guest/welcome after a fresh room + code entry.
+    if (pathname === "/guest/duration" || pathname === "/guest/welcome") return;
     if (leftMs > 0) return;
     if (firedForKeyRef.current === sessionKey) return;
     firedForKeyRef.current = sessionKey;
