@@ -6,16 +6,16 @@ import { Suspense, useEffect, useState } from "react";
 import { useDemo } from "@/contexts/demo-context";
 import { t } from "@/lib/i18n";
 
-const BANNER_IMAGE =
-  "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1600&h=900&fit=crop&q=80";
-
 function WelcomeContent() {
   const router = useRouter();
   const params = useSearchParams();
   const room = params.get("room")?.trim() ?? "";
   const hoursRaw = params.get("hours");
+  const hoursParsed = hoursRaw !== null ? Number.parseInt(hoursRaw, 10) : NaN;
   const hours =
-    hoursRaw === "3" ? (3 as const) : hoursRaw === "2" ? (2 as const) : null;
+    Number.isFinite(hoursParsed) && hoursParsed >= 1 && hoursParsed <= 168
+      ? hoursParsed
+      : null;
   const { dispatch, locale } = useDemo();
   const [ready, setReady] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -34,7 +34,7 @@ function WelcomeContent() {
     if (!ready || !room || !hours) return;
     const autoId = setTimeout(() => {
       dispatch({ type: "START_GUEST_SESSION", roomNumber: room, durationHours: hours });
-      router.push("/guest");
+      router.push("/guest/start");
     }, 5000);
     return () => clearTimeout(autoId);
   }, [ready, room, hours, dispatch, router]);
@@ -42,12 +42,12 @@ function WelcomeContent() {
   function onContinue() {
     if (!room || !hours) return;
     dispatch({ type: "START_GUEST_SESSION", roomNumber: room, durationHours: hours });
-    router.push("/guest");
+    router.push("/guest/start");
   }
 
   if (!ready || !room || !hours) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-black">
+      <div className="flex min-h-dvh items-center justify-center bg-[var(--background)]">
         <div className="h-8 w-8 animate-pulse rounded-full bg-[var(--gold)]/30" />
       </div>
     );
@@ -55,26 +55,24 @@ function WelcomeContent() {
 
   return (
     <div
-      className="relative flex min-h-dvh flex-col overflow-hidden bg-black cursor-pointer"
+      className="relative flex min-h-dvh cursor-pointer flex-col overflow-hidden bg-[var(--background)]"
       onClick={onContinue}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onContinue(); }}
     >
-      {/* Full-screen background image with slow zoom */}
-      <div className="absolute inset-0">
-        <Image
-          src={BANNER_IMAGE}
-          alt={t(locale, "welcomeBannerAlt")}
-          fill
-          className="object-cover transition-transform duration-[12000ms] ease-out"
-          style={{ transform: visible ? "scale(1.08)" : "scale(1)" }}
-          priority
-          sizes="100vw"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/20" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/40 to-transparent" />
-      </div>
+      <div
+        className="pointer-events-none absolute inset-0 z-0"
+        aria-hidden
+        style={{
+          background: `
+            radial-gradient(ellipse 120% 80% at 50% -15%, color-mix(in srgb, var(--gold) 28%, transparent), transparent 52%),
+            radial-gradient(ellipse 70% 55% at 100% 100%, color-mix(in srgb, var(--gold) 14%, transparent), transparent 45%),
+            radial-gradient(ellipse 60% 45% at 0% 80%, color-mix(in srgb, var(--gold-dim) 12%, transparent), transparent 40%),
+            linear-gradient(168deg, var(--background) 0%, color-mix(in srgb, var(--gold) 6%, var(--background)) 38%, var(--dark) 100%)
+          `,
+        }}
+      />
 
       {/* Content overlay */}
       <div className="relative z-10 flex min-h-dvh flex-col items-center justify-center px-6 py-16">
@@ -91,7 +89,7 @@ function WelcomeContent() {
             alt="Empire Apartments"
             width={72}
             height={72}
-            className="rounded-2xl shadow-2xl shadow-black/50"
+            className="rounded-2xl shadow-2xl"
           />
 
           {/* Brand tag */}
@@ -101,7 +99,7 @@ function WelcomeContent() {
 
           {/* Welcome headline */}
           <h1
-            className="mt-4 text-5xl font-black tracking-tight text-white drop-shadow-lg md:text-6xl"
+            className="mt-4 text-5xl font-black tracking-tight text-[var(--foreground)] drop-shadow-sm md:text-6xl"
             style={{
               opacity: visible ? 1 : 0,
               transform: visible ? "translateY(0)" : "translateY(20px)",
@@ -128,7 +126,7 @@ function WelcomeContent() {
 
           {/* Subtitle */}
           <p
-            className="mt-5 max-w-md text-lg leading-relaxed text-white/80 md:text-xl"
+            className="mt-5 max-w-md text-lg leading-relaxed text-[var(--foreground)]/80 md:text-xl"
             style={{
               opacity: visible ? 1 : 0,
               transform: visible ? "translateY(0)" : "translateY(15px)",
@@ -140,7 +138,7 @@ function WelcomeContent() {
 
           {/* Room info pill */}
           <div
-            className="mt-10 flex items-center gap-4 rounded-2xl border border-white/10 bg-white/5 px-8 py-4 backdrop-blur-md"
+            className="mt-10 flex items-center gap-4 rounded-2xl border border-[var(--border)] bg-[var(--card)]/85 px-8 py-4 shadow-sm backdrop-blur-md"
             style={{
               opacity: visible ? 1 : 0,
               transform: visible ? "translateY(0)" : "translateY(15px)",
@@ -148,18 +146,24 @@ function WelcomeContent() {
             }}
           >
             <div className="text-center">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-white/50">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">
                 {t(locale, "roomNumber")}
               </p>
               <p className="mt-0.5 text-3xl font-black text-[var(--gold)]">{room}</p>
             </div>
-            <span className="h-10 w-px bg-white/10" />
+            <span className="h-10 w-px bg-[var(--border)]" />
             <div className="text-center">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-white/50">
-                {t(locale, "chooseStay").split(" ")[0]}
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">
+                {t(locale, "durationEyebrow")}
               </p>
-              <p className="mt-0.5 text-xl font-black text-white">
-                {hours === 2 ? t(locale, "hours2") : t(locale, "hours3")}
+              <p className="mt-0.5 text-xl font-black text-[var(--foreground)]">
+                {hours === 1
+                  ? t(locale, "hours1")
+                  : hours === 2
+                    ? t(locale, "hours2")
+                    : hours === 3
+                      ? t(locale, "hours3")
+                      : `${hours}\u00a0${t(locale, "hours")}`}
               </p>
             </div>
           </div>
@@ -173,10 +177,10 @@ function WelcomeContent() {
               transition: "opacity 0.8s ease-out 1s, transform 0.8s ease-out 1s",
             }}
           >
-            <span className="text-sm font-bold uppercase tracking-wider text-white/40">
+            <span className="text-sm font-bold uppercase tracking-wider text-[var(--muted)]">
               {t(locale, "tapToContinue")}
             </span>
-            <div className="h-1 w-48 overflow-hidden rounded-full bg-white/10">
+            <div className="h-1 w-48 overflow-hidden rounded-full bg-[var(--border)]">
               <div
                 className="h-full rounded-full bg-[var(--gold)]"
                 style={{
@@ -196,7 +200,7 @@ export default function GuestWelcomePage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-dvh items-center justify-center bg-black">
+        <div className="flex min-h-dvh items-center justify-center bg-[var(--background)]">
           <div className="h-8 w-8 animate-pulse rounded-full bg-[var(--gold)]/30" />
         </div>
       }

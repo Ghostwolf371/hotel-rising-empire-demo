@@ -131,28 +131,62 @@ export default function RoomEntryPage() {
       {/* Verify code modal */}
       {showVerify && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm sm:p-6" onClick={() => setShowVerify(false)}>
-          <div className="animate-fade-in-scale w-full max-w-lg rounded-3xl border border-[var(--border)] bg-[var(--card)] p-6 text-center shadow-2xl shadow-black/30 sm:p-10" onClick={(e) => e.stopPropagation()}>
+          <div className="animate-fade-in-scale w-full max-w-lg rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5 text-center shadow-2xl shadow-black/30 sm:p-10" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-2xl font-black text-[var(--gold)] sm:text-3xl">{t(locale, "enterCode")}</h2>
             <p className="mt-3 text-sm text-[var(--muted)] sm:text-base">{t(locale, "codeHint")}</p>
             <form onSubmit={onSubmitCode} className="mt-6 sm:mt-8">
-              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3" onPaste={handlePaste}>
-                {digits.map((d, i) => (
-                  <span key={i} className="contents">
-                    {i === 3 && <span className="mx-1 text-2xl font-black text-[var(--gold)] sm:mx-2 sm:text-3xl">–</span>}
+              <div className="mx-auto w-full min-w-0 max-w-md py-1" onPaste={handlePaste}>
+                <div
+                  className="grid w-full items-stretch gap-x-1 sm:gap-x-2"
+                  style={{
+                    gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) auto minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)",
+                  }}
+                >
+                  {[0, 1, 2].map((i) => (
                     <input
+                      key={i}
                       ref={setRef(i)}
                       type="text"
                       inputMode="numeric"
                       maxLength={1}
-                      value={d}
+                      value={digits[i]}
                       onChange={(e) => handleChange(i, e.target.value)}
                       onKeyDown={(e) => handleKeyDown(i, e)}
-                      className={`h-14 w-11 rounded-2xl border-2 bg-[var(--surface)] text-center text-2xl font-black text-[var(--foreground)] outline-none transition-all duration-200 sm:h-20 sm:w-16 sm:text-3xl ${
-                        error ? "border-red-500 bg-red-500/10" : d ? "border-[var(--gold)] bg-[var(--gold)]/5" : "border-[var(--border-light)]"
-                      } focus:border-[var(--gold)] focus:ring-4 focus:ring-[var(--gold)]/20`}
+                      className={`box-border min-h-[3rem] w-full min-w-0 rounded-xl border-2 bg-[var(--surface)] px-0.5 text-center text-lg font-black tabular-nums text-[var(--foreground)] outline-none transition-all duration-200 sm:min-h-[4.25rem] sm:rounded-2xl sm:text-2xl ${
+                        error
+                          ? "border-red-500 bg-red-500/10"
+                          : digits[i]
+                            ? "border-[var(--gold)] bg-[var(--gold)]/5"
+                            : "border-[var(--border-light)]"
+                      } focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20 sm:focus:ring-4`}
                     />
+                  ))}
+                  <span
+                    className="flex min-h-[3rem] min-w-[1.25rem] items-center justify-center text-lg font-black leading-none text-[var(--gold)] sm:min-h-[4.25rem] sm:min-w-[1.5rem] sm:text-2xl"
+                    aria-hidden
+                  >
+                    –
                   </span>
-                ))}
+                  {[3, 4, 5].map((i) => (
+                    <input
+                      key={i}
+                      ref={setRef(i)}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={digits[i]}
+                      onChange={(e) => handleChange(i, e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(i, e)}
+                      className={`box-border min-h-[3rem] w-full min-w-0 rounded-xl border-2 bg-[var(--surface)] px-0.5 text-center text-lg font-black tabular-nums text-[var(--foreground)] outline-none transition-all duration-200 sm:min-h-[4.25rem] sm:rounded-2xl sm:text-2xl ${
+                        error
+                          ? "border-red-500 bg-red-500/10"
+                          : digits[i]
+                            ? "border-[var(--gold)] bg-[var(--gold)]/5"
+                            : "border-[var(--border-light)]"
+                      } focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20 sm:focus:ring-4`}
+                    />
+                  ))}
+                </div>
               </div>
               {error && <p className="mt-4 text-base font-semibold text-red-400 animate-fade-in">{t(locale, "invalidCode")}</p>}
               <button type="submit" className="mt-8 w-full rounded-2xl bg-[var(--gold)] py-5 text-xl font-bold text-[var(--dark)] shadow-lg transition-all duration-200 hover:bg-[var(--gold-light)] hover:shadow-xl active:scale-[0.98]">

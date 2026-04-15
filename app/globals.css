@@ -10,6 +10,7 @@
   --gold-light: #ddbf6a;
   --gold-dim: #9a7b32;
   --muted: #8a8578;
+  --gold-foreground: var(--gold);
   --surface: #141414;
   --border: #2a2824;
   --border-light: #3a3630;
@@ -23,21 +24,32 @@
   --card-hover: #f5f2ec;
   --gold: #d4af37;
   --gold-light: #e6c44a;
-  --gold-dim: #c9a54e;
-  --muted: #8a8279;
+  /* Darker bronze: readable links & chart bases on warm/off-white */
+  --gold-dim: #6e5a24;
+  /* Secondary text: meets contrast on cream, white, and subtle gold washes */
+  --muted: #4a4540;
+  /* Text/icons on pale gold tints (e.g. guest “Add time” chip) */
+  --gold-foreground: #2e2816;
   --surface: #f0ebe2;
   --border: #e0d9cd;
   --border-light: #d4ccbe;
 }
 
-[data-theme="light"] .shadow-2xl {
-  --tw-shadow-color: rgba(0, 0, 0, 0.08);
-}
-[data-theme="light"] .shadow-lg {
-  --tw-shadow-color: rgba(0, 0, 0, 0.06);
+/* Softer, warm-tinted elevation on cream/white (avoids harsh black halos) */
+[data-theme="light"] .shadow-sm {
+  --tw-shadow-color: rgba(42, 36, 30, 0.06);
 }
 [data-theme="light"] .shadow-md {
-  --tw-shadow-color: rgba(0, 0, 0, 0.05);
+  --tw-shadow-color: rgba(42, 36, 30, 0.07);
+}
+[data-theme="light"] .shadow-lg {
+  --tw-shadow-color: rgba(42, 36, 30, 0.08);
+}
+[data-theme="light"] .shadow-xl {
+  --tw-shadow-color: rgba(42, 36, 30, 0.1);
+}
+[data-theme="light"] .shadow-2xl {
+  --tw-shadow-color: rgba(42, 36, 30, 0.12);
 }
 
 @theme inline {

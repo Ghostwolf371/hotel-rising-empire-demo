@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { useState } from "react";
 import { ManagementShell } from "@/components/management-shell";
 import { RoomTimer, useTimeLeft } from "@/components/room-timer";
@@ -24,6 +25,42 @@ function statusButtons(locale: Locale): { value: RoomStatus; label: string }[] {
   ];
 }
 
+type RoomStatusToggle = "available" | "cleaning" | "maintenance";
+
+/** Neutral theme chips; hover previews green / blue / red; only the current status uses full color. */
+function roomStatusToggleClass(value: RoomStatusToggle, selected: boolean): string {
+  const base =
+    "rounded-lg px-3.5 py-2 text-sm font-semibold ring-1 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)]/35";
+
+  if (selected) {
+    if (value === "available") {
+      return `${base} bg-emerald-600 text-white ring-emerald-700/40 hover:bg-emerald-700 hover:ring-emerald-800/45`;
+    }
+    if (value === "cleaning") {
+      return `${base} bg-sky-600 text-white ring-sky-700/40 hover:bg-sky-700 hover:ring-sky-800/45`;
+    }
+    return `${base} bg-red-600 text-white ring-red-800/40 hover:bg-red-700 hover:ring-red-900/45`;
+  }
+
+  const neutral = `${base} bg-[var(--surface)] text-[var(--muted)] ring-[var(--border-light)] hover:text-[var(--foreground)]`;
+
+  if (value === "available") {
+    return `${neutral} hover:bg-emerald-500/14 hover:text-emerald-800 hover:ring-emerald-500/30 active:bg-emerald-600/20 active:text-emerald-900 active:ring-emerald-600/35 dark:hover:text-emerald-300 dark:active:text-emerald-200`;
+  }
+  if (value === "cleaning") {
+    return `${neutral} hover:bg-sky-500/14 hover:text-sky-900 hover:ring-sky-500/30 active:bg-sky-600/20 active:text-sky-950 active:ring-sky-600/35 dark:hover:text-sky-300 dark:active:text-sky-200`;
+  }
+  return `${neutral} hover:bg-red-500/14 hover:text-red-900 hover:ring-red-500/30 active:bg-red-600/20 active:text-red-950 active:ring-red-600/35 dark:hover:text-red-300 dark:active:text-red-200`;
+}
+
+const DURATION_MAX = 24;
+const QUICK_HOURS = [1, 2, 3, 4, 6, 8, 12, 24] as const;
+
+function clampDuration(n: number): number {
+  if (!Number.isFinite(n)) return 2;
+  return Math.min(DURATION_MAX, Math.max(1, Math.round(n)));
+}
+
 function RoomModal({ room, onClose }: { room: Room; onClose: () => void }) {
   const { orders, dispatch, locale, hourlyRate } = useDemo();
   const [durationHours, setDurationHours] = useState(2);
@@ -35,7 +72,7 @@ function RoomModal({ room, onClose }: { room: Room; onClose: () => void }) {
   const timeLoc = bcp47ForLocale(locale);
 
   function startSession() {
-    dispatch({ type: "START_ROOM_SESSION", roomId: room.id, durationHours });
+    dispatch({ type: "START_ROOM_SESSION", roomId: room.id, durationHours: clampDuration(durationHours) });
   }
   function endSession() {
     dispatch({ type: "END_ROOM_SESSION", roomId: room.id });
@@ -102,51 +139,73 @@ function RoomModal({ room, onClose }: { room: Room; onClose: () => void }) {
               </>
             ) : (
               <>
-                <p className="text-sm font-semibold text-[var(--gold-light)]">{t(locale, "mgmtStartNewSession")}</p>
-
-                {/* Hour slider */}
-                <div className="mt-4 px-1">
-                  <div className="flex justify-between px-[2px]">
-                    {[1, 2, 3, 4, 5, 6].map((h) => (
-                      <button
-                        key={h}
-                        type="button"
-                        onClick={() => setDurationHours(h)}
-                        className={`flex w-10 flex-col items-center gap-1 transition-all duration-200 ${
-                          durationHours === h ? "scale-110" : ""
-                        }`}
-                      >
-                        <span className={`text-base font-black transition-colors duration-200 ${
-                          h <= durationHours ? "text-[var(--gold)]" : "text-[var(--muted)]"
-                        }`}>
-                          +{h}u
-                        </span>
-                      </button>
-                    ))}
+                <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.04]">
+                  <div className="border-b border-[var(--border)] bg-gradient-to-r from-[var(--gold)]/12 via-[var(--gold)]/6 to-transparent px-5 py-4 sm:px-6">
+                    <h3 className="text-lg font-black tracking-tight text-[var(--gold)] sm:text-xl">{t(locale, "mgmtStartNewSession")}</h3>
                   </div>
-                  <div className="relative mt-3">
-                    <input
-                      type="range"
-                      min={1}
-                      max={6}
-                      step={1}
-                      value={durationHours}
-                      onChange={(e) => setDurationHours(Number(e.target.value))}
-                      className="gold-slider"
-                      style={{ "--slider-pct": `${((durationHours - 1) / 5) * 100}%` } as React.CSSProperties}
-                    />
-                    <div className="pointer-events-none absolute top-1/2 left-[2px] right-[2px] -translate-y-1/2">
-                      <div className="flex justify-between">
-                        {[1, 2, 3, 4, 5, 6].map((h) => (
-                          <span
+
+                  <div className="space-y-5 px-5 py-5 sm:px-6">
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--muted)]">{t(locale, "mgmtQuickPresets")}</p>
+                      <div className="mt-3 grid grid-cols-4 gap-2 sm:gap-2.5">
+                        {QUICK_HOURS.map((h) => (
+                          <button
                             key={h}
-                            className={`block h-2 w-2 rounded-full transition-all duration-200 ${
-                              h <= durationHours
-                                ? "bg-[var(--gold)] shadow-sm shadow-[var(--gold)]/40"
-                                : "bg-[var(--border-light)]"
+                            type="button"
+                            onClick={() => setDurationHours(h)}
+                            className={`flex min-h-[48px] touch-manipulation items-center justify-center rounded-xl text-[15px] font-black tabular-nums transition sm:min-h-[52px] sm:text-base ${
+                              durationHours === h
+                                ? "bg-[var(--gold)] text-[var(--dark)] shadow-md ring-2 ring-[var(--gold)]/35 ring-offset-2 ring-offset-[var(--card)]"
+                                : "border-2 border-[var(--border-light)] bg-[var(--surface)] text-[var(--foreground)] hover:border-[var(--gold)]/45 hover:bg-[var(--card-hover)]"
                             }`}
-                          />
+                          >
+                            {h}h
+                          </button>
                         ))}
+                      </div>
+                    </div>
+
+                    <div className="relative flex items-center gap-3 py-1">
+                      <div className="h-px flex-1 bg-[var(--border)]" aria-hidden />
+                      <span className="shrink-0 text-[10px] font-bold uppercase tracking-widest text-[var(--muted)]">{t(locale, "mgmtFineTune")}</span>
+                      <div className="h-px flex-1 bg-[var(--border)]" aria-hidden />
+                    </div>
+
+                    <div className="rounded-xl border border-[var(--border-light)] bg-[var(--surface)]/70 px-4 py-4 sm:px-5">
+                      <label htmlFor={`duration-${room.id}`} className="text-xs font-bold uppercase tracking-wider text-[var(--gold)]">
+                        {t(locale, "mgmtCustomHoursLabel")}
+                      </label>
+                      <p className="mt-1 text-xs leading-relaxed text-[var(--muted)]">{t(locale, "mgmtCustomHoursHint")}</p>
+                      <div className="mt-4 flex flex-wrap items-center gap-3">
+                        <input
+                          id={`duration-${room.id}`}
+                          type="number"
+                          inputMode="numeric"
+                          min={1}
+                          max={DURATION_MAX}
+                          value={durationHours}
+                          onChange={(e) => {
+                            const v = Number.parseInt(e.target.value, 10);
+                            if (Number.isFinite(v)) setDurationHours(clampDuration(v));
+                          }}
+                          onBlur={() => setDurationHours((h) => clampDuration(h))}
+                          className="h-12 w-[5.5rem] rounded-xl border-2 border-[var(--border-light)] bg-[var(--card)] px-2 text-center text-xl font-black text-[var(--foreground)] outline-none transition focus:border-[var(--gold)] focus:ring-4 focus:ring-[var(--gold)]/18"
+                        />
+                        <span className="text-sm font-bold text-[var(--foreground)]">{t(locale, "mgmtHours")}</span>
+                      </div>
+                      <div className="relative mt-5 px-0.5">
+                        <input
+                          type="range"
+                          min={1}
+                          max={DURATION_MAX}
+                          step={1}
+                          value={durationHours}
+                          onChange={(e) => setDurationHours(Number(e.target.value))}
+                          className="gold-slider"
+                          style={
+                            { "--slider-pct": `${((durationHours - 1) / (DURATION_MAX - 1)) * 100}%` } as CSSProperties
+                          }
+                        />
                       </div>
                     </div>
                   </div>
@@ -175,20 +234,19 @@ function RoomModal({ room, onClose }: { room: Room; onClose: () => void }) {
                 <div className="mt-6">
                   <p className="mb-2 text-sm font-semibold text-[var(--gold-light)]">{t(locale, "mgmtRoomStatus")}</p>
                   <div className="flex flex-wrap gap-2">
-                    {statusButtons(locale).map((s) => (
-                      <button
-                        key={s.value}
-                        type="button"
-                        onClick={() => setStatus(s.value)}
-                        className={`rounded-lg px-3.5 py-2 text-sm font-semibold transition ${
-                          room.status === s.value
-                            ? "bg-[var(--gold)]/15 text-[var(--gold)] ring-1 ring-[var(--gold)]/30"
-                            : "bg-[var(--surface)] text-[var(--muted)] ring-1 ring-[var(--border-light)] hover:text-[var(--foreground)]"
-                        }`}
-                      >
-                        {s.label}
-                      </button>
-                    ))}
+                    {statusButtons(locale).map((s) => {
+                      const selected = room.status === s.value;
+                      return (
+                        <button
+                          key={s.value}
+                          type="button"
+                          onClick={() => setStatus(s.value)}
+                          className={roomStatusToggleClass(s.value as RoomStatusToggle, selected)}
+                        >
+                          {s.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </>

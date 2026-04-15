@@ -52,6 +52,16 @@ export interface PanicAlert {
   at: number;
 }
 
+/** Guest post-stay star ratings (1–5); persisted for management reporting */
+export interface GuestRating {
+  id: string;
+  roomNumber: string;
+  submittedAt: number;
+  cleanliness: number;
+  comfort: number;
+  service: number;
+}
+
 export const LOCALES = ["en", "nl", "es", "pt"] as const;
 export type Locale = (typeof LOCALES)[number];
 

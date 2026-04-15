@@ -1,21 +1,21 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useDemo } from "@/contexts/demo-context";
 import { t } from "@/lib/i18n";
 
-function StarIcon({ filled }: { filled: boolean }) {
+function StarGlyph({ filled }: { filled: boolean }) {
+  const dim = "h-10 w-10 sm:h-11 sm:w-11";
   return (
     <svg
-      className={`h-16 w-16 transition-all duration-200 md:h-[4.25rem] md:w-[4.25rem] ${
-        filled
-          ? "scale-105 fill-[var(--gold)] text-[var(--gold)]"
-          : "fill-none text-[var(--border-light)]"
+      className={`${dim} shrink-0 transition-all duration-150 ${
+        filled ? "scale-105 fill-[var(--gold)] text-[var(--gold)]" : "fill-none text-[var(--border-light)]"
       }`}
       viewBox="0 0 24 24"
       stroke="currentColor"
-      strokeWidth={filled ? 0 : 1.5}
+      strokeWidth={filled ? 0 : 1.25}
+      aria-hidden
     >
       <path
         strokeLinecap="round"
@@ -26,171 +26,164 @@ function StarIcon({ filled }: { filled: boolean }) {
   );
 }
 
+function StarRow({
+  label,
+  value,
+  hover,
+  onHover,
+  onSelect,
+}: {
+  label: string;
+  value: number;
+  hover: number;
+  onHover: (n: number) => void;
+  onSelect: (n: number) => void;
+}) {
+  const active = hover || value;
+  return (
+    <div className="border-b border-[var(--border)] py-5 last:border-b-0">
+      <p className="text-left text-[15px] font-semibold leading-snug text-[var(--foreground)] sm:text-base">{label}</p>
+      <div
+        className="mt-3 flex flex-wrap justify-start gap-0.5 sm:gap-1"
+        role="group"
+        aria-label={label}
+        onMouseLeave={() => onHover(0)}
+      >
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button
+            key={n}
+            type="button"
+            onClick={() => onSelect(n)}
+            onMouseEnter={() => onHover(n)}
+            className="touch-manipulation rounded-md p-1 transition-transform duration-150 hover:scale-105 active:scale-95"
+            aria-label={`${n} of 5`}
+          >
+            <StarGlyph filled={n <= active} />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function RateContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { locale, dispatch } = useDemo();
-  const [stars, setStars] = useState(0);
-  const [hover, setHover] = useState(0);
-  const [q1, setQ1] = useState("");
-  const [q2, setQ2] = useState("");
-  const [q3, setQ3] = useState("");
-  const [feedback, setFeedback] = useState("");
-  const [showMore, setShowMore] = useState(false);
+  const { locale, dispatch, rooms, guestSession, armGuestNavToRatingAfterSessionEnd } = useDemo();
+  const [cleanliness, setCleanliness] = useState(0);
+  const [comfort, setComfort] = useState(0);
+  const [service, setService] = useState(0);
+  const [h1, setH1] = useState(0);
+  const [h2, setH2] = useState(0);
+  const [h3, setH3] = useState(0);
+  const endedHandled = useRef(false);
 
-  const endedFlow = searchParams.get("ended");
+  const roomParam = searchParams.get("room")?.trim() ?? "";
+
   useEffect(() => {
-    if (endedFlow !== "1") return;
-    dispatch({ type: "END_GUEST_SESSION" });
-    router.replace("/guest/rate", { scroll: false });
-  }, [dispatch, router, endedFlow]);
+    if (searchParams.get("ended") !== "1" || endedHandled.current) return;
+    endedHandled.current = true;
+    const room = guestSession?.roomNumber ?? searchParams.get("room")?.trim() ?? "";
+    if (guestSession) {
+      armGuestNavToRatingAfterSessionEnd();
+      dispatch({ type: "END_GUEST_SESSION" });
+    }
+    router.replace(room ? `/guest/rate?room=${encodeURIComponent(room)}` : "/guest/rate", { scroll: false });
+  }, [armGuestNavToRatingAfterSessionEnd, dispatch, guestSession, router, searchParams]);
+
+  useEffect(() => {
+    if (!roomParam) return;
+    const r = rooms.find((x) => x.number === roomParam);
+    if (r?.status === "available") {
+      router.replace(`/guest/duration?room=${encodeURIComponent(roomParam)}`);
+    }
+  }, [rooms, roomParam, router]);
+
+  function goDuration() {
+    const q = roomParam ? `?room=${encodeURIComponent(roomParam)}` : "";
+    router.push(`/guest/duration${q}`);
+  }
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    router.push("/guest/duration");
+    if (cleanliness < 1 || comfort < 1 || service < 1) return;
+    if (roomParam) {
+      dispatch({
+        type: "SUBMIT_GUEST_RATING",
+        roomNumber: roomParam,
+        cleanliness,
+        comfort,
+        service,
+      });
+    }
+    goDuration();
   }
 
-  const comfortOpts = [
-    { value: "excellent", label: t(locale, "ansExcellent") },
-    { value: "good", label: t(locale, "ansGood") },
-    { value: "average", label: t(locale, "ansAverage") },
-    { value: "poor", label: t(locale, "ansPoor") },
-  ];
-  const speedOpts = comfortOpts;
-  const recommendOpts = [
-    { value: "yes", label: t(locale, "ansYes") },
-    { value: "maybe", label: t(locale, "ansMaybe") },
-    { value: "no", label: t(locale, "ansNo") },
-  ];
+  const canSubmit = cleanliness > 0 && comfort > 0 && service > 0;
 
   return (
-    <div className="relative flex min-h-dvh flex-col overflow-hidden">
+    <div className="relative flex min-h-dvh flex-col overflow-hidden bg-[var(--background)]">
       <div
-        className="pointer-events-none absolute inset-0 bg-cover bg-center blur-sm"
+        className="pointer-events-none absolute inset-0 z-0"
+        aria-hidden
         style={{
-          backgroundImage:
-            "url(https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1600&h=900&fit=crop)",
+          background: `
+            radial-gradient(ellipse 120% 80% at 50% -15%, color-mix(in srgb, var(--gold) 26%, transparent), transparent 52%),
+            radial-gradient(ellipse 70% 55% at 100% 100%, color-mix(in srgb, var(--gold) 12%, transparent), transparent 45%),
+            linear-gradient(168deg, var(--background) 0%, color-mix(in srgb, var(--gold) 5%, var(--background)) 40%, var(--dark) 100%)
+          `,
         }}
       />
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-md" />
 
       <main className="relative z-10 flex min-h-0 flex-1 items-center justify-center overflow-y-auto px-4 py-8 sm:px-5 sm:py-10 md:px-8">
-        <div className="animate-fade-in-scale my-auto w-full max-w-xl rounded-3xl border border-[var(--border)] bg-[var(--card)] p-6 shadow-2xl sm:p-8 md:p-12">
-          <h1 className="text-center text-3xl font-bold tracking-tight text-[var(--gold)] md:text-4xl">
+        <div className="animate-fade-in-scale my-auto w-full max-w-lg rounded-3xl border border-[var(--border)] bg-[var(--card)]/95 p-6 shadow-2xl backdrop-blur-sm sm:p-8 md:p-10">
+          <h1 className="text-center text-2xl font-black tracking-tight text-[var(--gold)] sm:text-3xl md:text-4xl">
             {t(locale, "rateTitle")}
           </h1>
-          <p className="mt-4 text-center text-base leading-relaxed text-[var(--muted)] md:text-lg">
-            {t(locale, "rateSubExtended")}
-          </p>
+          <p className="mt-3 text-center text-sm leading-relaxed text-[var(--muted)] sm:text-base">{t(locale, "rateSubStars")}</p>
 
-          <div className="mt-10 flex flex-wrap justify-center gap-2 md:gap-3">
-            {[1, 2, 3, 4, 5].map((n) => (
-              <button
-                key={n}
-                type="button"
-                onClick={() => setStars(n)}
-                onMouseEnter={() => setHover(n)}
-                onMouseLeave={() => setHover(0)}
-                className="rounded-lg p-1 transition-transform duration-200 hover:scale-105 active:scale-95"
-              >
-                <StarIcon filled={n <= (hover || stars)} />
-              </button>
-            ))}
-          </div>
-
-          <form onSubmit={submit} className="mt-10">
-            <textarea
-              className="min-h-[160px] w-full resize-none rounded-2xl border-0 bg-[var(--surface)] p-5 text-base text-[var(--foreground)] outline-none ring-1 ring-transparent transition placeholder:text-[var(--muted)] focus:ring-2 focus:ring-[var(--gold)]/25 md:min-h-[180px] md:text-lg"
-              placeholder={t(locale, "feedbackPlaceholderLong")}
-              value={feedback}
-              onChange={(e) => setFeedback(e.target.value)}
+          <form onSubmit={submit} className="mt-8">
+            <StarRow
+              label={t(locale, "rateStarCleanliness")}
+              value={cleanliness}
+              hover={h1}
+              onHover={setH1}
+              onSelect={setCleanliness}
+            />
+            <StarRow
+              label={t(locale, "rateStarComfort")}
+              value={comfort}
+              hover={h2}
+              onHover={setH2}
+              onSelect={setComfort}
+            />
+            <StarRow
+              label={t(locale, "rateStarService")}
+              value={service}
+              hover={h3}
+              onHover={setH3}
+              onSelect={setService}
             />
 
-            <button
-              type="button"
-              onClick={() => setShowMore((v) => !v)}
-              className="mt-4 text-sm font-semibold text-[var(--gold)] underline-offset-2 hover:underline"
-            >
-              {showMore ? t(locale, "fewerQuestions") : t(locale, "moreQuestions")}
-            </button>
-
-            {showMore && (
-              <div className="mt-6 space-y-6 border-t border-[var(--border)] pt-6">
-                <fieldset>
-                  <legend className="text-sm font-bold text-[var(--gold)]">
-                    {t(locale, "q1")}
-                  </legend>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {comfortOpts.map((o) => (
-                      <button
-                        key={o.value}
-                        type="button"
-                        onClick={() => setQ1(o.value)}
-                        className={`rounded-full px-4 py-2.5 text-sm font-semibold transition ${
-                          q1 === o.value
-                            ? "bg-[var(--gold)] text-[var(--dark)]"
-                            : "bg-[var(--surface)] text-[var(--foreground)] hover:bg-[var(--card-hover)]"
-                        }`}
-                      >
-                        {o.label}
-                      </button>
-                    ))}
-                  </div>
-                </fieldset>
-                <fieldset>
-                  <legend className="text-sm font-bold text-[var(--gold)]">
-                    {t(locale, "q2")}
-                  </legend>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {speedOpts.map((o) => (
-                      <button
-                        key={o.value}
-                        type="button"
-                        onClick={() => setQ2(o.value)}
-                        className={`rounded-full px-4 py-2.5 text-sm font-semibold transition ${
-                          q2 === o.value
-                            ? "bg-[var(--gold)] text-[var(--dark)]"
-                            : "bg-[var(--surface)] text-[var(--foreground)] hover:bg-[var(--card-hover)]"
-                        }`}
-                      >
-                        {o.label}
-                      </button>
-                    ))}
-                  </div>
-                </fieldset>
-                <fieldset>
-                  <legend className="text-sm font-bold text-[var(--gold)]">
-                    {t(locale, "q3")}
-                  </legend>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {recommendOpts.map((o) => (
-                      <button
-                        key={o.value}
-                        type="button"
-                        onClick={() => setQ3(o.value)}
-                        className={`rounded-full px-4 py-2.5 text-sm font-semibold transition ${
-                          q3 === o.value
-                            ? "bg-[var(--gold)] text-[var(--dark)]"
-                            : "bg-[var(--surface)] text-[var(--foreground)] hover:bg-[var(--card-hover)]"
-                        }`}
-                      >
-                        {o.label}
-                      </button>
-                    ))}
-                  </div>
-                </fieldset>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              className="mt-8 w-full rounded-2xl bg-[var(--gold)] py-5 text-lg font-bold text-[var(--dark)] shadow-lg transition hover:bg-[var(--gold-light)] active:scale-[0.99]"
-            >
-              {t(locale, "submit")}
-            </button>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row-reverse sm:justify-end">
+              <button
+                type="submit"
+                disabled={!canSubmit}
+                className="min-h-[52px] flex-1 rounded-2xl bg-[var(--gold)] py-4 text-lg font-bold text-[var(--dark)] shadow-lg transition hover:bg-[var(--gold-light)] enabled:active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                {t(locale, "submit")}
+              </button>
+              <button
+                type="button"
+                onClick={goDuration}
+                className="min-h-[52px] flex-1 rounded-2xl border-2 border-[var(--border-light)] bg-[var(--surface)] py-4 text-lg font-bold text-[var(--foreground)] transition hover:border-[var(--gold)]/35 hover:bg-[var(--card-hover)] active:scale-[0.99]"
+              >
+                {t(locale, "rateSkip")}
+              </button>
+            </div>
           </form>
 
-          <p className="mt-8 text-center text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted)] md:text-xs">
+          <p className="mt-8 text-center text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted)] sm:text-xs">
             {t(locale, "feedbackFooterTagline")}
           </p>
         </div>

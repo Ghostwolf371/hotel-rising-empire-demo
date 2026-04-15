@@ -7,6 +7,8 @@ import {
   useEffect,
   useMemo,
   useReducer,
+  useRef,
+  type MutableRefObject,
   type ReactNode,
 } from "react";
 import {
@@ -19,6 +21,7 @@ import {
 import {
   isLocale,
   type Category,
+  type GuestRating,
   type Locale,
   type Order,
   type PanicAlert,
@@ -35,9 +38,9 @@ export interface CartLine {
   qty: number;
 }
 
-interface GuestSession {
+export interface GuestSession {
   roomNumber: string;
-  durationHours: 2 | 3;
+  durationHours: number;
   sessionEndsAt: number;
   sessionStartedAt: number;
 }
@@ -46,6 +49,7 @@ interface PersistedState {
   rooms: Room[];
   orders: Order[];
   panicAlerts: PanicAlert[];
+  guestRatings: GuestRating[];
   guestSession: GuestSession | null;
   locale: Locale;
   theme: Theme;
@@ -58,14 +62,22 @@ export type Action =
   | { type: "HYDRATE"; payload: Partial<PersistedState> }
   | { type: "SET_LOCALE"; locale: Locale }
   | { type: "SET_THEME"; theme: Theme }
-  | { type: "START_GUEST_SESSION"; roomNumber: string; durationHours: 2 | 3 }
+  | { type: "START_GUEST_SESSION"; roomNumber: string; durationHours: number }
   | { type: "EXTEND_GUEST_SESSION"; extraHours: number }
   | { type: "END_GUEST_SESSION" }
+  | {
+      type: "SUBMIT_GUEST_RATING";
+      roomNumber: string;
+      cleanliness: number;
+      comfort: number;
+      service: number;
+    }
   | { type: "UPDATE_ROOM_STATUS"; roomId: string; status: RoomStatus }
   | { type: "START_ROOM_SESSION"; roomId: string; durationHours: number }
   | { type: "END_ROOM_SESSION"; roomId: string }
   | { type: "PANIC"; roomNumber: string }
   | { type: "CLEAR_PANICS" }
+  | { type: "CLEAR_PANIC_ALERT"; id: string }
   | { type: "ADD_ORDER"; order: Order }
   | { type: "SET_ORDER_STATUS"; orderId: string; status: Order["status"] }
   | { type: "CART_SET"; lines: CartLine[] }
@@ -94,6 +106,7 @@ function defaultState(): DemoState {
     rooms: initialRooms(),
     orders: initialOrders(),
     panicAlerts: [],
+    guestRatings: [],
     guestSession: null,
     locale: "en",
     theme: "dark",
@@ -107,17 +120,25 @@ function defaultState(): DemoState {
 function reducer(state: DemoState, action: Action): DemoState {
   switch (action.type) {
     case "HYDRATE":
-      return { ...state, ...action.payload, cart: state.cart };
+      return {
+        ...state,
+        ...action.payload,
+        guestRatings: Array.isArray(action.payload.guestRatings)
+          ? action.payload.guestRatings
+          : (state.guestRatings ?? []),
+        cart: state.cart,
+      };
     case "SET_LOCALE":
       return { ...state, locale: action.locale };
     case "SET_THEME":
       return { ...state, theme: action.theme };
     case "START_GUEST_SESSION": {
       const now = Date.now();
-      const ms = action.durationHours * 60 * 60 * 1000;
+      const durationHours = Math.min(168, Math.max(1, Math.round(action.durationHours)));
+      const ms = durationHours * 60 * 60 * 1000;
       const guestSession: GuestSession = {
         roomNumber: action.roomNumber,
-        durationHours: action.durationHours,
+        durationHours,
         sessionStartedAt: now,
         sessionEndsAt: now + ms,
       };
@@ -128,7 +149,7 @@ function reducer(state: DemoState, action: Action): DemoState {
               status: "occupied" as const,
               sessionStartedAt: now,
               sessionEndsAt: now + ms,
-              durationHours: action.durationHours,
+              durationHours,
             }
           : r
       );
@@ -153,7 +174,7 @@ function reducer(state: DemoState, action: Action): DemoState {
         r.number === roomNumber
           ? {
               ...r,
-              status: "available" as const,
+              status: "cleaning" as const,
               sessionEndsAt: undefined,
               sessionStartedAt: undefined,
               durationHours: undefined,
@@ -161,6 +182,18 @@ function reducer(state: DemoState, action: Action): DemoState {
           : r
       );
       return { ...state, guestSession: null, rooms, cart: [] };
+    }
+    case "SUBMIT_GUEST_RATING": {
+      const rating: GuestRating = {
+        id: `rate-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        roomNumber: action.roomNumber,
+        submittedAt: Date.now(),
+        cleanliness: action.cleanliness,
+        comfort: action.comfort,
+        service: action.service,
+      };
+      const next = [rating, ...state.guestRatings];
+      return { ...state, guestRatings: next.slice(0, 500) };
     }
     case "UPDATE_ROOM_STATUS":
       return {
@@ -212,6 +245,11 @@ function reducer(state: DemoState, action: Action): DemoState {
     }
     case "CLEAR_PANICS":
       return { ...state, panicAlerts: [] };
+    case "CLEAR_PANIC_ALERT":
+      return {
+        ...state,
+        panicAlerts: state.panicAlerts.filter((a) => a.id !== action.id),
+      };
     case "ADD_ORDER":
       return { ...state, orders: [action.order, ...state.orders] };
     case "SET_ORDER_STATUS":
@@ -286,6 +324,9 @@ function reducer(state: DemoState, action: Action): DemoState {
   }
 }
 
+/** When ending the guest session we clear `guestSession` before navigation to `/guest/rate` finishes; guest pages must skip their “no session → duration” redirect once. */
+type GuestPostSessionEndNavRef = MutableRefObject<{ skipDurationRedirectOnce: boolean }>;
+
 interface DemoContextValue {
   locale: Locale;
   setLocale: (l: Locale) => void;
@@ -295,6 +336,7 @@ interface DemoContextValue {
   rooms: Room[];
   orders: Order[];
   panicAlerts: PanicAlert[];
+  guestRatings: GuestRating[];
   guestSession: GuestSession | null;
   catalog: Product[];
   categories: Category[];
@@ -306,12 +348,18 @@ interface DemoContextValue {
   setCartQty: (productId: string, qty: number) => void;
   removeCartLine: (productId: string) => void;
   clearCart: () => void;
+  guestPostSessionEndNavRef: GuestPostSessionEndNavRef;
+  armGuestNavToRatingAfterSessionEnd: () => void;
 }
 
 const DemoContext = createContext<DemoContextValue | null>(null);
 
 export function DemoProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, undefined, defaultState);
+  const guestPostSessionEndNavRef = useRef({ skipDurationRedirectOnce: false });
+  const armGuestNavToRatingAfterSessionEnd = useCallback(() => {
+    guestPostSessionEndNavRef.current.skipDurationRedirectOnce = true;
+  }, []);
 
   useEffect(() => {
     try {
@@ -341,6 +389,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       rooms: state.rooms,
       orders: state.orders,
       panicAlerts: state.panicAlerts,
+      guestRatings: state.guestRatings,
       guestSession: state.guestSession,
       locale: state.locale,
       theme: state.theme,
@@ -357,6 +406,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     state.rooms,
     state.orders,
     state.panicAlerts,
+    state.guestRatings,
     state.guestSession,
     state.locale,
     state.theme,
@@ -426,6 +476,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       rooms: state.rooms,
       orders: state.orders,
       panicAlerts: state.panicAlerts,
+      guestRatings: state.guestRatings,
       guestSession: state.guestSession,
       catalog: state.catalog,
       categories: state.categories,
@@ -437,6 +488,8 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       setCartQty,
       removeCartLine,
       clearCart,
+      guestPostSessionEndNavRef,
+      armGuestNavToRatingAfterSessionEnd,
     }),
     [
       state.locale,
@@ -444,6 +497,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       state.rooms,
       state.orders,
       state.panicAlerts,
+      state.guestRatings,
       state.guestSession,
       state.catalog,
       state.categories,
@@ -457,6 +511,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       setCartQty,
       removeCartLine,
       clearCart,
+      armGuestNavToRatingAfterSessionEnd,
     ]
   );
 

@@ -17,6 +17,10 @@ const instrumentSerif = Instrument_Serif({
 export const metadata: Metadata = {
   title: "Empire Apartments — Tablet demo",
   description: "Short-stay pension guest tablet demo (Next.js).",
+  icons: {
+    icon: [{ url: "/logo.png", type: "image/png" }],
+    apple: [{ url: "/logo.png", type: "image/png" }],
+  },
 };
 
 export default function RootLayout({

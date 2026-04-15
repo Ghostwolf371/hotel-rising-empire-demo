@@ -20,13 +20,20 @@ export default function GuestCartPage() {
     clearCart,
     dispatch,
     locale,
+    theme,
+    guestPostSessionEndNavRef,
   } = useDemo();
   const [notes, setNotes] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
-    if (!guestSession) router.replace("/guest/duration");
-  }, [guestSession, router]);
+    if (guestSession) return;
+    if (guestPostSessionEndNavRef.current.skipDurationRedirectOnce) {
+      guestPostSessionEndNavRef.current.skipDurationRedirectOnce = false;
+      return;
+    }
+    router.replace("/guest/duration");
+  }, [guestSession, router, guestPostSessionEndNavRef]);
 
   const lines = useMemo(() => {
     return cart
@@ -96,9 +103,12 @@ export default function GuestCartPage() {
             <div className="flex shrink-0 items-center justify-between gap-3">
               <Link
                 href="/guest"
-                className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-[var(--gold)]/90 transition-colors hover:bg-[var(--gold)]/10 hover:text-[var(--gold)]"
+                className="inline-flex min-h-11 min-w-0 shrink-0 touch-manipulation items-center gap-2 rounded-xl border border-[var(--border-light)] bg-[var(--surface)] px-4 py-2.5 text-sm font-bold text-[var(--foreground)] shadow-sm transition hover:border-[var(--gold)]/35 hover:bg-[var(--card-hover)] hover:text-[var(--gold)] sm:px-5"
+                aria-label={t(locale, "back")}
               >
-                <span>←</span>
+                <svg className="h-5 w-5 shrink-0 text-[var(--gold)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
                 {t(locale, "back")}
               </Link>
               {lines.length > 0 && (
@@ -116,7 +126,7 @@ export default function GuestCartPage() {
               {lines.map((l) => (
                 <li
                   key={l.productId}
-                  className="group flex flex-wrap items-center gap-4 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-[0_8px_30px_-12px_rgba(0,0,0,0.45)] transition hover:border-[var(--gold)]/20 hover:shadow-[0_12px_40px_-12px_rgba(201,165,78,0.12)] sm:gap-5 sm:p-5"
+                  className="group flex flex-wrap items-center gap-4 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-md transition hover:border-[var(--gold)]/25 hover:shadow-lg sm:gap-5 sm:p-5"
                 >
                   <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl bg-[var(--surface)] ring-1 ring-[var(--border)] sm:h-28 sm:w-28">
                     <Image
@@ -193,7 +203,7 @@ export default function GuestCartPage() {
 
           {/* Checkout card */}
           <aside className="lg:sticky lg:top-6">
-            <div className="flex flex-col overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--card)] shadow-[0_20px_50px_-20px_rgba(0,0,0,0.55)]">
+            <div className="flex flex-col overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--card)] shadow-lg lg:shadow-xl">
               <div className="shrink-0 border-b border-[var(--border)] bg-[var(--surface)] px-6 py-5">
                 <h2 className="text-center text-sm font-bold uppercase tracking-[0.2em] text-[var(--gold)]">
                   {t(locale, "summaryOrder")}
@@ -234,7 +244,7 @@ export default function GuestCartPage() {
                   type="button"
                   disabled={lines.length === 0}
                   onClick={placeOrder}
-                  className="w-full origin-center touch-manipulation rounded-2xl bg-[var(--gold)] py-4 text-lg font-black tracking-wide text-[var(--dark)] shadow-[0_8px_24px_-6px_rgba(201,165,78,0.55)] transition-all duration-200 ease-out hover:scale-[1.03] hover:bg-[var(--gold-light)] hover:py-[1.125rem] hover:shadow-[0_14px_36px_-6px_rgba(201,165,78,0.5)] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-35 disabled:hover:scale-100 disabled:hover:py-4"
+                  className="w-full origin-center touch-manipulation rounded-2xl bg-[var(--gold)] py-4 text-lg font-black tracking-wide text-[var(--dark)] shadow-[0_8px_28px_-12px_color-mix(in_srgb,var(--gold)_42%,transparent)] transition-all duration-200 ease-out hover:scale-[1.03] hover:bg-[var(--gold-light)] hover:py-[1.125rem] hover:shadow-[0_12px_36px_-12px_color-mix(in_srgb,var(--gold)_52%,transparent)] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-35 disabled:hover:scale-100 disabled:hover:py-4"
                 >
                   {t(locale, "placeOrder")}
                 </button>
@@ -245,8 +255,12 @@ export default function GuestCartPage() {
       </div>
 
       {showSuccess && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6 backdrop-blur-md">
-          <div className="animate-fade-in-scale w-full max-w-md overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--card)] shadow-2xl shadow-black/50 ring-1 ring-emerald-500/20">
+        <div
+          className={`fixed inset-0 z-50 flex items-center justify-center p-6 backdrop-blur-md ${
+            theme === "light" ? "bg-[color-mix(in_srgb,var(--foreground)_28%,transparent)]" : "bg-black/65"
+          }`}
+        >
+          <div className="animate-fade-in-scale w-full max-w-md overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--card)] shadow-2xl ring-1 ring-emerald-500/20">
             <div className="bg-gradient-to-b from-emerald-500/10 to-transparent px-8 pb-2 pt-10 text-center">
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/25">
                 <svg className="h-9 w-9" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

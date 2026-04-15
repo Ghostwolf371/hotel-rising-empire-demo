@@ -10,15 +10,34 @@ export function formatTimeRange(
   end: Date,
   locale: Locale
 ): string {
-  const opts: Intl.DateTimeFormatOptions = {
+  const loc = bcp47ForLocale(locale);
+
+  const sameCalendarDay =
+    start.getFullYear() === end.getFullYear() &&
+    start.getMonth() === end.getMonth() &&
+    start.getDate() === end.getDate();
+
+  const timeOnly: Intl.DateTimeFormatOptions = {
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
   };
-  const loc = bcp47ForLocale(locale);
-  const a = start.toLocaleTimeString(loc, opts);
-  const b = end.toLocaleTimeString(loc, opts);
-  return `${a} – ${b}`;
+
+  if (sameCalendarDay) {
+    return `${start.toLocaleTimeString(loc, timeOnly)} – ${end.toLocaleTimeString(loc, timeOnly)}`;
+  }
+
+  const crossYear = start.getFullYear() !== end.getFullYear();
+  const withDate: Intl.DateTimeFormatOptions = {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+    ...(crossYear ? { year: "numeric" as const } : {}),
+  };
+
+  return `${start.toLocaleString(loc, withDate)} – ${end.toLocaleString(loc, withDate)}`;
 }
 
 export function formatDateTime(ts: number, locale: Locale): string {
