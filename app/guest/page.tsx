@@ -119,7 +119,7 @@ export default function GuestMainPage() {
       { id: "all", label: t(locale, "all") },
       ...categories.map((c) => ({
         id: c.id,
-        label: locale === "nl" ? c.nameNl : c.name,
+        label: c.name,
       })),
     ];
     return tabs;
@@ -292,8 +292,8 @@ export default function GuestMainPage() {
           {/* Product grid — 1 col on very narrow, 2 from ~520px, 3 on xl */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {filtered.map((p, idx) => {
-              const name = locale === "nl" ? p.nameNl : p.name;
-              const catLabel = categoryLabel(categories, p.category, locale);
+              const name = p.name;
+              const catLabel = categoryLabel(categories, p.category);
               const qty = cartMap.get(p.id) ?? 0;
               const isInCart = qty > 0;
               const justTapped = tapped === p.id;

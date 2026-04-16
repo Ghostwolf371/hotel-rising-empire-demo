@@ -40,7 +40,7 @@ export default function GuestCartPage() {
       .map((c) => {
         const p = productById(c.productId);
         if (!p) return null;
-        const name = locale === "nl" ? p.nameNl : p.name;
+        const name = p.name;
         return { ...c, product: p, name, lineTotal: p.priceSrd * c.qty };
       })
       .filter(Boolean) as {

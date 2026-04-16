@@ -28,16 +28,15 @@ export const initialRooms = (): Room[] =>
   });
 
 export const defaultCategories: Category[] = [
-  { id: "drink", name: "Drinks", nameNl: "Dranken", color: "sky" },
-  { id: "snack", name: "Snacks", nameNl: "Snacks", color: "amber" },
-  { id: "other", name: "Other", nameNl: "Overig", color: "purple" },
+  { id: "drink", name: "Drinks", color: "sky" },
+  { id: "snack", name: "Snacks", color: "amber" },
+  { id: "other", name: "Other", color: "purple" },
 ];
 
 export const defaultCatalog: Product[] = [
   {
     id: "p1",
     name: "Coca Cola",
-    nameNl: "Coca Cola",
     priceSrd: 21,
     category: "drink",
     image: "https://images.unsplash.com/photo-1629203851122-3726ecdf080e?w=400&h=300&fit=crop",
@@ -46,7 +45,6 @@ export const defaultCatalog: Product[] = [
   {
     id: "p2",
     name: "Orange Juice",
-    nameNl: "Sinaasappelsap",
     priceSrd: 18,
     category: "drink",
     image: "https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w=400&h=300&fit=crop",
@@ -55,7 +53,6 @@ export const defaultCatalog: Product[] = [
   {
     id: "p3",
     name: "Sparkling Water",
-    nameNl: "Bruisend water",
     priceSrd: 12,
     category: "drink",
     image: "https://images.unsplash.com/photo-1559839914-17aae19cec71?w=400&h=300&fit=crop",
@@ -64,7 +61,6 @@ export const defaultCatalog: Product[] = [
   {
     id: "p4",
     name: "Chocolate",
-    nameNl: "Chocolade",
     priceSrd: 13,
     category: "snack",
     image: "https://images.unsplash.com/photo-1549007994-cb92caebd54b?w=400&h=300&fit=crop",
@@ -73,7 +69,6 @@ export const defaultCatalog: Product[] = [
   {
     id: "p5",
     name: "Mixed Nuts",
-    nameNl: "Notenmix",
     priceSrd: 22,
     category: "snack",
     image: "https://images.unsplash.com/photo-1599599810769-bcde5a160d32?w=400&h=300&fit=crop",
@@ -82,7 +77,6 @@ export const defaultCatalog: Product[] = [
   {
     id: "p6",
     name: "Energy Bar",
-    nameNl: "Energy reep",
     priceSrd: 15,
     category: "snack",
     image: "https://images.unsplash.com/photo-1622484212850-eb596d769edc?w=400&h=300&fit=crop",

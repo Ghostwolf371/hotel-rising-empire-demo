@@ -7,14 +7,12 @@ export type ProductCategory = string;
 export interface Category {
   id: string;
   name: string;
-  nameNl: string;
   color: string;
 }
 
 export interface Product {
   id: string;
   name: string;
-  nameNl: string;
   priceSrd: number;
   category: ProductCategory;
   image: string;

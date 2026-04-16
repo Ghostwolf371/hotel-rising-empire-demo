@@ -367,10 +367,35 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       if (!raw) return;
       const parsed = JSON.parse(raw) as Partial<PersistedState>;
       if (parsed.catalog) {
-        parsed.catalog = parsed.catalog.map((p) => ({
-          ...p,
-          available: p.available ?? true,
-        }));
+        parsed.catalog = parsed.catalog.map((raw) => {
+          const p = raw as Product & { nameNl?: string };
+          const name =
+            typeof p.name === "string" && p.name.trim()
+              ? p.name.trim()
+              : String(p.nameNl ?? "").trim() || p.id;
+          return {
+            id: p.id,
+            name,
+            priceSrd: p.priceSrd,
+            category: p.category,
+            image: typeof p.image === "string" ? p.image : "",
+            available: p.available ?? true,
+          };
+        });
+      }
+      if (parsed.categories?.length) {
+        parsed.categories = parsed.categories.map((raw) => {
+          const c = raw as Category & { nameNl?: string };
+          const name =
+            typeof c.name === "string" && c.name.trim()
+              ? c.name.trim()
+              : String(c.nameNl ?? "").trim() || c.id;
+          return {
+            id: c.id,
+            name,
+            color: typeof c.color === "string" && c.color ? c.color : "purple",
+          };
+        });
       }
       if (!parsed.categories || parsed.categories.length === 0) {
         parsed.categories = defaultCategories;

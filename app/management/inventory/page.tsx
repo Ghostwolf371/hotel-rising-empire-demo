@@ -75,14 +75,13 @@ function CategoriesPanel({
     setEditing({
       id: `cat-${Date.now()}`,
       name: "",
-      nameNl: "",
       color: "sky",
     });
     setIsNew(true);
   }
 
   function saveCategory() {
-    if (!editing || !editing.name.trim() || !editing.nameNl.trim()) return;
+    if (!editing || !editing.name.trim()) return;
     if (isNew) {
       dispatch({ type: "ADD_CATEGORY", category: editing });
     } else {
@@ -144,7 +143,7 @@ function CategoriesPanel({
               <span
                 className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase ${categoryBadgeClass(c.color)}`}
               >
-                {locale === "nl" ? c.nameNl : c.name}
+                {c.name}
               </span>
               <span className="text-[var(--muted)]">·</span>
               <span className="text-xs text-[var(--muted)]">{c.id}</span>
@@ -187,7 +186,7 @@ function CategoryModal({
 }) {
   const set = (patch: Partial<Category>) =>
     setCategory({ ...category, ...patch });
-  const canSave = category.name.trim() && category.nameNl.trim();
+  const canSave = Boolean(category.name.trim());
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-6 backdrop-blur-md">
@@ -227,17 +226,6 @@ function CategoryModal({
               type="text"
               value={category.name}
               onChange={(e) => set({ name: e.target.value })}
-              className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-              {t(locale, "mgmtCategoryNameNl")}
-            </label>
-            <input
-              type="text"
-              value={category.nameNl}
-              onChange={(e) => set({ nameNl: e.target.value })}
               className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20"
             />
           </div>
@@ -330,11 +318,7 @@ function InventoryContent({
       list = list.filter((p) => p.category === effectiveCatFilter);
     if (search.trim()) {
       const q = search.toLowerCase();
-      list = list.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.nameNl.toLowerCase().includes(q),
-      );
+      list = list.filter((p) => p.name.toLowerCase().includes(q));
     }
     return list;
   }, [catalog, effectiveCatFilter, search]);
@@ -343,7 +327,6 @@ function InventoryContent({
     setEditingProduct({
       id: `p${Date.now()}`,
       name: "",
-      nameNl: "",
       priceSrd: 0,
       category: defaultCatId,
       image: "",
@@ -394,7 +377,7 @@ function InventoryContent({
       { id: "all", label: t(locale, "mgmtAllCategories") },
       ...categories.map((c) => ({
         id: c.id,
-        label: locale === "nl" ? c.nameNl : c.name,
+        label: c.name,
       })),
     ];
     return tabs;
@@ -474,7 +457,7 @@ function InventoryContent({
           {filtered.map((p) => {
             const catMeta = categories.find((c) => c.id === p.category);
             const badgeClass = categoryBadgeClass(catMeta?.color ?? "purple");
-            const badgeLabel = categoryLabel(categories, p.category, locale);
+            const badgeLabel = categoryLabel(categories, p.category);
             return (
               <div
                 key={p.id}
@@ -514,7 +497,7 @@ function InventoryContent({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <p className="truncate text-sm font-bold text-[var(--foreground)]">
-                      {locale === "nl" ? p.nameNl : p.name}
+                      {p.name}
                     </p>
                     <span
                       className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase ${badgeClass}`}
@@ -522,9 +505,6 @@ function InventoryContent({
                       {badgeLabel}
                     </span>
                   </div>
-                  <p className="mt-0.5 text-xs text-[var(--muted)]">
-                    {locale === "nl" ? p.name : p.nameNl}
-                  </p>
                 </div>
                 <p className="text-base font-black text-[var(--gold)]">
                   {formatSrd(p.priceSrd)}
@@ -596,7 +576,6 @@ function ProductModal({
   const set = (patch: Partial<Product>) => setProduct({ ...product, ...patch });
   const canSave =
     product.name.trim() &&
-    product.nameNl.trim() &&
     product.priceSrd > 0 &&
     categories.length > 0;
 
@@ -639,29 +618,16 @@ function ProductModal({
               />
             </div>
           )}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-                {t(locale, "mgmtProductName")}
-              </label>
-              <input
-                type="text"
-                value={product.name}
-                onChange={(e) => set({ name: e.target.value })}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-                {t(locale, "mgmtProductNameNl")}
-              </label>
-              <input
-                type="text"
-                value={product.nameNl}
-                onChange={(e) => set({ nameNl: e.target.value })}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20"
-              />
-            </div>
+          <div>
+            <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+              {t(locale, "mgmtProductName")}
+            </label>
+            <input
+              type="text"
+              value={product.name}
+              onChange={(e) => set({ name: e.target.value })}
+              className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20"
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -695,7 +661,7 @@ function ProductModal({
                 >
                   {categories.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {locale === "nl" ? c.nameNl : c.name}
+                      {c.name}
                     </option>
                   ))}
                 </select>
