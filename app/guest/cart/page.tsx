@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { ProductThumb } from "@/components/product-thumb";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -129,7 +130,7 @@ export default function GuestCartPage() {
                   className="group flex flex-wrap items-center gap-4 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-md transition hover:border-[var(--gold)]/25 hover:shadow-lg sm:gap-5 sm:p-5"
                 >
                   <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl bg-[var(--surface)] ring-1 ring-[var(--border)] sm:h-28 sm:w-28">
-                    <Image
+                    <ProductThumb
                       src={l.product.image}
                       alt={l.name}
                       fill

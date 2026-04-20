@@ -1,0 +1,91 @@
+// https://pris.ly/d/prisma-schema — SQLite for local/dev; use Postgres in production (change provider + DATABASE_URL).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Category {
+  id       String    @id
+  name     String
+  color    String
+  products Product[]
+}
+
+model Product {
+  id         String   @id
+  name       String
+  priceSrd   Int
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  image      String   @default("")
+  available  Boolean  @default(true)
+}
+
+model Room {
+  id               String  @id
+  number           String  @unique
+  status           String
+  sessionStartedAt Int?
+  sessionEndsAt    Int?
+  durationHours    Int?
+}
+
+model Order {
+  id         String      @id
+  roomNumber String
+  createdAt  Int
+  status     String
+  notes      String?
+  lines      OrderLine[]
+}
+
+model OrderLine {
+  id        String @id @default(cuid())
+  orderId   String
+  order     Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  name      String
+  qty       Int
+  unitPrice Int
+
+  @@index([orderId])
+}
+
+model PanicAlert {
+  id         String @id
+  roomNumber String
+  at         Int
+}
+
+model GuestRating {
+  id          String @id
+  roomNumber  String
+  submittedAt Int
+  cleanliness Int
+  comfort     Int
+  service     Int
+}
+
+/// Single-row app settings (row id = 1).
+model SiteConfig {
+  id         Int @id @default(1)
+  hourlyRate Int @default(75)
+}
+
+/// One-time 6-digit codes for guest tablet room entry; staff reads from management UI.
+model RoomCheckInCode {
+  id          String  @id @default(cuid())
+  roomNumber  String
+  code        String
+  createdAt   Int
+  expiresAt   Int
+  consumedAt  Int?
+
+  @@index([roomNumber])
+  @@index([expiresAt])
+}

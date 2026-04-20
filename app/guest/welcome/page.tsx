@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useDemo } from "@/contexts/demo-context";
 import { t } from "@/lib/i18n";
 
@@ -19,6 +19,14 @@ function WelcomeContent() {
   const { dispatch, locale } = useDemo();
   const [ready, setReady] = useState(false);
   const [visible, setVisible] = useState(false);
+  /** Cleared on manual continue so the 5s auto-start cannot double-dispatch. */
+  const autoStartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const startGuestSessionAndGo = useCallback(() => {
+    if (!room || !hours) return;
+    dispatch({ type: "START_GUEST_SESSION", roomNumber: room, durationHours: hours });
+    router.push("/guest/start");
+  }, [room, hours, dispatch, router]);
 
   useEffect(() => {
     if (!room || !hours) {
@@ -32,17 +40,25 @@ function WelcomeContent() {
 
   useEffect(() => {
     if (!ready || !room || !hours) return;
-    const autoId = setTimeout(() => {
-      dispatch({ type: "START_GUEST_SESSION", roomNumber: room, durationHours: hours });
-      router.push("/guest/start");
+    autoStartTimerRef.current = setTimeout(() => {
+      autoStartTimerRef.current = null;
+      startGuestSessionAndGo();
     }, 5000);
-    return () => clearTimeout(autoId);
-  }, [ready, room, hours, dispatch, router]);
+    return () => {
+      if (autoStartTimerRef.current !== null) {
+        clearTimeout(autoStartTimerRef.current);
+        autoStartTimerRef.current = null;
+      }
+    };
+  }, [ready, room, hours, startGuestSessionAndGo]);
 
   function onContinue() {
     if (!room || !hours) return;
-    dispatch({ type: "START_GUEST_SESSION", roomNumber: room, durationHours: hours });
-    router.push("/guest/start");
+    if (autoStartTimerRef.current !== null) {
+      clearTimeout(autoStartTimerRef.current);
+      autoStartTimerRef.current = null;
+    }
+    startGuestSessionAndGo();
   }
 
   if (!ready || !room || !hours) {

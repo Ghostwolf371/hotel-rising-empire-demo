@@ -1,8 +1,11 @@
 "use client";
 
-import Image from "next/image";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ManagementShell } from "@/components/management-shell";
+import {
+  MAX_PRODUCT_IMAGE_FILE_BYTES,
+  ProductThumb,
+} from "@/components/product-thumb";
 import { useDemo, type Action } from "@/contexts/demo-context";
 import {
   categoryBadgeClass,
@@ -469,7 +472,7 @@ function InventoryContent({
               >
                 <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-[var(--surface)]">
                   {p.image ? (
-                    <Image
+                    <ProductThumb
                       src={p.image}
                       alt={p.name}
                       fill
@@ -565,7 +568,7 @@ function ProductModal({
   onClose,
 }: {
   product: Product;
-  setProduct: (p: Product | null) => void;
+  setProduct: React.Dispatch<React.SetStateAction<Product | null>>;
   categories: Category[];
   isNew: boolean;
   locale: Locale;
@@ -573,11 +576,51 @@ function ProductModal({
   onDelete: () => void;
   onClose: () => void;
 }) {
-  const set = (patch: Partial<Product>) => setProduct({ ...product, ...patch });
+  const set = (patch: Partial<Product>) =>
+    setProduct((prev) => (prev ? { ...prev, ...patch } : prev));
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragDepth = useRef(0);
+  const [dragActive, setDragActive] = useState(false);
+  const [uploadHint, setUploadHint] = useState<string | null>(null);
+
   const canSave =
     product.name.trim() &&
     product.priceSrd > 0 &&
     categories.length > 0;
+
+  const urlInputValue = product.image.startsWith("data:") ? "" : product.image;
+
+  const applyImageFile = useCallback(
+    (file: File | undefined) => {
+      if (!file) return;
+      if (!file.type.startsWith("image/")) {
+        setUploadHint(t(locale, "mgmtProductImageInvalid"));
+        return;
+      }
+      if (file.size > MAX_PRODUCT_IMAGE_FILE_BYTES) {
+        setUploadHint(t(locale, "mgmtProductImageTooLarge"));
+        return;
+      }
+      setUploadHint(null);
+      const reader = new FileReader();
+      reader.onload = () => {
+        const r = reader.result;
+        if (typeof r === "string")
+          setProduct((prev) => (prev ? { ...prev, image: r } : prev));
+      };
+      reader.onerror = () => {
+        setUploadHint(t(locale, "mgmtProductImageReadError"));
+      };
+      reader.readAsDataURL(file);
+    },
+    [locale, setProduct],
+  );
+
+  useEffect(() => {
+    setUploadHint(null);
+    setDragActive(false);
+    dragDepth.current = 0;
+  }, [product.id]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6 backdrop-blur-md">
@@ -609,7 +652,7 @@ function ProductModal({
         <div className="space-y-4 px-6 py-5">
           {product.image && (
             <div className="relative h-32 w-full overflow-hidden rounded-xl bg-[var(--surface)]">
-              <Image
+              <ProductThumb
                 src={product.image}
                 alt={product.name || "Preview"}
                 fill
@@ -626,7 +669,7 @@ function ProductModal({
               type="text"
               value={product.name}
               onChange={(e) => set({ name: e.target.value })}
-              className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20"
+              className="box-border h-11 w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm leading-normal text-[var(--foreground)] outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20"
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -640,7 +683,7 @@ function ProductModal({
                 step={0.5}
                 value={product.priceSrd}
                 onChange={(e) => set({ priceSrd: Number(e.target.value) })}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20"
+                className="box-border h-11 w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm leading-normal text-[var(--foreground)] outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20"
               />
             </div>
             <div>
@@ -657,7 +700,7 @@ function ProductModal({
                   onChange={(e) =>
                     set({ category: e.target.value as ProductCategory })
                   }
-                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20"
+                  className="box-border h-11 w-full cursor-pointer rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm leading-normal text-[var(--foreground)] outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20"
                 >
                   {categories.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -673,11 +716,82 @@ function ProductModal({
               {t(locale, "mgmtProductImage")}
             </label>
             <input
-              type="text"
-              value={product.image}
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={(e) => {
+                applyImageFile(e.target.files?.[0]);
+                e.target.value = "";
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              onDragEnter={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dragDepth.current += 1;
+                setDragActive(true);
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onDragLeave={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dragDepth.current = Math.max(0, dragDepth.current - 1);
+                if (dragDepth.current === 0) setDragActive(false);
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dragDepth.current = 0;
+                setDragActive(false);
+                applyImageFile(e.dataTransfer.files?.[0]);
+              }}
+              className={`flex min-h-[7.5rem] w-full flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed px-4 py-5 text-center transition ${
+                dragActive
+                  ? "border-[var(--gold)] bg-[var(--gold)]/10"
+                  : "border-[var(--border)] bg-[var(--surface)] hover:border-[var(--gold)]/45 hover:bg-[var(--card-hover)]"
+              }`}
+            >
+              <svg
+                className="h-9 w-9 shrink-0 text-[var(--gold)]/85"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={1.5}
+                aria-hidden
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+              <span className="text-sm font-bold text-[var(--foreground)]">
+                {t(locale, "mgmtProductImageDropzone")}
+              </span>
+              <span className="max-w-xs text-xs text-[var(--muted)]">
+                {t(locale, "mgmtProductImageDropzoneSub")}
+              </span>
+            </button>
+            {uploadHint ? (
+              <p className="mt-2 text-xs font-semibold text-red-400">{uploadHint}</p>
+            ) : null}
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+              {t(locale, "mgmtProductImageUrl")}
+            </label>
+            <input
+              type="url"
+              value={urlInputValue}
               onChange={(e) => set({ image: e.target.value })}
-              placeholder="https://images.unsplash.com/…"
-              className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--foreground)] outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20"
+              placeholder={t(locale, "mgmtProductImageUrlPlaceholder")}
+              className="box-border h-11 w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm leading-normal text-[var(--foreground)] outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20"
             />
           </div>
         </div>

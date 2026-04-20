@@ -2,21 +2,31 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  requestRoomCheckInCode,
+  verifyRoomCheckInCode,
+} from "@/app/actions/checkin-codes";
 import { LanguageToggle } from "@/components/language-toggle";
+import {
+  requestCheckInCodeLocal,
+  verifyCheckInCodeLocal,
+} from "@/lib/checkin-codes-local";
 import { useDemo } from "@/contexts/demo-context";
 import { t } from "@/lib/i18n";
 
-const DEMO_CODE = "000000";
 const DIGITS = 6;
 
 export default function RoomEntryPage() {
   const router = useRouter();
-  const { locale, theme, toggleTheme } = useDemo();
+  const { locale, theme, toggleTheme, rooms, useDatabase } = useDemo();
   const [room, setRoom] = useState("");
   const [showVerify, setShowVerify] = useState(false);
   const [digits, setDigits] = useState<string[]>(Array(DIGITS).fill(""));
   const [error, setError] = useState(false);
+  const [roomError, setRoomError] = useState(false);
+  const [codeRequesting, setCodeRequesting] = useState(false);
+  const [codeRequestError, setCodeRequestError] = useState<string | null>(null);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const setRef = useCallback((i: number) => (el: HTMLInputElement | null) => {
@@ -27,11 +37,47 @@ export default function RoomEntryPage() {
     e.preventDefault();
     const n = room.trim();
     if (!n) return;
+    const exists = rooms.some((r) => r.number === n);
+    if (!exists) {
+      setRoomError(true);
+      return;
+    }
+    setRoomError(false);
     setShowVerify(true);
     setDigits(Array(DIGITS).fill(""));
     setError(false);
+    setCodeRequestError(null);
     setTimeout(() => inputRefs.current[0]?.focus(), 100);
   }
+
+  useEffect(() => {
+    if (!showVerify) return;
+    const n = room.trim();
+    if (!n) return;
+    setCodeRequesting(true);
+    setCodeRequestError(null);
+    let cancelled = false;
+    void (async () => {
+      try {
+        if (useDatabase) {
+          await requestRoomCheckInCode(n);
+        } else {
+          requestCheckInCodeLocal(n);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setCodeRequestError(
+            err instanceof Error ? err.message : "Could not request code",
+          );
+        }
+      } finally {
+        if (!cancelled) setCodeRequesting(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [showVerify, room, useDatabase]);
 
   function handleChange(i: number, value: string) {
     const char = value.replace(/\D/g, "").slice(-1);
@@ -56,11 +102,25 @@ export default function RoomEntryPage() {
     inputRefs.current[Math.min(pasted.length, DIGITS - 1)]?.focus();
   }
 
-  function onSubmitCode(e: React.FormEvent) {
+  async function onSubmitCode(e: React.FormEvent) {
     e.preventDefault();
-    if (digits.join("") !== DEMO_CODE) { setError(true); return; }
+    const code = digits.join("");
+    if (code.length !== 6) return;
+    const n = room.trim();
+    let ok = false;
+    try {
+      ok = useDatabase
+        ? await verifyRoomCheckInCode(n, code)
+        : verifyCheckInCodeLocal(n, code);
+    } catch {
+      ok = false;
+    }
+    if (!ok) {
+      setError(true);
+      return;
+    }
     setShowVerify(false);
-    router.push(`/guest/duration?room=${encodeURIComponent(room.trim())}`);
+    router.push(`/guest/duration?room=${encodeURIComponent(n)}`);
   }
 
   return (
@@ -105,8 +165,20 @@ export default function RoomEntryPage() {
                 <svg className="h-7 w-7 shrink-0 text-[var(--muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
-                <input className="w-full bg-transparent text-xl text-[var(--foreground)] outline-none placeholder:text-[var(--muted)]" placeholder={t(locale, "roomPlaceholder")} value={room} onChange={(e) => setRoom(e.target.value)} inputMode="numeric" />
+                <input
+                  className="w-full bg-transparent text-xl text-[var(--foreground)] outline-none placeholder:text-[var(--muted)]"
+                  placeholder={t(locale, "roomPlaceholder")}
+                  value={room}
+                  onChange={(e) => {
+                    setRoom(e.target.value);
+                    setRoomError(false);
+                  }}
+                  inputMode="numeric"
+                />
               </div>
+              {roomError ? (
+                <p className="mt-3 text-sm font-semibold text-red-400">{t(locale, "roomNotFound")}</p>
+              ) : null}
             </div>
             <button type="submit" className="flex w-full items-center justify-center gap-3 rounded-2xl bg-[var(--gold)] py-5 text-xl font-bold text-[var(--dark)] shadow-lg transition-all duration-200 hover:bg-[var(--gold-light)] hover:shadow-xl active:scale-[0.98]">
               {t(locale, "continue")}
@@ -134,6 +206,14 @@ export default function RoomEntryPage() {
           <div className="animate-fade-in-scale w-full max-w-lg rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5 text-center shadow-2xl shadow-black/30 sm:p-10" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-2xl font-black text-[var(--gold)] sm:text-3xl">{t(locale, "enterCode")}</h2>
             <p className="mt-3 text-sm text-[var(--muted)] sm:text-base">{t(locale, "codeHint")}</p>
+            {codeRequesting ? (
+              <p className="mt-4 text-sm font-semibold text-[var(--gold)]">{t(locale, "codeRequesting")}</p>
+            ) : (
+              <p className="mt-4 text-sm text-[var(--muted)]">{t(locale, "codeSentToStaff")}</p>
+            )}
+            {codeRequestError ? (
+              <p className="mt-3 text-sm font-semibold text-red-400">{codeRequestError}</p>
+            ) : null}
             <form onSubmit={onSubmitCode} className="mt-6 sm:mt-8">
               <div className="mx-auto w-full min-w-0 max-w-md py-1" onPaste={handlePaste}>
                 <div
@@ -152,13 +232,14 @@ export default function RoomEntryPage() {
                       value={digits[i]}
                       onChange={(e) => handleChange(i, e.target.value)}
                       onKeyDown={(e) => handleKeyDown(i, e)}
+                      disabled={codeRequesting}
                       className={`box-border min-h-[3rem] w-full min-w-0 rounded-xl border-2 bg-[var(--surface)] px-0.5 text-center text-lg font-black tabular-nums text-[var(--foreground)] outline-none transition-all duration-200 sm:min-h-[4.25rem] sm:rounded-2xl sm:text-2xl ${
                         error
                           ? "border-red-500 bg-red-500/10"
                           : digits[i]
                             ? "border-[var(--gold)] bg-[var(--gold)]/5"
                             : "border-[var(--border-light)]"
-                      } focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20 sm:focus:ring-4`}
+                      } focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20 sm:focus:ring-4 disabled:opacity-50`}
                     />
                   ))}
                   <span
@@ -177,19 +258,24 @@ export default function RoomEntryPage() {
                       value={digits[i]}
                       onChange={(e) => handleChange(i, e.target.value)}
                       onKeyDown={(e) => handleKeyDown(i, e)}
+                      disabled={codeRequesting}
                       className={`box-border min-h-[3rem] w-full min-w-0 rounded-xl border-2 bg-[var(--surface)] px-0.5 text-center text-lg font-black tabular-nums text-[var(--foreground)] outline-none transition-all duration-200 sm:min-h-[4.25rem] sm:rounded-2xl sm:text-2xl ${
                         error
                           ? "border-red-500 bg-red-500/10"
                           : digits[i]
                             ? "border-[var(--gold)] bg-[var(--gold)]/5"
                             : "border-[var(--border-light)]"
-                      } focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20 sm:focus:ring-4`}
+                      } focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20 sm:focus:ring-4 disabled:opacity-50`}
                     />
                   ))}
                 </div>
               </div>
               {error && <p className="mt-4 text-base font-semibold text-red-400 animate-fade-in">{t(locale, "invalidCode")}</p>}
-              <button type="submit" className="mt-8 w-full rounded-2xl bg-[var(--gold)] py-5 text-xl font-bold text-[var(--dark)] shadow-lg transition-all duration-200 hover:bg-[var(--gold-light)] hover:shadow-xl active:scale-[0.98]">
+              <button
+                type="submit"
+                disabled={codeRequesting}
+                className="mt-8 w-full rounded-2xl bg-[var(--gold)] py-5 text-xl font-bold text-[var(--dark)] shadow-lg transition-all duration-200 hover:bg-[var(--gold-light)] hover:shadow-xl active:scale-[0.98] disabled:opacity-50"
+              >
                 {t(locale, "continue")}
               </button>
               <button type="button" onClick={() => setShowVerify(false)} className="mt-4 text-sm font-semibold text-[var(--muted)] hover:text-[var(--gold)]">

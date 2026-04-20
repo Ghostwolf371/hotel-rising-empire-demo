@@ -3,14 +3,65 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { LanguageToggle } from "@/components/language-toggle";
 import { useTimeLeft } from "@/components/room-timer";
+import { listRoomCheckInCodes } from "@/app/actions/checkin-codes";
 import { useDemo } from "@/contexts/demo-context";
+import { listActiveCheckInCodesLocal } from "@/lib/checkin-codes-local";
 import { formatSrd } from "@/lib/format";
 import { bcp47ForLocale } from "@/lib/locale-intl";
 import { t, type TKey } from "@/lib/i18n";
 import type { Order } from "@/lib/types";
+
+/** Same key as `STORAGE_KEY` in `contexts/demo-context.tsx`. */
+const DEMO_STORAGE_KEY = "hre-demo-v2";
+
+const GUEST_SESSION_LIVE_STORAGE_PREFIX = "hre-guest-sess-live-";
+
+function clearGuestSessionLiveDedupe(roomNumber: string) {
+  if (typeof sessionStorage === "undefined") return;
+  try {
+    sessionStorage.removeItem(GUEST_SESSION_LIVE_STORAGE_PREFIX + roomNumber);
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * Atomically records that we are surfacing this stay, or returns false if we already
+ * surfaced (or reserved) the same room with a start time within `jitterMs` — covers
+ * React effect re-runs, client optimistic `sessionStartedAt` vs server HYDRATE, etc.
+ */
+function claimGuestSessionLivePopup(
+  roomNumber: string,
+  sessionStartedAt: number,
+  jitterMs: number,
+): boolean {
+  if (typeof sessionStorage === "undefined") return true;
+  try {
+    const k = GUEST_SESSION_LIVE_STORAGE_PREFIX + roomNumber;
+    const raw = sessionStorage.getItem(k);
+    if (raw != null) {
+      const prev = Number(raw);
+      if (Number.isFinite(prev) && Math.abs(sessionStartedAt - prev) < jitterMs) {
+        return false;
+      }
+    }
+    sessionStorage.setItem(k, String(sessionStartedAt));
+    return true;
+  } catch {
+    return true;
+  }
+}
 
 const NAV: { key: TKey; href: string; icon: React.ReactNode }[] = [
   {
@@ -69,6 +120,25 @@ interface Notification {
   time: number;
 }
 
+/** Classic circular loading wheel (SVG + spin). */
+function SpinnerWheel({ className }: { className?: string }) {
+  return (
+    <svg
+      className={`animate-spin ${className ?? ""}`}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      aria-hidden
+    >
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+      <path
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+      />
+    </svg>
+  );
+}
+
 function ExpiryWatcher({ endsAt, roomNumber, onExpiry }: { endsAt: number; roomNumber: string; onExpiry: (roomNumber: string) => void }) {
   const left = useTimeLeft(endsAt);
   const firedRef = useRef(false);
@@ -83,12 +153,44 @@ function ExpiryWatcher({ endsAt, roomNumber, onExpiry }: { endsAt: number; roomN
 
 type LivePopup =
   | { kind: "session"; roomNumber: string; durationHours?: number }
-  | { kind: "order"; order: Order };
+  | { kind: "order"; order: Order }
+  | {
+      kind: "checkin";
+      id: string;
+      roomNumber: string;
+      code: string;
+      expiresAt: number;
+      createdAt: number;
+    };
+
+/** Same notification already visible or waiting in the queue (e.g. while check-in modal is open). */
+function livePopupMatches(a: LivePopup, b: LivePopup): boolean {
+  if (a.kind !== b.kind) return false;
+  if (a.kind === "order" && b.kind === "order") return a.order.id === b.order.id;
+  if (a.kind === "checkin" && b.kind === "checkin") return a.id === b.id;
+  if (a.kind === "session" && b.kind === "session") {
+    return a.roomNumber === b.roomNumber;
+  }
+  return false;
+}
 
 export function ManagementShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { panicAlerts, orders, rooms, locale, theme, toggleTheme, dispatch } = useDemo();
+  const {
+    panicAlerts,
+    orders,
+    rooms,
+    locale,
+    theme,
+    toggleTheme,
+    dispatch,
+    useDatabase,
+    databaseSyncing,
+    databaseSyncError,
+    refreshDomainFromServer,
+    initialDomainHydrated,
+  } = useDemo();
   const [notifOpen, setNotifOpen] = useState(false);
   const bellRef = useRef<HTMLDivElement>(null);
   /** Hide in-room order rows without changing order status (until status changes). */
@@ -96,12 +198,41 @@ export function ManagementShell({ children }: { children: ReactNode }) {
 
   const [livePopup, setLivePopup] = useState<LivePopup | null>(null);
   const liveQueue = useRef<LivePopup[]>([]);
-  const snapTick = useRef(0);
-  const snap = useRef<{ orders: Set<string>; sessions: Set<string> } | null>(null);
+
+  /**
+   * Only enqueue “live” events that happen after this tab mounted (with a small skew),
+   * so a full page refresh does not replay popups for old orders / sessions / codes.
+   */
+  const pageMountAtRef = useRef(Date.now());
+  /** Allow events up to this many ms *before* mount (clock skew / same-tick ordering). */
+  const LIVE_EVENT_SKEW_MS = 4000;
+  const shownLiveOrderIdsRef = useRef(new Set<string>());
+  const shownLiveSessionKeysRef = useRef(new Set<string>());
+  /** Same physical stay can surface with different `sessionStartedAt` (client vs server). */
+  const GUEST_SESSION_START_JITTER_MS = 60_000;
+  const seenCheckInIdsRef = useRef<Set<string>>(new Set());
+
+  /** Re-apply saved theme as early as possible on each management route (shell often remounts per page). */
+  useLayoutEffect(() => {
+    if (!pathname.startsWith("/management")) return;
+    try {
+      const raw = localStorage.getItem(DEMO_STORAGE_KEY);
+      if (raw) {
+        const j = JSON.parse(raw) as { theme?: string };
+        if (j.theme === "light" || j.theme === "dark") {
+          document.documentElement.setAttribute("data-theme", j.theme);
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [pathname]);
 
   const enqueueLive = useCallback((ev: LivePopup) => {
     setLivePopup((cur) => {
       if (!cur) return ev;
+      if (livePopupMatches(cur, ev)) return cur;
+      if (liveQueue.current.some((q) => livePopupMatches(q, ev))) return cur;
       liveQueue.current.push(ev);
       return cur;
     });
@@ -116,44 +247,124 @@ export function ManagementShell({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    snapTick.current += 1;
-    const orderIds = new Set(orders.filter((o) => o.status === "processing").map((o) => o.id));
-    const sessionKeys = new Set(
-      rooms
-        .filter((r) => r.status === "occupied" && r.sessionStartedAt)
-        .map((r) => `${r.number}-${r.sessionStartedAt}`)
-    );
+    const now = Date.now();
+    const windowStart = pageMountAtRef.current - LIVE_EVENT_SKEW_MS;
+    /** Ignore timestamps clearly in the future (seed data / clock skew). */
+    const windowEnd = now + 15_000;
 
-    if (snapTick.current <= 2) {
-      snap.current = { orders: orderIds, sessions: sessionKeys };
-      return;
+    for (const o of orders) {
+      if (o.status !== "processing") continue;
+      if (o.createdAt < windowStart || o.createdAt > windowEnd) continue;
+      if (shownLiveOrderIdsRef.current.has(o.id)) continue;
+      shownLiveOrderIdsRef.current.add(o.id);
+      enqueueLive({ kind: "order", order: o });
     }
 
-    if (!snap.current) snap.current = { orders: new Set(), sessions: new Set() };
-
-    for (const id of orderIds) {
-      if (!snap.current.orders.has(id)) {
-        const order = orders.find((o) => o.id === id);
-        if (order) enqueueLive({ kind: "order", order });
+    for (const r of rooms) {
+      if (r.status !== "occupied" || r.sessionStartedAt == null) {
+        clearGuestSessionLiveDedupe(r.number);
+        continue;
       }
-    }
-    for (const key of sessionKeys) {
-      if (!snap.current.sessions.has(key)) {
-        const room = rooms.find(
-          (r) => r.status === "occupied" && r.sessionStartedAt && `${r.number}-${r.sessionStartedAt}` === key
-        );
-        if (room) {
-          enqueueLive({
-            kind: "session",
-            roomNumber: room.number,
-            durationHours: room.durationHours,
-          });
-        }
-      }
-    }
+      const key = `${r.number}-${r.sessionStartedAt}`;
+      if (r.sessionStartedAt < windowStart || r.sessionStartedAt > windowEnd) continue;
+      if (shownLiveSessionKeysRef.current.has(key)) continue;
 
-    snap.current = { orders: orderIds, sessions: sessionKeys };
+      if (!claimGuestSessionLivePopup(r.number, r.sessionStartedAt, GUEST_SESSION_START_JITTER_MS)) {
+        shownLiveSessionKeysRef.current.add(key);
+        continue;
+      }
+
+      shownLiveSessionKeysRef.current.add(key);
+      enqueueLive({
+        kind: "session",
+        roomNumber: r.number,
+        durationHours: r.durationHours,
+      });
+    }
   }, [orders, rooms, enqueueLive]);
+
+  /** Guest tablet / other tabs update the DB — poll so rooms & orders stay current and popups fire. */
+  useEffect(() => {
+    if (!pathname.startsWith("/management")) return;
+    if (!useDatabase) return;
+
+    let cancelled = false;
+    async function tick() {
+      if (cancelled || document.visibilityState !== "visible") return;
+      await refreshDomainFromServer();
+    }
+
+    const id = setInterval(() => void tick(), 3500);
+    void tick();
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [pathname, useDatabase, refreshDomainFromServer]);
+
+  /** New guest tablet room-entry codes → same full-screen queue as orders / sessions. */
+  useEffect(() => {
+    if (!pathname.startsWith("/management")) return;
+
+    let cancelled = false;
+    const windowStart = pageMountAtRef.current - LIVE_EVENT_SKEW_MS;
+
+    async function pollCheckIns() {
+      if (cancelled || document.visibilityState !== "visible") return;
+      const windowEnd = Date.now() + 15_000;
+      let rows: {
+        id: string;
+        roomNumber: string;
+        code: string;
+        expiresAt: number;
+        createdAt: number;
+      }[] = [];
+      try {
+        if (useDatabase) {
+          rows = await listRoomCheckInCodes();
+        } else {
+          rows = listActiveCheckInCodesLocal().map((r) => ({
+            id: r.id,
+            roomNumber: r.roomNumber,
+            code: r.code,
+            expiresAt: r.expiresAt,
+            createdAt: r.createdAt,
+          }));
+        }
+      } catch {
+        return;
+      }
+
+      const activeIds = new Set(rows.map((r) => r.id));
+      for (const id of seenCheckInIdsRef.current) {
+        if (!activeIds.has(id)) seenCheckInIdsRef.current.delete(id);
+      }
+
+      for (const r of rows) {
+        if (seenCheckInIdsRef.current.has(r.id)) continue;
+        if (r.createdAt < windowStart || r.createdAt > windowEnd) {
+          seenCheckInIdsRef.current.add(r.id);
+          continue;
+        }
+        seenCheckInIdsRef.current.add(r.id);
+        enqueueLive({
+          kind: "checkin",
+          id: r.id,
+          roomNumber: r.roomNumber,
+          code: r.code,
+          expiresAt: r.expiresAt,
+          createdAt: r.createdAt,
+        });
+      }
+    }
+
+    const id = setInterval(() => void pollCheckIns(), useDatabase ? 2800 : 2000);
+    void pollCheckIns();
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [pathname, useDatabase, enqueueLive]);
 
   useEffect(() => {
     setDismissedOrderNotifs((prev) => {
@@ -227,8 +438,21 @@ export function ManagementShell({ children }: { children: ReactNode }) {
 
   const notifCount = visibleNotifications.length;
 
+  const showManagementBootstrap =
+    pathname.startsWith("/management") && useDatabase && !initialDomainHydrated;
+
   return (
-    <div className="flex min-h-dvh bg-[var(--background)]">
+    <div className="relative flex min-h-dvh bg-[var(--background)]">
+      {showManagementBootstrap && (
+        <div
+          className="fixed inset-0 z-[220] flex flex-col items-center justify-center gap-6 bg-[var(--background)] px-6"
+          role="status"
+          aria-live="polite"
+        >
+          <SpinnerWheel className="h-16 w-16 shrink-0 text-[var(--gold)] motion-reduce:animate-none" />
+          <p className="max-w-xs text-center text-sm font-semibold text-[var(--muted)]">{t(locale, "mgmtBootLoading")}</p>
+        </div>
+      )}
       {/* Sidebar */}
       <aside className="sticky top-0 flex h-dvh w-56 shrink-0 flex-col border-r border-[var(--border)] bg-[var(--card)]">
         <div className="flex items-center gap-3 border-b border-[var(--border)] px-4 py-5">
@@ -399,46 +623,103 @@ export function ManagementShell({ children }: { children: ReactNode }) {
         ))}
 
         {/* Main content */}
-        <main className="flex-1">{children}</main>
+        <main className="flex-1">
+          {useDatabase && (databaseSyncing || databaseSyncError) ? (
+            <div
+              className="border-b border-amber-500/40 bg-amber-500/15 px-4 py-2 text-center text-xs font-semibold text-amber-950 dark:text-amber-100"
+              role="status"
+            >
+              {databaseSyncing ? "Saving to database…" : null}
+              {databaseSyncError ? databaseSyncError : null}
+            </div>
+          ) : null}
+          {children}
+        </main>
       </div>
 
       {livePopup && (
         <div
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 p-4 backdrop-blur-md sm:p-8"
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 p-3 backdrop-blur-lg sm:p-6"
           role="dialog"
           aria-modal="true"
           aria-labelledby="live-popup-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) dismissLive();
+          }}
         >
-          <div className="animate-fade-in-scale relative w-full max-w-lg rounded-3xl border-2 border-[var(--gold)]/40 bg-[var(--card)] p-8 shadow-2xl shadow-[var(--gold)]/20 sm:p-10">
+          <div className="animate-fade-in-scale relative max-h-[min(92dvh,900px)] w-full max-w-3xl overflow-y-auto rounded-[2rem] border-[3px] border-[var(--gold)]/50 bg-[var(--card)] p-6 shadow-2xl shadow-[var(--gold)]/25 sm:p-12 md:p-14">
             {livePopup.kind === "session" ? (
               <>
-                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-[var(--gold)]/15 text-[var(--gold)]">
-                  <svg className="h-11 w-11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-3xl bg-[var(--gold)]/20 text-[var(--gold)] sm:h-28 sm:w-28">
+                  <svg className="h-14 w-14 sm:h-16 sm:w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                   </svg>
                 </div>
-                <h2 id="live-popup-title" className="mt-6 text-center text-2xl font-black tracking-tight text-[var(--gold)] sm:text-3xl">
+                <h2 id="live-popup-title" className="mt-8 text-center text-3xl font-black tracking-tight text-[var(--gold)] sm:text-4xl md:text-5xl">
                   {t(locale, "mgmtLiveGuestSessionTitle")}
                 </h2>
-                <p className="mt-3 text-center text-lg text-[var(--foreground)]">{t(locale, "mgmtLiveGuestSessionLead")}</p>
-                <p className="mt-4 text-center text-5xl font-black tabular-nums text-[var(--gold)] sm:text-6xl">{livePopup.roomNumber}</p>
+                <p className="mt-4 text-center text-xl text-[var(--foreground)] sm:text-2xl">{t(locale, "mgmtLiveGuestSessionLead")}</p>
+                <p className="mt-6 text-center text-6xl font-black tabular-nums leading-none text-[var(--gold)] sm:text-7xl md:text-8xl">{livePopup.roomNumber}</p>
                 {livePopup.durationHours != null && livePopup.durationHours > 0 && (
-                  <p className="mt-3 text-center text-sm text-[var(--muted)]">
+                  <p className="mt-5 text-center text-base text-[var(--muted)] sm:text-lg">
                     {livePopup.durationHours} {t(locale, "mgmtHours")} · {t(locale, "mgmtLiveGuestSessionHint")}
                   </p>
                 )}
-                <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+                <div className="mt-10 flex flex-col gap-4 sm:mt-12 sm:flex-row sm:justify-center">
                   <Link
                     href="/management/rooms"
                     onClick={dismissLive}
-                    className="flex min-h-[52px] flex-1 items-center justify-center rounded-2xl border-2 border-[var(--gold)]/50 bg-[var(--gold)]/10 px-6 py-4 text-center text-base font-bold text-[var(--gold)] transition hover:bg-[var(--gold)]/20"
+                    className="flex min-h-14 flex-1 items-center justify-center rounded-2xl border-2 border-[var(--gold)]/60 bg-[var(--gold)]/10 px-8 py-4 text-center text-lg font-bold text-[var(--gold)] transition hover:bg-[var(--gold)]/20"
                   >
                     {t(locale, "mgmtLiveViewRooms")}
                   </Link>
                   <button
                     type="button"
                     onClick={dismissLive}
-                    className="min-h-[52px] flex-1 rounded-2xl bg-[var(--gold)] px-6 py-4 text-base font-bold text-[var(--dark)] shadow-lg transition hover:bg-[var(--gold-light)] active:scale-[0.99]"
+                    className="min-h-14 flex-1 rounded-2xl bg-[var(--gold)] px-8 py-4 text-lg font-bold text-[var(--dark)] shadow-xl transition hover:bg-[var(--gold-light)] active:scale-[0.99]"
+                  >
+                    {t(locale, "mgmtLiveDismiss")}
+                  </button>
+                </div>
+              </>
+            ) : livePopup.kind === "order" ? (
+              <>
+                <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-3xl bg-emerald-500/20 text-emerald-500 sm:h-28 sm:w-28">
+                  <svg className="h-14 w-14 sm:h-16 sm:w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                </div>
+                <h2 id="live-popup-title" className="mt-8 text-center text-3xl font-black tracking-tight text-[var(--gold)] sm:text-4xl md:text-5xl">
+                  {t(locale, "mgmtLiveNewOrderTitle")}
+                </h2>
+                <p className="mt-4 text-center text-xl font-bold text-[var(--foreground)] sm:text-2xl">
+                  {t(locale, "mgmtRoom")} {livePopup.order.roomNumber}
+                </p>
+                <ul className="mt-8 max-h-[min(40vh,320px)] space-y-3 overflow-y-auto rounded-2xl border-2 border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6">
+                  {livePopup.order.items.map((item) => (
+                    <li key={item.productId} className="flex justify-between gap-4 text-base sm:text-lg">
+                      <span className="text-[var(--foreground)]">
+                        {item.qty}× {item.name}
+                      </span>
+                      <span className="shrink-0 font-semibold text-[var(--muted)]">{formatSrd(item.qty * item.unitPrice)}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-6 text-right text-2xl font-black text-[var(--gold)] sm:text-3xl">
+                  {formatSrd(livePopup.order.items.reduce((s, i) => s + i.qty * i.unitPrice, 0))}
+                </p>
+                <div className="mt-10 flex flex-col gap-4 sm:mt-12 sm:flex-row sm:justify-center">
+                  <Link
+                    href="/management/orders"
+                    onClick={dismissLive}
+                    className="flex min-h-14 flex-1 items-center justify-center rounded-2xl border-2 border-[var(--gold)]/60 bg-[var(--gold)]/10 px-8 py-4 text-center text-lg font-bold text-[var(--gold)] transition hover:bg-[var(--gold)]/20"
+                  >
+                    {t(locale, "mgmtLiveViewOrders")}
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={dismissLive}
+                    className="min-h-14 flex-1 rounded-2xl bg-[var(--gold)] px-8 py-4 text-lg font-bold text-[var(--dark)] shadow-xl transition hover:bg-[var(--gold-light)] active:scale-[0.99]"
                   >
                     {t(locale, "mgmtLiveDismiss")}
                   </button>
@@ -446,42 +727,46 @@ export function ManagementShell({ children }: { children: ReactNode }) {
               </>
             ) : (
               <>
-                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-500">
-                  <svg className="h-11 w-11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-3xl bg-sky-500/20 text-sky-500 sm:h-28 sm:w-28">
+                  <svg className="h-14 w-14 sm:h-16 sm:w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                   </svg>
                 </div>
-                <h2 id="live-popup-title" className="mt-6 text-center text-2xl font-black tracking-tight text-[var(--gold)] sm:text-3xl">
-                  {t(locale, "mgmtLiveNewOrderTitle")}
+                <h2 id="live-popup-title" className="mt-8 text-center text-3xl font-black tracking-tight text-[var(--gold)] sm:text-4xl md:text-5xl">
+                  {t(locale, "mgmtCheckInCodesTitle")}
                 </h2>
-                <p className="mt-2 text-center text-lg font-bold text-[var(--foreground)]">
-                  {t(locale, "mgmtRoom")} {livePopup.order.roomNumber}
+                <p className="mt-4 text-center text-base text-[var(--muted)] sm:text-lg">{t(locale, "mgmtCheckInCodesSub")}</p>
+                {!useDatabase ? (
+                  <p className="mt-3 text-center text-xs font-semibold text-amber-700 dark:text-amber-300">
+                    {t(locale, "mgmtCheckInLocalHint")}
+                  </p>
+                ) : null}
+                <p className="mt-6 text-center text-sm font-bold uppercase tracking-wider text-[var(--muted)]">
+                  {t(locale, "mgmtRoom")} {livePopup.roomNumber}
                 </p>
-                <ul className="mt-6 max-h-48 space-y-2 overflow-y-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
-                  {livePopup.order.items.map((item) => (
-                    <li key={item.productId} className="flex justify-between text-sm">
-                      <span className="text-[var(--foreground)]">
-                        {item.qty}× {item.name}
-                      </span>
-                      <span className="font-semibold text-[var(--muted)]">{formatSrd(item.qty * item.unitPrice)}</span>
-                    </li>
-                  ))}
-                </ul>
-                <p className="mt-4 text-right text-lg font-black text-[var(--gold)]">
-                  {formatSrd(livePopup.order.items.reduce((s, i) => s + i.qty * i.unitPrice, 0))}
+                <p className="mt-3 text-center font-mono text-5xl font-black tracking-[0.25em] text-[var(--gold)] sm:text-6xl md:text-7xl">
+                  {livePopup.code.slice(0, 3)}-{livePopup.code.slice(3)}
                 </p>
-                <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+                <p className="mt-6 text-center text-sm text-[var(--muted)]">
+                  {t(locale, "mgmtCheckInExpires")}:{" "}
+                  {new Date(livePopup.expiresAt).toLocaleString(bcp47ForLocale(locale), {
+                    hour: "numeric",
+                    minute: "2-digit",
+                    second: "2-digit",
+                  })}
+                </p>
+                <div className="mt-10 flex flex-col gap-4 sm:mt-12 sm:flex-row sm:justify-center">
                   <Link
-                    href="/management/orders"
+                    href="/management/rooms"
                     onClick={dismissLive}
-                    className="flex min-h-[52px] flex-1 items-center justify-center rounded-2xl border-2 border-[var(--gold)]/50 bg-[var(--gold)]/10 px-6 py-4 text-center text-base font-bold text-[var(--gold)] transition hover:bg-[var(--gold)]/20"
+                    className="flex min-h-14 flex-1 items-center justify-center rounded-2xl border-2 border-[var(--gold)]/60 bg-[var(--gold)]/10 px-8 py-4 text-center text-lg font-bold text-[var(--gold)] transition hover:bg-[var(--gold)]/20"
                   >
-                    {t(locale, "mgmtLiveViewOrders")}
+                    {t(locale, "mgmtLiveViewRooms")}
                   </Link>
                   <button
                     type="button"
                     onClick={dismissLive}
-                    className="min-h-[52px] flex-1 rounded-2xl bg-[var(--gold)] px-6 py-4 text-base font-bold text-[var(--dark)] shadow-lg transition hover:bg-[var(--gold-light)] active:scale-[0.99]"
+                    className="min-h-14 flex-1 rounded-2xl bg-[var(--gold)] px-8 py-4 text-lg font-bold text-[var(--dark)] shadow-xl transition hover:bg-[var(--gold-light)] active:scale-[0.99]"
                   >
                     {t(locale, "mgmtLiveDismiss")}
                   </button>

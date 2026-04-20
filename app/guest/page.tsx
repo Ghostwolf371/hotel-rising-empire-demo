@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { ProductThumb } from "@/components/product-thumb";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -328,7 +329,13 @@ export default function GuestMainPage() {
                     className="flex w-full touch-manipulation flex-col overflow-hidden rounded-2xl text-left active:scale-[0.97]"
                   >
                     <div className="relative aspect-[4/3] overflow-hidden bg-[var(--surface)]">
-                      <Image src={p.image} alt={name} fill className="object-cover transition-transform duration-300 group-hover:scale-105" sizes="(max-width: 639px) 100vw, (max-width: 1279px) 50vw, 33vw" />
+                      <ProductThumb
+                        src={p.image}
+                        alt={name}
+                        fill
+                        className="object-cover transition-transform duration-300 group-hover:scale-105"
+                        sizes="(max-width: 639px) 100vw, (max-width: 1279px) 50vw, 33vw"
+                      />
                     </div>
                     <div className="flex flex-1 flex-col p-4">
                       <h3 className="text-base font-bold text-[var(--foreground)]">{name}</h3>
