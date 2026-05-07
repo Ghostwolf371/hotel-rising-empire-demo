@@ -171,7 +171,7 @@ export async function applyGuestSessionStart(
   roomNumber: string,
   durationHours: number,
 ) {
-  const h = Math.min(168, Math.max(1, Math.round(durationHours)));
+  const h = Math.max(4, Math.round(durationHours));
   const now = Date.now();
   const ms = h * 60 * 60 * 1000;
   await updateRoomByNumber(roomNumber, {
@@ -204,7 +204,7 @@ export async function applyManagementRoomSessionStart(
   roomId: string,
   durationHours: number,
 ) {
-  const h = Math.min(168, Math.max(1, Math.round(durationHours)));
+  const h = Math.max(4, Math.round(durationHours));
   const now = Date.now();
   const ms = h * 60 * 60 * 1000;
   await updateRoomById(roomId, {

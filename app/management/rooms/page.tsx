@@ -53,12 +53,12 @@ function roomStatusToggleClass(value: RoomStatusToggle, selected: boolean): stri
   return `${neutral} hover:bg-red-500/14 hover:text-red-900 hover:ring-red-500/30 active:bg-red-600/20 active:text-red-950 active:ring-red-600/35 dark:hover:text-red-300 dark:active:text-red-200`;
 }
 
-const DURATION_MAX = 24;
-const QUICK_HOURS = [1, 2, 3, 4, 6, 8, 12, 24] as const;
+const DURATION_MAX = 48;
+const QUICK_HOURS = [2, 4, 6, 8, 12, 24] as const;
 
 function clampDuration(n: number): number {
-  if (!Number.isFinite(n)) return 2;
-  return Math.min(DURATION_MAX, Math.max(1, Math.round(n)));
+  if (!Number.isFinite(n)) return 4;
+  return Math.max(4, Math.round(n));
 }
 
 function RoomModal({ room, onClose }: { room: Room; onClose: () => void }) {
@@ -181,8 +181,7 @@ function RoomModal({ room, onClose }: { room: Room; onClose: () => void }) {
                           id={`duration-${room.id}`}
                           type="number"
                           inputMode="numeric"
-                          min={1}
-                          max={DURATION_MAX}
+                          min={4}
                           value={durationHours}
                           onChange={(e) => {
                             const v = Number.parseInt(e.target.value, 10);
@@ -196,14 +195,14 @@ function RoomModal({ room, onClose }: { room: Room; onClose: () => void }) {
                       <div className="relative mt-5 px-0.5">
                         <input
                           type="range"
-                          min={1}
+                          min={4}
                           max={DURATION_MAX}
                           step={1}
                           value={durationHours}
                           onChange={(e) => setDurationHours(Number(e.target.value))}
                           className="gold-slider"
                           style={
-                            { "--slider-pct": `${((durationHours - 1) / (DURATION_MAX - 1)) * 100}%` } as CSSProperties
+                            { "--slider-pct": `${((durationHours - 4) / (DURATION_MAX - 4)) * 100}%` } as CSSProperties
                           }
                         />
                       </div>
