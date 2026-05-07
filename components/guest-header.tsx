@@ -5,7 +5,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LanguageToggle } from "@/components/language-toggle";
 import { useDemo } from "@/contexts/demo-context";
+import {
+  GUEST_MENU_STICKY_PAD_INSET,
+  GUEST_MENU_STICKY_SHEET,
+} from "@/lib/guest-toolbar-styles";
 import { t } from "@/lib/i18n";
+
+const guestMainToolbarClass = `sticky top-0 z-20 ${GUEST_MENU_STICKY_SHEET} ${GUEST_MENU_STICKY_PAD_INSET}`;
+
+const iconChromeClass =
+  "flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--muted)] transition hover:border-[var(--gold)]/30 hover:text-[var(--gold)]";
 
 export function GuestHeader({
   showCart = true,
@@ -18,19 +27,49 @@ export function GuestHeader({
   const cartCount = cart.reduce((s, c) => s + c.qty, 0);
 
   return (
-    <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] bg-[var(--card)]/95 px-4 py-3 backdrop-blur-md sm:px-6 sm:py-4">
-      <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-        <Image src="/logo.png" alt="Empire Apartments" width={44} height={44} className="h-10 w-10 shrink-0 rounded-lg sm:h-11 sm:w-11" />
-        <span className="truncate text-lg font-black uppercase tracking-wider text-[var(--gold)] sm:text-xl">
+    <header className={guestMainToolbarClass}>
+      <div className="flex h-11 min-w-0 items-center gap-2 sm:gap-2.5">
+        <Image
+          src="/logo.png"
+          alt={t(locale, "brand")}
+          width={40}
+          height={40}
+          className="h-9 w-9 shrink-0 self-center rounded-lg sm:h-10 sm:w-10"
+        />
+        <span className="truncate text-sm font-black uppercase leading-none tracking-[0.12em] text-[var(--gold)] sm:text-base sm:tracking-[0.15em]">
           {t(locale, "brand")}
         </span>
       </div>
-      <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
-        <LanguageToggle variant="guest" />
+
+      <div className="ml-auto flex h-11 min-h-[44px] shrink-0 items-center gap-2 sm:gap-3">
+        <LanguageToggle variant="shell" />
+        {showCart && (
+          <Link
+            href="/guest/cart"
+            aria-current={onCartPage ? "page" : undefined}
+            className={`relative flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface)] transition hover:border-[var(--gold)]/30 ${
+              cartCount > 0 ? "text-[var(--gold)]" : "text-[var(--muted)] hover:text-[var(--gold)]"
+            }`}
+            aria-label={t(locale, "cart")}
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+              />
+            </svg>
+            {cartCount > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--gold)] px-1 text-[10px] font-black leading-none text-[var(--dark)]">
+                {cartCount > 99 ? "99+" : cartCount}
+              </span>
+            )}
+          </Link>
+        )}
         <button
           type="button"
           onClick={toggleTheme}
-          className="flex h-11 w-11 items-center justify-center rounded-xl border border-[var(--border-light)] text-[var(--muted)] transition hover:bg-[var(--card-hover)] hover:text-[var(--gold)]"
+          className={iconChromeClass}
           title={theme === "dark" ? t(locale, "lightMode") : t(locale, "darkMode")}
         >
           {theme === "dark" ? (
@@ -43,44 +82,6 @@ export function GuestHeader({
             </svg>
           )}
         </button>
-        {showCart && (
-          <Link
-            href="/guest/cart"
-            aria-current={onCartPage ? "page" : undefined}
-            className={`relative flex h-11 items-center gap-2 rounded-xl border px-4 text-sm font-bold transition sm:px-5 sm:text-base ${
-              onCartPage
-                ? "border-[var(--gold)]/40 bg-[var(--gold)]/15 text-[var(--gold)] shadow-[0_0_20px_-4px_rgba(201,165,78,0.35)]"
-                : "border-[var(--border-light)] text-[var(--gold)] hover:border-[var(--gold)]/25 hover:bg-[var(--card-hover)]"
-            }`}
-          >
-            <svg
-              className="h-5 w-5 shrink-0 sm:h-6 sm:w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              aria-hidden
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-              />
-            </svg>
-            <span className="hidden sm:inline">{t(locale, "cart")}</span>
-            {cartCount > 0 && (
-              <span
-                className={`flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-xs font-black ${
-                  onCartPage
-                    ? "bg-[var(--gold)] text-[var(--dark)]"
-                    : "border border-[var(--gold)]/50 bg-[var(--dark)] text-[var(--gold)]"
-                }`}
-              >
-                {cartCount > 99 ? "99+" : cartCount}
-              </span>
-            )}
-          </Link>
-        )}
       </div>
     </header>
   );

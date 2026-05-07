@@ -1,8 +1,10 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
+import { GuestFlowHeader, guestFlowThemeButtonClassName } from "@/components/guest-flow-header";
 import { LanguageToggle } from "@/components/language-toggle";
 import { useDemo } from "@/contexts/demo-context";
 import { formatSrd } from "@/lib/format";
@@ -14,6 +16,15 @@ type DurationChoice = (typeof PRESETS)[number] | "custom";
 
 const CUSTOM_HOURS_MAX = 24;
 
+const choiceEase = "[transition-timing-function:cubic-bezier(0.22,1,0.36,1)]";
+const presetBtnBase =
+  "group relative min-h-[7.5rem] overflow-hidden rounded-2xl border-2 py-5 text-center sm:min-h-[9rem] sm:rounded-3xl sm:py-8 " +
+  "motion-safe:duration-450 motion-safe:ease-out " +
+  "transition-[border-color,background-color,color,box-shadow,transform] " +
+  "motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-lg " +
+  "focus-visible:-translate-y-px focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--gold)]/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] " +
+  "active:translate-y-0 motion-safe:active:transition-transform motion-safe:active:duration-150";
+
 function clampHours(n: number): number {
   if (!Number.isFinite(n)) return 1;
   return Math.min(CUSTOM_HOURS_MAX, Math.max(1, Math.round(n)));
@@ -23,7 +34,7 @@ function DurationContent() {
   const router = useRouter();
   const params = useSearchParams();
   const room = params.get("room") || DEMO_ROOM;
-  const { hourlyRate, locale, theme, toggleTheme } = useDemo();
+  const { hourlyRate, locale, theme, toggleTheme, dispatch } = useDemo();
   const [choice, setChoice] = useState<DurationChoice>(2);
   const [customHours, setCustomHours] = useState(12);
   const [visible, setVisible] = useState(false);
@@ -42,10 +53,13 @@ function DurationContent() {
     return t(locale, "hours3");
   }
 
-  function goToWelcome() {
-    router.push(
-      `/guest/welcome?room=${encodeURIComponent(room)}&hours=${effectiveHours}`
-    );
+  function goToStart() {
+    dispatch({
+      type: "START_GUEST_SESSION",
+      roomNumber: room,
+      durationHours: effectiveHours,
+    });
+    router.push("/guest/start");
   }
 
   return (
@@ -64,20 +78,28 @@ function DurationContent() {
         }}
       />
 
-      {/* Top bar — in document flow + safe-area so text never sits under the OS notch */}
-      <header className="relative z-20 flex shrink-0 items-center justify-between gap-3 border-b border-[var(--border)] bg-[var(--card)]/95 px-4 py-3 shadow-sm backdrop-blur-md sm:px-6 sm:py-4" style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}>
-        <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
-          <Image src="/logo.png" alt="Empire Apartments" width={40} height={40} className="h-9 w-9 shrink-0 rounded-lg shadow-md sm:h-10 sm:w-10" />
-          <span className="truncate text-sm font-black uppercase tracking-[0.12em] text-[var(--foreground)] sm:text-base sm:tracking-[0.15em]">
+      <GuestFlowHeader>
+        <Link
+          href="/"
+          className="flex h-11 min-w-0 items-center gap-3 transition opacity-90 hover:opacity-100"
+        >
+          <Image
+            src="/logo.png"
+            alt={t(locale, "brand")}
+            width={40}
+            height={40}
+            className="h-9 w-9 shrink-0 self-center rounded-lg shadow-lg sm:h-10 sm:w-10"
+          />
+          <span className="truncate text-sm font-black uppercase leading-none tracking-[0.2em] text-[var(--gold)]">
             {t(locale, "brand")}
           </span>
-        </div>
-        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+        </Link>
+        <div className="flex h-11 min-h-[44px] shrink-0 items-center gap-2">
           <LanguageToggle variant="landing" />
           <button
             type="button"
             onClick={toggleTheme}
-            className="flex h-11 w-11 min-h-[44px] min-w-[44px] touch-manipulation items-center justify-center rounded-full border border-[var(--border-light)] bg-[var(--surface)] text-[var(--foreground)] transition hover:border-[var(--gold)]/40 hover:text-[var(--gold)]"
+            className={guestFlowThemeButtonClassName}
             aria-label={theme === "dark" ? t(locale, "lightMode") : t(locale, "darkMode")}
           >
             {theme === "dark" ? (
@@ -91,7 +113,7 @@ function DurationContent() {
             )}
           </button>
         </div>
-      </header>
+      </GuestFlowHeader>
 
       {/* Main content */}
       <div className="relative z-10 flex min-h-0 w-full flex-1 flex-col items-center justify-center px-4 py-8 sm:px-6 sm:py-12">
@@ -119,96 +141,148 @@ function DurationContent() {
             {t(locale, "chooseStay")}
           </h1>
 
-          {/* 1 / 2 / 3 hour presets */}
+          {/* 1 / 2 / 3 hour presets — height + opacity tween when swapping with custom */}
           <div
-            className="mt-10 grid w-full grid-cols-3 gap-2 sm:gap-4"
-            style={{ opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(20px)", transition: "all 0.8s ease-out 0.45s" }}
+            className={`duration-choice-collapsible-panel w-full overflow-hidden ${
+              choice === "custom"
+                ? "pointer-events-none mt-0 [grid-template-rows:0fr] opacity-0"
+                : `mt-10 opacity-100 [grid-template-rows:1fr] ${visible ? "[animation:duration-choice-in_0.55s_ease-out_0.4s_both]" : ""}`
+            }`}
+            aria-hidden={choice === "custom"}
           >
-            {PRESETS.map((h) => (
-              <button
-                key={h}
-                type="button"
-                onClick={() => setChoice(h)}
-                className={`group relative min-h-[7.5rem] overflow-hidden rounded-2xl border-2 py-5 text-center transition-all duration-300 active:scale-[0.98] sm:min-h-[9rem] sm:rounded-3xl sm:py-8 ${
-                  choice === h
-                    ? "border-[var(--gold)] bg-[var(--gold)] text-black shadow-xl shadow-[var(--gold)]/25"
-                    : "border-[var(--border-light)] bg-[var(--card)]/80 text-[var(--foreground)] backdrop-blur-md hover:border-[var(--gold)]/40 hover:bg-[var(--card)]"
-                }`}
+            <div className="min-h-0">
+              <div
+                className="grid w-full grid-cols-3 gap-2 sm:gap-4"
+                style={{ opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(20px)", transition: "opacity 0.8s ease-out 0.45s, transform 0.8s ease-out 0.45s" }}
               >
-                {choice === h && (
-                  <div className="absolute inset-0 bg-gradient-to-br from-[var(--gold-light)] via-[var(--gold)] to-[var(--gold)] opacity-100" />
-                )}
-                <div className="relative flex h-full flex-col items-center justify-center px-1">
-                  <span className={`block text-[10px] font-bold uppercase leading-tight tracking-wider sm:text-xs ${choice === h ? "text-black/45" : "text-[var(--muted)]"}`}>
-                    {t(locale, "durationEyebrow")}
-                  </span>
-                  <span className="mt-1.5 block text-xl font-black leading-tight sm:mt-2 sm:text-3xl">{presetLabel(h)}</span>
-                  <span className={`mt-1.5 block text-xs font-bold tabular-nums sm:mt-2 sm:text-sm ${choice === h ? "text-black/55" : "text-[var(--muted)]"}`}>
-                    {formatSrd(h * hourlyRate)}
-                  </span>
-                </div>
-              </button>
-            ))}
+                {PRESETS.map((h) => (
+                  <button
+                    key={h}
+                    type="button"
+                    onClick={() => setChoice(h)}
+                    className={`${presetBtnBase} active:scale-[0.985] motion-safe:active:shadow-md ${
+                      choice === h
+                        ? "-translate-y-0.5 border-[var(--gold)] bg-[var(--gold)] text-black shadow-xl shadow-[var(--gold)]/25 motion-safe:-translate-y-px"
+                        : "border-[var(--border-light)] bg-[var(--card)]/80 text-[var(--foreground)] backdrop-blur-md hover:border-[var(--gold)]/55 motion-safe:hover:shadow-[var(--gold)]/8"
+                    }`}
+                  >
+                    <div
+                      className={`pointer-events-none absolute inset-0 bg-gradient-to-br from-[var(--gold-light)] via-[var(--gold)] to-[var(--gold)] motion-safe:duration-450 motion-safe:ease-out transition-opacity ${choice === h ? "opacity-100" : "opacity-0 group-hover:opacity-[0.18]"}`}
+                      aria-hidden
+                    />
+                    <div className="relative flex h-full flex-col items-center justify-center px-1">
+                      <span
+                        className={`motion-safe:duration-350 block text-[10px] font-bold uppercase leading-tight tracking-wider motion-safe:ease-out transition-opacity sm:text-xs ${
+                          choice === h ? "text-black/45 opacity-100" : "text-[var(--muted)] motion-safe:group-hover:text-[var(--foreground)] opacity-95"
+                        }`}
+                      >
+                        {t(locale, "durationEyebrow")}
+                      </span>
+                      <span className={`mt-1.5 motion-safe:duration-350 block text-xl font-black leading-tight motion-safe:ease-out transition-transform sm:mt-2 sm:text-3xl ${choice === h ? "" : "motion-safe:group-hover:scale-[1.03]"}`}>
+                        {presetLabel(h)}
+                      </span>
+                      <span className={`mt-1.5 block text-xs font-bold tabular-nums motion-safe:duration-300 motion-safe:ease-out sm:mt-2 sm:text-sm ${choice === h ? "text-black/55" : "text-[var(--muted)]"}`}>{formatSrd(h * hourlyRate)}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Custom duration — full-width bar */}
           <button
             type="button"
-            onClick={() => setChoice("custom")}
-            className={`mt-3 flex w-full min-h-[3.5rem] items-center justify-between gap-3 rounded-2xl border-2 px-4 py-3 text-left transition-all duration-300 active:scale-[0.99] sm:mt-4 sm:min-h-[4rem] sm:rounded-2xl sm:px-5 sm:py-4 ${
-              choice === "custom"
-                ? "border-[var(--gold)] bg-[var(--gold)] text-black shadow-lg shadow-[var(--gold)]/20"
-                : "border-[var(--border-light)] bg-[var(--card)]/85 text-[var(--foreground)] backdrop-blur-md hover:border-[var(--gold)]/40"
-            }`}
-            style={{ opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(12px)", transition: "all 0.8s ease-out 0.5s" }}
+            onClick={() => (choice === "custom" ? setChoice(2) : setChoice("custom"))}
+            aria-expanded={choice === "custom"}
+            className={
+              `group touch-manipulation ${
+                choice === "custom" ? "motion-safe:-translate-y-px mt-10" : "mt-3 sm:mt-4"
+              } min-h-[3.5rem] w-full rounded-2xl border-2 px-4 py-3 text-left ` +
+              "motion-safe:duration-[480ms] sm:min-h-[4rem] sm:rounded-2xl sm:px-5 sm:py-4 " +
+              `[transition-property:background-color,border-color,box-shadow,transform,color,margin-top] ${choiceEase} ` +
+              "flex items-center justify-between gap-3 " +
+              "motion-safe:active:translate-y-[1px] motion-safe:active:scale-[0.992] motion-safe:active:transition-transform motion-safe:active:duration-150 " +
+              `${visible ? `${choice === "custom" ? "[animation:duration-choice-in_0.5s_ease-out_0.38s_both]" : "[animation:duration-choice-in_0.52s_ease-out_0.42s_both]"}` : ""}` +
+              (choice === "custom"
+                ? " border-[var(--gold)] bg-[var(--gold)] text-black shadow-lg shadow-[var(--gold)]/25 hover:brightness-[1.02] motion-safe:focus-visible:shadow-[0_18px_50px_-20px_color-mix(in_srgb,var(--gold)_72%,transparent)]"
+                : " border-[var(--border-light)] bg-[var(--card)]/85 text-[var(--foreground)] backdrop-blur-md hover:border-[var(--gold)]/50 motion-safe:hover:-translate-y-0.5 motion-safe:hover:bg-[var(--card)] motion-safe:hover:shadow-md")
+            }
           >
-            <div className="min-w-0 flex-1">
-              <span className={`block text-[10px] font-bold uppercase tracking-wider sm:text-xs ${choice === "custom" ? "text-black/45" : "text-[var(--muted)]"}`}>
+            <div className="min-w-0 flex-1 motion-safe:duration-450 motion-safe:ease-out transition-[opacity,filter]">
+              <span className={`block text-[10px] font-bold uppercase tracking-wider motion-safe:duration-300 sm:text-xs ${choice === "custom" ? "text-black/55" : "text-[var(--muted)] motion-safe:group-hover:text-[var(--foreground)]"}`}>
                 {t(locale, "durationCustom")}
               </span>
-              <span className={`mt-0.5 block text-sm font-semibold sm:text-base ${choice === "custom" ? "text-black/70" : "text-[var(--muted)]"}`}>
+              <span className={`mt-0.5 motion-safe:duration-300 block text-sm font-semibold motion-safe:ease-out sm:text-base ${choice === "custom" ? "font-semibold text-black/80" : "text-[var(--muted)] motion-safe:group-hover:text-[var(--foreground)]"}`}>
                 {t(locale, "durationCustomSub")}
               </span>
             </div>
             <span
-              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full sm:h-10 sm:w-10 ${
-                choice === "custom" ? "bg-black/15 text-black" : "bg-[var(--surface)] text-[var(--gold)]"
-              }`}
+              className={`motion-safe:duration-400 motion-safe:ease-[cubic-bezier(0.34,1.2,0.64,1)] relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full motion-safe:active:scale-[0.95] sm:h-10 sm:w-10 ${
+                choice === "custom"
+                  ? "bg-black/14 text-black motion-safe:[box-shadow:inset_0_1px_0_rgba(255,255,255,0.15)]"
+                  : "bg-[var(--surface)] text-[var(--gold)] motion-safe:[box-shadow:0_2px_8px_-4px_color-mix(in_srgb,var(--gold)_42%,transparent)]"
+              } transition-[background-color,box-shadow,transform,color] motion-safe:ease-out`}
               aria-hidden
             >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg
+                className={`motion-safe:ease-[cubic-bezier(0.34,1.2,0.64,1)] pointer-events-none absolute h-5 w-5 motion-safe:duration-[420ms] ${choice === "custom" ? "scale-[0.85] rotate-[180deg] opacity-0 blur-[2px]" : "scale-100 rotate-0 opacity-100 blur-0"} transition-[opacity,transform,filter]`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              <svg
+                className={`motion-safe:ease-[cubic-bezier(0.34,1.2,0.64,1)] pointer-events-none absolute h-5 w-5 motion-safe:duration-[420ms] ${choice === "custom" ? "scale-100 rotate-0 opacity-100 blur-0" : "scale-[0.82] rotate-[-95deg] opacity-0 blur-[2px]"} transition-[opacity,transform,filter]`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 12h12" />
               </svg>
             </span>
           </button>
 
-          {choice === "custom" && (
-            <div
-              className="mt-5 w-full rounded-2xl border border-[var(--border)] bg-[var(--card)]/90 px-5 py-4 backdrop-blur-sm"
-              style={{ opacity: visible ? 1 : 0, transition: "opacity 0.5s ease-out" }}
-            >
-              <label htmlFor="custom-hours" className="block text-left text-sm font-semibold text-[var(--foreground)]">
-                {t(locale, "customHoursLabel")}
-              </label>
-              <div className="mt-3 flex flex-wrap items-center gap-3">
-                <input
-                  id="custom-hours"
-                  type="number"
-                  inputMode="numeric"
-                  min={1}
-                  max={CUSTOM_HOURS_MAX}
-                  value={customHours}
-                  onChange={(e) => {
-                    const v = Number.parseInt(e.target.value, 10);
-                    setCustomHours(Number.isFinite(v) ? v : 1);
-                  }}
-                  onBlur={() => setCustomHours((h) => clampHours(h))}
-                  className="w-full min-w-[8rem] max-w-[12rem] rounded-xl border-2 border-[var(--border-light)] bg-[var(--surface)] px-4 py-3 text-center text-2xl font-black text-[var(--foreground)] outline-none transition focus:border-[var(--gold)] focus:ring-4 focus:ring-[var(--gold)]/20 sm:text-3xl"
-                />
-                <span className="text-lg font-bold text-[var(--muted)]">{t(locale, "hours")}</span>
+          {/* Custom hours panel */}
+          <div
+            className={`duration-choice-collapsible-panel mt-5 w-full overflow-hidden ${
+              choice === "custom"
+                ? "opacity-100 [grid-template-rows:1fr] motion-safe:delay-[40ms]"
+                : "pointer-events-none [grid-template-rows:0fr] opacity-0"
+            }`}
+            aria-hidden={choice !== "custom"}
+          >
+            <div className="min-h-0">
+              <div
+                className={`motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] rounded-2xl border border-[var(--border)] bg-[var(--card)]/90 px-5 py-4 shadow-lg shadow-black/20 backdrop-blur-sm motion-safe:duration-450 sm:shadow-black/14 ${
+                  choice === "custom" ? "motion-safe:delay-75 motion-safe:[animation:duration-choice-in_0.5s_ease-out_both]" : ""
+                }`}
+              >
+                <label htmlFor="custom-hours" className="block text-left text-sm font-semibold text-[var(--foreground)]">
+                  {t(locale, "customHoursLabel")}
+                </label>
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <input
+                    id="custom-hours"
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    max={CUSTOM_HOURS_MAX}
+                    value={customHours}
+                    onChange={(e) => {
+                      const v = Number.parseInt(e.target.value, 10);
+                      setCustomHours(Number.isFinite(v) ? v : 1);
+                    }}
+                    onBlur={() => setCustomHours((h) => clampHours(h))}
+                    className="motion-safe:duration-300 w-full min-w-[8rem] max-w-[12rem] rounded-xl border-2 border-[var(--border-light)] bg-[var(--surface)] px-4 py-3 text-center text-2xl font-black text-[var(--foreground)] outline-none transition-colors motion-safe:ease-out focus:border-[var(--gold)] focus:ring-[3px] focus:ring-[var(--gold)]/25 hover:border-[color-mix(in_srgb,var(--gold)_52%,transparent)] sm:text-3xl sm:focus:ring-4"
+                  />
+                  <span className="motion-safe:duration-200 text-lg font-bold motion-safe:ease-out text-[var(--muted)]">{t(locale, "hours")}</span>
+                </div>
               </div>
             </div>
-          )}
+          </div>
 
           {/* Price + CTA */}
           <div
@@ -222,14 +296,16 @@ function DurationContent() {
               </div>
               <div className="text-right">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">{t(locale, "total")}</p>
-                <p className="text-3xl font-black text-[var(--gold)]">{formatSrd(cost)}</p>
+                <p key={`total-${effectiveHours}-${cost}`} className="text-3xl font-black motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] text-[var(--gold)] motion-safe:[animation:duration-choice-total_0.38s_ease-out_both] motion-reduce:[animation-duration:0ms] tabular-nums">
+                  {formatSrd(cost)}
+                </p>
               </div>
             </div>
 
             <button
               type="button"
-              onClick={goToWelcome}
-              className="animate-gold-pulse mt-5 w-full rounded-2xl bg-[var(--gold)] py-6 text-xl font-bold text-black shadow-xl shadow-[var(--gold)]/25 transition-all duration-300 hover:bg-[var(--gold-light)] hover:shadow-2xl active:scale-[0.97]"
+              onClick={goToStart}
+              className="animate-gold-pulse mt-5 w-full rounded-2xl bg-[var(--gold)] py-6 text-xl font-bold text-black shadow-xl shadow-[var(--gold)]/25 transition-[transform,box-shadow] duration-300 motion-safe:ease-out hover:bg-[var(--gold-light)] hover:shadow-2xl focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--gold)]/65 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] motion-safe:active:scale-[0.985]"
             >
               {t(locale, "startSession")} →
             </button>

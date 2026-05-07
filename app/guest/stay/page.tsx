@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { GuestFlowHeader, guestFlowThemeButtonClassName } from "@/components/guest-flow-header";
 import { LanguageToggle } from "@/components/language-toggle";
 import { GuestSessionModals } from "@/components/guest-session-modals";
 import { GuestSessionPanel } from "@/components/guest-session-panel";
@@ -65,31 +66,42 @@ export default function GuestStayOnlyPage() {
         }}
       />
 
-      <header className="relative z-20 flex items-center justify-between gap-3 px-4 py-4 sm:px-8 sm:py-5">
-        <div className="flex min-w-0 items-center gap-3">
-          <Image src="/logo.png" alt={t(locale, "brand")} width={40} height={40} className="rounded-lg shadow-lg" />
-          <span className="truncate text-sm font-black uppercase tracking-[0.2em] text-[var(--gold)]">{t(locale, "brand")}</span>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
+      <GuestFlowHeader>
+        <Link
+          href="/"
+          className="flex h-11 min-w-0 items-center gap-3 transition opacity-90 hover:opacity-100"
+        >
+          <Image
+            src="/logo.png"
+            alt={t(locale, "brand")}
+            width={40}
+            height={40}
+            className="h-9 w-9 shrink-0 self-center rounded-lg shadow-lg sm:h-10 sm:w-10"
+          />
+          <span className="truncate text-sm font-black uppercase leading-none tracking-[0.2em] text-[var(--gold)]">
+            {t(locale, "brand")}
+          </span>
+        </Link>
+        <div className="flex h-11 min-h-[44px] shrink-0 items-center gap-2">
           <LanguageToggle variant="landing" />
           <button
             type="button"
             onClick={toggleTheme}
-            className="flex h-11 w-11 min-h-[44px] min-w-[44px] touch-manipulation items-center justify-center rounded-full border border-[var(--border-light)] bg-[var(--surface)] text-[var(--foreground)] backdrop-blur-sm transition hover:border-[var(--gold)]/40 hover:text-[var(--gold)]"
+            className={guestFlowThemeButtonClassName}
             title={theme === "dark" ? t(locale, "lightMode") : t(locale, "darkMode")}
           >
             {theme === "dark" ? (
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
               </svg>
             ) : (
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
               </svg>
             )}
           </button>
         </div>
-      </header>
+      </GuestFlowHeader>
 
       <main className="relative z-10 flex flex-1 flex-col items-center px-4 py-8 sm:px-6 sm:py-12">
         <p className="mb-6 text-center text-sm font-semibold text-[var(--muted)]">{t(locale, "yourStay")}</p>

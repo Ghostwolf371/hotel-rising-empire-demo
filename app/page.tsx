@@ -132,12 +132,12 @@ export default function RoomEntryPage() {
             {t(locale, "brand")}
           </span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <LanguageToggle variant="landing" />
           <button
             type="button"
             onClick={toggleTheme}
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--surface)] text-[var(--muted)] transition hover:text-[var(--gold)]"
+            className="flex h-11 w-11 min-h-[44px] min-w-[44px] touch-manipulation items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--muted)] transition hover:border-[var(--gold)]/30 hover:text-[var(--gold)]"
             title={theme === "dark" ? t(locale, "lightMode") : t(locale, "darkMode")}
           >
             {theme === "dark" ? (

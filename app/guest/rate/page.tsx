@@ -1,10 +1,57 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { GuestChoiceCountdownBar, GUEST_TIMED_CHOICE_MS } from "@/components/guest-choice-countdown-bar";
+import { GuestChoiceCountdownPortal } from "@/components/guest-choice-countdown-portal";
 import { useDemo } from "@/contexts/demo-context";
 import { t } from "@/lib/i18n";
 
+const DEMO_ROOM = "104";
+
+
+/** Keyed by `room`; owns idle redirect + fixed countdown strip (outside card layout). */
+function RateGuestIdleChooser({ goDuration, ariaLabel }: { goDuration: () => void; ariaLabel: string }) {
+  const [timedChoiceDismissed, setTimedChoiceDismissed] = useState(false);
+  const idleDurationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    function clearIdleDuration() {
+      if (idleDurationTimerRef.current !== null) {
+        clearTimeout(idleDurationTimerRef.current);
+        idleDurationTimerRef.current = null;
+      }
+    }
+
+    function onPointerDown() {
+      setTimedChoiceDismissed(true);
+      clearIdleDuration();
+      window.removeEventListener("pointerdown", onPointerDown);
+    }
+
+    idleDurationTimerRef.current = setTimeout(() => {
+      idleDurationTimerRef.current = null;
+      goDuration();
+    }, GUEST_TIMED_CHOICE_MS);
+
+    window.addEventListener("pointerdown", onPointerDown, { passive: true });
+
+    return () => {
+      clearIdleDuration();
+      window.removeEventListener("pointerdown", onPointerDown);
+    };
+  }, [goDuration]);
+
+  if (timedChoiceDismissed) return null;
+
+  return (
+    <GuestChoiceCountdownPortal>
+      <div className="guest-choice-countdown-slot" data-slot="guest-rate">
+        <GuestChoiceCountdownBar active ariaLabel={ariaLabel} className="px-6" />
+      </div>
+    </GuestChoiceCountdownPortal>
+  );
+}
 function StarGlyph({ filled }: { filled: boolean }) {
   const dim = "h-10 w-10 sm:h-11 sm:w-11";
   return (
@@ -99,10 +146,10 @@ function RateContent() {
     }
   }, [rooms, roomParam, router]);
 
-  function goDuration() {
-    const q = roomParam ? `?room=${encodeURIComponent(roomParam)}` : "";
-    router.push(`/guest/duration${q}`);
-  }
+  const goDuration = useCallback(() => {
+    const room = roomParam || DEMO_ROOM;
+    router.push(`/guest/duration?room=${encodeURIComponent(room)}`);
+  }, [roomParam, router]);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -135,7 +182,7 @@ function RateContent() {
         }}
       />
 
-      <main className="relative z-10 flex min-h-0 flex-1 items-center justify-center overflow-y-auto px-4 py-8 sm:px-5 sm:py-10 md:px-8">
+      <main className="relative z-10 flex min-h-0 flex-1 items-center justify-center overflow-y-auto px-4 pb-24 pt-8 sm:px-5 sm:pb-24 sm:pt-10 md:px-8">
         <div className="animate-fade-in-scale my-auto w-full max-w-lg rounded-3xl border border-[var(--border)] bg-[var(--card)]/95 p-6 shadow-2xl backdrop-blur-sm sm:p-8 md:p-10">
           <h1 className="text-center text-2xl font-black tracking-tight text-[var(--gold)] sm:text-3xl md:text-4xl">
             {t(locale, "rateTitle")}
@@ -187,6 +234,12 @@ function RateContent() {
             {t(locale, "feedbackFooterTagline")}
           </p>
         </div>
+
+        <RateGuestIdleChooser
+          key={roomParam || DEMO_ROOM}
+          goDuration={goDuration}
+          ariaLabel={t(locale, "guestTimerAria")}
+        />
       </main>
     </div>
   );

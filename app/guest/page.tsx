@@ -7,6 +7,10 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LanguageToggle } from "@/components/language-toggle";
 import { useDemo } from "@/contexts/demo-context";
+import {
+  GUEST_MENU_STICKY_PAD_INSET,
+  GUEST_MENU_STICKY_SHEET,
+} from "@/lib/guest-toolbar-styles";
 import { GuestSessionModals } from "@/components/guest-session-modals";
 import { GuestSessionPanel } from "@/components/guest-session-panel";
 import { formatSrd, formatTimeRange } from "@/lib/format";
@@ -167,18 +171,18 @@ export default function GuestMainPage() {
 
       {/* ─── MAIN CONTENT ─── */}
       <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
-        <div className="sticky top-0 z-20 flex items-center justify-between gap-2 border-b border-[var(--border)] bg-[var(--background)]/95 px-4 py-2.5 backdrop-blur-sm sm:gap-3 sm:px-6 sm:py-3">
+        <div className={`sticky top-0 z-20 ${GUEST_MENU_STICKY_SHEET} ${GUEST_MENU_STICKY_PAD_INSET}`}>
           <Link
             href="/guest/stay"
-            className="inline-flex min-h-11 min-w-0 max-w-[min(100%,14rem)] touch-manipulation items-center gap-2 rounded-xl border border-[var(--border-light)] bg-[var(--surface)] px-3 py-2 text-sm font-bold text-[var(--foreground)] transition hover:border-[var(--gold)]/35 hover:bg-[var(--card-hover)] hover:text-[var(--gold)] sm:max-w-none sm:px-4"
+            className="inline-flex h-11 min-w-0 max-w-[min(100%,14rem)] shrink-0 touch-manipulation items-center gap-2 rounded-xl border border-[var(--border-light)] bg-[var(--surface)] px-3 text-sm font-bold leading-none text-[var(--foreground)] transition hover:border-[var(--gold)]/35 hover:bg-[var(--card-hover)] hover:text-[var(--gold)] sm:max-w-none sm:px-4"
             aria-label={t(locale, "yourStay")}
           >
             <svg className="h-5 w-5 shrink-0 text-[var(--gold)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
-            <span className="truncate">{t(locale, "yourStay")}</span>
+            <span className="truncate leading-none">{t(locale, "yourStay")}</span>
           </Link>
-          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          <div className="flex h-11 min-h-[44px] shrink-0 items-center gap-2 sm:gap-3">
             <LanguageToggle variant="shell" />
             <Link
               href="/guest/cart"

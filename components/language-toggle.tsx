@@ -22,65 +22,44 @@ const SETTINGS_LABEL: Record<Locale, string> = {
 
 type Variant = "shell" | "guest" | "landing" | "duration" | "inline" | "settings";
 
-/** Trigger shows short code in tight layouts, full name elsewhere */
+type VariantStyleBlock = {
+  row: string;
+  label: string;
+  root: string;
+  trigger: string;
+  triggerOpen: string;
+  panel: string;
+  option: string;
+  optionActive: string;
+  optionIdle: string;
+};
+
+/** Full language name in trigger; short codes only for `inline` */
 function triggerLabelsFor(variant: Variant): Record<Locale, string> {
-  return variant === "shell" || variant === "inline" ? CODE_LABEL : SETTINGS_LABEL;
+  if (variant === "inline") return CODE_LABEL;
+  return SETTINGS_LABEL;
 }
 
-const VARIANT_STYLES: Record<
-  Variant,
-  {
-    row: string;
-    label: string;
-    root: string;
-    trigger: string;
-    triggerOpen: string;
-    panel: string;
-    option: string;
-    optionActive: string;
-    optionIdle: string;
-  }
-> = {
-  shell: {
-    row: "flex items-center gap-2",
-    label:
-      "shrink-0 text-xs font-bold uppercase tracking-wider text-[var(--muted)]",
-    root: "relative",
-    trigger:
-      "flex min-h-10 min-w-[5.5rem] items-center justify-between gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs font-bold text-[var(--foreground)] transition hover:border-[var(--gold)]/40",
-    triggerOpen: "border-[var(--gold)]/50 ring-1 ring-[var(--gold)]/20",
-    panel:
-      "absolute right-0 top-full z-50 mt-1 min-w-[9.5rem] overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)] py-1 shadow-xl shadow-black/30",
-    option: "flex w-full items-center px-3 py-2 text-left text-sm font-semibold transition",
-    optionActive: "bg-[var(--gold)]/15 text-[var(--gold)]",
-    optionIdle: "text-[var(--foreground)] hover:bg-[var(--surface)]",
-  },
-  guest: {
-    row: "flex items-center gap-3",
-    label: "shrink-0 text-sm font-semibold text-[var(--muted)]",
-    root: "relative",
-    trigger:
-      "flex min-w-[8.5rem] items-center justify-between gap-2 rounded-full border border-[var(--border-light)] bg-[var(--surface)] px-4 py-2 text-base font-medium text-[var(--foreground)] transition hover:border-[var(--gold)]/40",
-    triggerOpen: "border-[var(--gold)]/50 ring-1 ring-[var(--gold)]/20",
-    panel:
-      "absolute right-0 top-full z-50 mt-1.5 min-w-[11rem] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] py-1 shadow-xl shadow-black/25",
-    option: "flex w-full items-center px-4 py-2.5 text-left text-base font-medium transition",
-    optionActive: "bg-[var(--gold)]/15 text-[var(--gold)]",
-    optionIdle: "text-[var(--foreground)] hover:bg-[var(--card-hover)]",
-  },
-  landing: {
-    row: "flex items-center gap-3",
-    label: "shrink-0 text-sm font-semibold text-[var(--muted)]",
-    root: "relative",
-    trigger:
-      "flex min-w-[8.5rem] items-center justify-between gap-2 rounded-full border border-[var(--border-light)] bg-[var(--surface)] px-5 py-2.5 text-base font-medium text-[var(--foreground)] transition hover:border-[var(--gold)]/40",
-    triggerOpen: "border-[var(--gold)]/50 ring-1 ring-[var(--gold)]/20",
-    panel:
-      "absolute right-0 top-full z-50 mt-1.5 min-w-[11rem] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] py-1 shadow-xl shadow-black/25",
-    option: "flex w-full items-center px-4 py-2.5 text-left text-base font-medium transition",
-    optionActive: "bg-[var(--gold)]/15 text-[var(--gold)]",
-    optionIdle: "text-[var(--foreground)] hover:bg-[var(--card-hover)]",
-  },
+/** Matches `/guest` sticky toolbar: 44px-tall controls, one vertical center */
+const GUEST_MENU_LANGUAGE: VariantStyleBlock = {
+  row: "flex h-11 min-h-[44px] shrink-0 items-center gap-2",
+  label:
+    "shrink-0 self-center text-xs font-bold uppercase leading-none tracking-wider text-[var(--gold)]/85",
+  root: "relative flex items-center",
+  trigger:
+    "flex h-11 min-h-[44px] min-w-[6rem] max-w-[13rem] shrink-0 items-center justify-between gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 text-xs font-bold leading-none text-[var(--foreground)] transition hover:border-[var(--gold)]/40",
+  triggerOpen: "border-[var(--gold)]/50 ring-1 ring-[var(--gold)]/20",
+  panel:
+    "absolute right-0 top-full z-50 mt-1 min-w-[9.5rem] overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)] py-1 shadow-xl shadow-black/30",
+  option: "flex w-full items-center px-3 py-2 text-left text-sm font-semibold transition",
+  optionActive: "bg-[var(--gold)]/15 text-[var(--gold)]",
+  optionIdle: "text-[var(--foreground)] hover:bg-[var(--surface)]",
+};
+
+const VARIANT_STYLES: Record<Variant, VariantStyleBlock> = {
+  shell: GUEST_MENU_LANGUAGE,
+  guest: GUEST_MENU_LANGUAGE,
+  landing: GUEST_MENU_LANGUAGE,
   duration: {
     row: "flex items-center gap-2",
     label: "shrink-0 text-xs font-bold uppercase tracking-wider text-white/70",

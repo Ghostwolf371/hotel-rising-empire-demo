@@ -34,9 +34,9 @@ export function GuestSessionPanel({
   return (
     <>
       {!isFs && (
-        <div className="flex items-center gap-3 border-b border-[var(--border)] px-5 py-4">
-          <Image src="/logo.png" alt="Empire Apartments" width={36} height={36} className="rounded-lg" />
-          <span className="text-sm font-black uppercase tracking-wider text-[var(--gold)]">{t(locale, "brand")}</span>
+        <div className="flex items-center gap-3 border-b border-[var(--border)] px-4 py-2.5 sm:px-6">
+          <Image src="/logo.png" alt="Empire Apartments" width={36} height={36} className="h-9 w-9 shrink-0 self-center rounded-lg" />
+          <span className="text-sm font-black uppercase leading-none tracking-wider text-[var(--gold)]">{t(locale, "brand")}</span>
         </div>
       )}
 

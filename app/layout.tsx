@@ -48,6 +48,7 @@ export default function RootLayout({
           {THEME_BOOT_SCRIPT}
         </Script>
         <Providers useDatabase={useDatabase}>{children}</Providers>
+        <div id="guest-portal-root" className="contents" />
       </body>
     </html>
   );
