@@ -119,6 +119,14 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Silences Next 16's "Turbopack with a webpack config" warning during dev.
+  // `withPWA` only injects its webpack plugin in production builds, so this
+  // empty Turbopack config is fine for the dev / `--turbopack` path.
+  turbopack: {},
 };
 
-export default withPWA(nextConfig);
+// In development Next 16 uses Turbopack by default. `withPWA` is a no-op when
+// `disable: true`, but its wrapper still attaches a webpack key that triggers
+// the Turbopack-vs-webpack conflict warning. Skip the wrapper entirely in dev.
+const isDev = process.env.NODE_ENV === "development";
+export default isDev ? nextConfig : withPWA(nextConfig);
