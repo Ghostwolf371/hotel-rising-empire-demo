@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTimeLeft } from "@/components/room-timer";
 import { useDemo } from "@/contexts/demo-context";
 
@@ -15,6 +15,17 @@ export function useGuestSessionUi() {
 
   const endsAt = guestSession?.sessionEndsAt ?? 0;
   const leftMs = useTimeLeft(endsAt);
+
+  // Pre-warm the rating route as soon as we have a session. Without this
+  // the first End-tap pays the dev-server compile cost (or a cold network
+  // fetch in prod) for /guest/rate, which is exactly the window where the
+  // current page renders its "no session" empty state and the user sees a
+  // black screen.
+  const room = guestSession?.roomNumber;
+  useEffect(() => {
+    if (!room) return;
+    router.prefetch(`/guest/rate?room=${encodeURIComponent(room)}`);
+  }, [room, router]);
 
   function confirmExtend() {
     if (!guestSession) return;

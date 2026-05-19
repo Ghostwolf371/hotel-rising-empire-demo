@@ -54,7 +54,13 @@ export default function GuestCartPage() {
 
   const total = lines.reduce((s, l) => s + l.lineTotal, 0);
 
-  if (!guestSession) return null;
+  if (!guestSession) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-[var(--background)]">
+        <div className="h-8 w-8 animate-pulse rounded-full bg-[var(--gold)]/30" />
+      </div>
+    );
+  }
 
   function placeOrder() {
     if (!guestSession || lines.length === 0) return;

@@ -140,7 +140,17 @@ export default function GuestMainPage() {
     return m;
   }, [cart]);
 
-  if (!guestSession) return null;
+  // While the session is being torn down and /guest/rate is loading we get
+  // a brief render with guestSession=null. Returning null here painted a
+  // black screen on the way out; show the same lightweight loader the
+  // sibling guest pages use so the transition reads as "in flight".
+  if (!guestSession) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-[var(--background)]">
+        <div className="h-8 w-8 animate-pulse rounded-full bg-[var(--gold)]/30" />
+      </div>
+    );
+  }
 
   const start = new Date(guestSession.sessionStartedAt);
   const end = new Date(guestSession.sessionEndsAt);
