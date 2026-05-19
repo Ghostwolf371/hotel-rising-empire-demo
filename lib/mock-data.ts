@@ -33,13 +33,18 @@ export const defaultCategories: Category[] = [
   { id: "other", name: "Other", color: "purple" },
 ];
 
+// Seed catalog uses bundled photos from `/public/products/`. Self-hosting
+// the demo art on the same origin as the app sidesteps any networks that
+// block third-party image CDNs like Unsplash — important for the kiosk
+// tablet that lives on hotel/cafe Wi-Fi where outbound CDN traffic is
+// sometimes filtered.
 export const defaultCatalog: Product[] = [
   {
     id: "p1",
     name: "Coca Cola",
     priceSrd: 21,
     category: "drink",
-    image: "https://images.unsplash.com/photo-1629203851122-3726ecdf080e?w=400&h=300&fit=crop",
+    image: "/products/coca-cola.jpg",
     available: true,
   },
   {
@@ -47,7 +52,7 @@ export const defaultCatalog: Product[] = [
     name: "Orange Juice",
     priceSrd: 18,
     category: "drink",
-    image: "https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w=400&h=300&fit=crop",
+    image: "/products/orange-juice.jpg",
     available: true,
   },
   {
@@ -55,7 +60,7 @@ export const defaultCatalog: Product[] = [
     name: "Sparkling Water",
     priceSrd: 12,
     category: "drink",
-    image: "https://images.unsplash.com/photo-1559839914-17aae19cec71?w=400&h=300&fit=crop",
+    image: "/products/sparkling-water.jpg",
     available: true,
   },
   {
@@ -63,7 +68,7 @@ export const defaultCatalog: Product[] = [
     name: "Chocolate",
     priceSrd: 13,
     category: "snack",
-    image: "https://images.unsplash.com/photo-1549007994-cb92caebd54b?w=400&h=300&fit=crop",
+    image: "/products/chocolate.jpg",
     available: true,
   },
   {
@@ -71,7 +76,7 @@ export const defaultCatalog: Product[] = [
     name: "Mixed Nuts",
     priceSrd: 22,
     category: "snack",
-    image: "https://images.unsplash.com/photo-1599599810769-bcde5a160d32?w=400&h=300&fit=crop",
+    image: "/products/mixed-nuts.jpg",
     available: true,
   },
   {
@@ -79,7 +84,7 @@ export const defaultCatalog: Product[] = [
     name: "Energy Bar",
     priceSrd: 15,
     category: "snack",
-    image: "https://images.unsplash.com/photo-1622484212850-eb596d769edc?w=400&h=300&fit=crop",
+    image: "/products/energy-bar.jpg",
     available: true,
   },
 ];

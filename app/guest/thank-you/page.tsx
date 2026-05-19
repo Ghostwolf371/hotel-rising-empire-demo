@@ -5,8 +5,9 @@ import { GuestHeader } from "@/components/guest-header";
 import { useDemo } from "@/contexts/demo-context";
 import { t } from "@/lib/i18n";
 
-const BANNER_IMAGE =
-  "https://images.unsplash.com/photo-1582719508461-905c673771fd?w=1200&h=400&fit=crop";
+// Self-hosted so the thank-you screen renders even when the kiosk
+// network blocks third-party image CDNs.
+const BANNER_IMAGE = "/products/promo-thanks.jpg";
 
 export default function ThankYouPage() {
   const { locale } = useDemo();

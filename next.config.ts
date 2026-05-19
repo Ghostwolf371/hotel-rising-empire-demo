@@ -55,13 +55,14 @@ const withPWA = withPWAInit({
           expiration: { maxEntries: 16, maxAgeSeconds: 60 * 60 * 24 * 365 },
         },
       },
-      // Unsplash images used by guest landing carousels.
+      // Bundled product/promo art under /products/*. Hashed at request time
+      // via the Next image optimizer, so SWR is safe.
       {
-        urlPattern: /^https:\/\/images\.unsplash\.com\/.*/i,
+        urlPattern: /\/products\/.+/i,
         handler: "StaleWhileRevalidate",
         options: {
-          cacheName: "unsplash",
-          expiration: { maxEntries: 48, maxAgeSeconds: 60 * 60 * 24 * 14 },
+          cacheName: "demo-images",
+          expiration: { maxEntries: 48, maxAgeSeconds: 60 * 60 * 24 * 30 },
         },
       },
       // Server Actions (POSTs that Next routes to the page URL). NEVER cache —
@@ -111,14 +112,9 @@ const withPWA = withPWAInit({
 });
 
 const nextConfig: NextConfig = {
-  images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "images.unsplash.com",
-      },
-    ],
-  },
+  // No `images.remotePatterns` — every demo image is now bundled in
+  // `public/products/` so the kiosk tablet doesn't need to reach an
+  // external image CDN that hotel Wi-Fi sometimes filters.
   // Silences Next 16's "Turbopack with a webpack config" warning during dev.
   // `withPWA` only injects its webpack plugin in production builds, so this
   // empty Turbopack config is fine for the dev / `--turbopack` path.

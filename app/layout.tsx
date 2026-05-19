@@ -126,9 +126,6 @@ export default function RootLayout({
             href={s.src}
           />
         ))}
-        {/* Cuts ~100 ms off cold LCP for hotel wifi: pre-warm TLS to Unsplash. */}
-        <link rel="preconnect" href="https://images.unsplash.com" crossOrigin="" />
-        <link rel="dns-prefetch" href="https://images.unsplash.com" />
         {/* Runs as soon as the parser reaches it, before React hydrates. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
         <Providers useDatabase={useDatabase}>{children}</Providers>

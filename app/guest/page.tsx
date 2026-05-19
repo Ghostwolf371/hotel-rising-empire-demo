@@ -19,9 +19,12 @@ import { categoryLabel } from "@/lib/category-styles";
 import { t } from "@/lib/i18n";
 import type { ProductCategory } from "@/lib/types";
 
+// Self-hosted slides live in `public/products/`. Earlier these pointed at
+// Unsplash, but some kiosk Wi-Fi blocks third-party image CDNs and left
+// the carousel blank.
 const PROMO_SLIDES = [
   {
-    image: "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=1200&h=500&fit=crop&q=80",
+    image: "/products/promo-spa.jpg",
     tag: "Spa & Wellness",
     title: "Spa evening",
     highlight: "20% off",
@@ -29,7 +32,7 @@ const PROMO_SLIDES = [
     desc: "Relax and enjoy our premium spa experience. Book directly from your room.",
   },
   {
-    image: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1200&h=500&fit=crop&q=80",
+    image: "/products/promo-dining.jpg",
     tag: "Dining",
     title: "Room service",
     highlight: "Free delivery",
@@ -37,7 +40,7 @@ const PROMO_SLIDES = [
     desc: "Enjoy gourmet meals delivered to your room. Fresh and hot, every time.",
   },
   {
-    image: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=1200&h=500&fit=crop&q=80",
+    image: "/products/promo-stay.jpg",
     tag: "Special Offer",
     title: "Extended stay",
     highlight: "Save 15%",
