@@ -48,8 +48,25 @@ export default function RoomEntryPage() {
     setDigits(Array(DIGITS).fill(""));
     setError(false);
     setCodeRequestError(null);
-    setTimeout(() => inputRefs.current[0]?.focus(), 100);
   }
+
+  // Focus the first code input once the modal actually mounts. Using a
+  // double rAF instead of a fragile setTimeout so we don't race the modal's
+  // fade-in-scale animation on slower tablets, and preventScroll keeps the
+  // viewport from jumping when the soft keyboard appears.
+  useEffect(() => {
+    if (!showVerify) return;
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        inputRefs.current[0]?.focus({ preventScroll: true });
+      });
+    });
+    return () => {
+      cancelAnimationFrame(raf1);
+      if (raf2) cancelAnimationFrame(raf2);
+    };
+  }, [showVerify]);
 
   useEffect(() => {
     if (!showVerify) return;
@@ -86,11 +103,15 @@ export default function RoomEntryPage() {
     next[i] = char;
     setDigits(next);
     setError(false);
-    if (char && i < DIGITS - 1) inputRefs.current[i + 1]?.focus();
+    if (char && i < DIGITS - 1) {
+      inputRefs.current[i + 1]?.focus({ preventScroll: true });
+    }
   }
 
   function handleKeyDown(i: number, e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Backspace" && !digits[i] && i > 0) inputRefs.current[i - 1]?.focus();
+    if (e.key === "Backspace" && !digits[i] && i > 0) {
+      inputRefs.current[i - 1]?.focus({ preventScroll: true });
+    }
   }
 
   function handlePaste(e: React.ClipboardEvent) {
@@ -100,7 +121,9 @@ export default function RoomEntryPage() {
     const next = [...digits];
     for (let i = 0; i < pasted.length; i++) next[i] = pasted[i];
     setDigits(next);
-    inputRefs.current[Math.min(pasted.length, DIGITS - 1)]?.focus();
+    inputRefs.current[Math.min(pasted.length, DIGITS - 1)]?.focus({
+      preventScroll: true,
+    });
   }
 
   async function onSubmitCode(e: React.FormEvent) {
@@ -207,7 +230,7 @@ export default function RoomEntryPage() {
 
       {/* Verify code modal */}
       {showVerify && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-sm sm:px-6 sm:pt-[max(1.5rem,env(safe-area-inset-top))] sm:pb-[max(1.5rem,env(safe-area-inset-bottom))]" onClick={() => setShowVerify(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6 sm:pt-[max(1.5rem,env(safe-area-inset-top))] sm:pb-[max(1.5rem,env(safe-area-inset-bottom))]" onClick={() => setShowVerify(false)}>
           <div className="animate-fade-in-scale w-full max-w-lg rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5 text-center shadow-2xl shadow-black/30 sm:p-10" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-2xl font-black text-[var(--gold)] sm:text-3xl">{t(locale, "enterCode")}</h2>
             <p className="mt-3 text-sm text-[var(--muted)] sm:text-base">{t(locale, "codeHint")}</p>
@@ -238,13 +261,13 @@ export default function RoomEntryPage() {
                       onChange={(e) => handleChange(i, e.target.value)}
                       onKeyDown={(e) => handleKeyDown(i, e)}
                       disabled={codeRequesting}
-                      className={`box-border min-h-[3rem] w-full min-w-0 rounded-xl border-2 bg-[var(--surface)] px-0.5 text-center text-lg font-black tabular-nums text-[var(--foreground)] outline-none transition-all duration-200 sm:min-h-[4.25rem] sm:rounded-2xl sm:text-2xl ${
+                      className={`box-border min-h-[3rem] w-full min-w-0 rounded-xl border-2 bg-[var(--surface)] px-0.5 text-center text-lg font-black tabular-nums text-[var(--foreground)] outline-none transition-colors duration-100 sm:min-h-[4.25rem] sm:rounded-2xl sm:text-2xl ${
                         error
                           ? "border-red-500 bg-red-500/10"
                           : digits[i]
                             ? "border-[var(--gold)] bg-[var(--gold)]/5"
                             : "border-[var(--border-light)]"
-                      } focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20 sm:focus:ring-4 disabled:opacity-50`}
+                      } focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20 disabled:opacity-50`}
                     />
                   ))}
                   <span
@@ -264,13 +287,13 @@ export default function RoomEntryPage() {
                       onChange={(e) => handleChange(i, e.target.value)}
                       onKeyDown={(e) => handleKeyDown(i, e)}
                       disabled={codeRequesting}
-                      className={`box-border min-h-[3rem] w-full min-w-0 rounded-xl border-2 bg-[var(--surface)] px-0.5 text-center text-lg font-black tabular-nums text-[var(--foreground)] outline-none transition-all duration-200 sm:min-h-[4.25rem] sm:rounded-2xl sm:text-2xl ${
+                      className={`box-border min-h-[3rem] w-full min-w-0 rounded-xl border-2 bg-[var(--surface)] px-0.5 text-center text-lg font-black tabular-nums text-[var(--foreground)] outline-none transition-colors duration-100 sm:min-h-[4.25rem] sm:rounded-2xl sm:text-2xl ${
                         error
                           ? "border-red-500 bg-red-500/10"
                           : digits[i]
                             ? "border-[var(--gold)] bg-[var(--gold)]/5"
                             : "border-[var(--border-light)]"
-                      } focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20 sm:focus:ring-4 disabled:opacity-50`}
+                      } focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20 disabled:opacity-50`}
                     />
                   ))}
                 </div>
