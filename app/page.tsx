@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   requestRoomCheckInCode,
   verifyRoomCheckInCode,
@@ -23,16 +23,16 @@ export default function RoomEntryPage() {
   const { locale, theme, toggleTheme, rooms, useDatabase } = useDemo();
   const [room, setRoom] = useState("");
   const [showVerify, setShowVerify] = useState(false);
-  const [digits, setDigits] = useState<string[]>(Array(DIGITS).fill(""));
+  const [code, setCode] = useState("");
+  const [codeFocused, setCodeFocused] = useState(false);
   const [error, setError] = useState(false);
   const [roomError, setRoomError] = useState(false);
   const [codeRequesting, setCodeRequesting] = useState(false);
   const [codeRequestError, setCodeRequestError] = useState<string | null>(null);
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const codeInputRef = useRef<HTMLInputElement | null>(null);
 
-  const setRef = useCallback((i: number) => (el: HTMLInputElement | null) => {
-    inputRefs.current[i] = el;
-  }, []);
+  const digits = Array.from({ length: DIGITS }, (_, i) => code[i] ?? "");
+  const activeIndex = Math.min(code.length, DIGITS - 1);
 
   function onSubmitRoom(e: React.FormEvent) {
     e.preventDefault();
@@ -45,21 +45,21 @@ export default function RoomEntryPage() {
     }
     setRoomError(false);
     setShowVerify(true);
-    setDigits(Array(DIGITS).fill(""));
+    setCode("");
     setError(false);
     setCodeRequestError(null);
   }
 
-  // Focus the first code input once the modal actually mounts. Using a
-  // double rAF instead of a fragile setTimeout so we don't race the modal's
-  // fade-in-scale animation on slower tablets, and preventScroll keeps the
-  // viewport from jumping when the soft keyboard appears.
+  // Focus the hidden code input once the modal actually mounts. Double rAF
+  // waits for both the React commit and the first paint so we never race the
+  // modal's fade-in-scale animation. preventScroll keeps tablet viewports
+  // (especially in browser fullscreen) from jumping when the keyboard opens.
   useEffect(() => {
     if (!showVerify) return;
     let raf2 = 0;
     const raf1 = requestAnimationFrame(() => {
       raf2 = requestAnimationFrame(() => {
-        inputRefs.current[0]?.focus({ preventScroll: true });
+        codeInputRef.current?.focus({ preventScroll: true });
       });
     });
     return () => {
@@ -97,39 +97,15 @@ export default function RoomEntryPage() {
     };
   }, [showVerify, room, useDatabase]);
 
-  function handleChange(i: number, value: string) {
-    const char = value.replace(/\D/g, "").slice(-1);
-    const next = [...digits];
-    next[i] = char;
-    setDigits(next);
+  function handleCodeChange(value: string) {
+    const cleaned = value.replace(/\D/g, "").slice(0, DIGITS);
+    setCode(cleaned);
     setError(false);
-    if (char && i < DIGITS - 1) {
-      inputRefs.current[i + 1]?.focus({ preventScroll: true });
-    }
-  }
-
-  function handleKeyDown(i: number, e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Backspace" && !digits[i] && i > 0) {
-      inputRefs.current[i - 1]?.focus({ preventScroll: true });
-    }
-  }
-
-  function handlePaste(e: React.ClipboardEvent) {
-    e.preventDefault();
-    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, DIGITS);
-    if (!pasted) return;
-    const next = [...digits];
-    for (let i = 0; i < pasted.length; i++) next[i] = pasted[i];
-    setDigits(next);
-    inputRefs.current[Math.min(pasted.length, DIGITS - 1)]?.focus({
-      preventScroll: true,
-    });
   }
 
   async function onSubmitCode(e: React.FormEvent) {
     e.preventDefault();
-    const code = digits.join("");
-    if (code.length !== 6) return;
+    if (code.length !== DIGITS) return;
     const n = room.trim();
     let ok = false;
     try {
@@ -243,59 +219,72 @@ export default function RoomEntryPage() {
               <p className="mt-3 text-sm font-semibold text-red-400">{codeRequestError}</p>
             ) : null}
             <form onSubmit={onSubmitCode} className="mt-6 sm:mt-8">
-              <div className="mx-auto w-full min-w-0 max-w-md py-1" onPaste={handlePaste}>
+              <div
+                className="relative mx-auto w-full min-w-0 max-w-md py-1"
+                onClick={() => codeInputRef.current?.focus({ preventScroll: true })}
+              >
+                {/* Single real input — invisible but covers all 6 cells. Keeps
+                    focus and the soft keyboard rock-steady on tablets; the
+                    cells below are pure presentation that read from `code`. */}
+                <input
+                  ref={codeInputRef}
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  pattern="[0-9]*"
+                  maxLength={DIGITS}
+                  value={code}
+                  onChange={(e) => handleCodeChange(e.target.value)}
+                  onFocus={() => setCodeFocused(true)}
+                  onBlur={() => setCodeFocused(false)}
+                  disabled={codeRequesting}
+                  aria-label={t(locale, "enterCode")}
+                  className="absolute inset-0 z-10 h-full w-full cursor-pointer bg-transparent text-transparent caret-transparent outline-none disabled:cursor-not-allowed"
+                  style={{
+                    // Hide the native caret/selection without using opacity:0
+                    // (Safari sometimes refuses to focus opacity:0 inputs).
+                    WebkitTextFillColor: "transparent",
+                  }}
+                />
                 <div
                   className="grid w-full items-stretch gap-x-1 sm:gap-x-2"
                   style={{
-                    gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) auto minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)",
+                    gridTemplateColumns:
+                      "minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) auto minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)",
                   }}
+                  aria-hidden
                 >
-                  {[0, 1, 2].map((i) => (
-                    <input
-                      key={i}
-                      ref={setRef(i)}
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={1}
-                      value={digits[i]}
-                      onChange={(e) => handleChange(i, e.target.value)}
-                      onKeyDown={(e) => handleKeyDown(i, e)}
-                      disabled={codeRequesting}
-                      className={`box-border min-h-[3rem] w-full min-w-0 rounded-xl border-2 bg-[var(--surface)] px-0.5 text-center text-lg font-black tabular-nums text-[var(--foreground)] outline-none transition-colors duration-100 sm:min-h-[4.25rem] sm:rounded-2xl sm:text-2xl ${
-                        error
-                          ? "border-red-500 bg-red-500/10"
-                          : digits[i]
-                            ? "border-[var(--gold)] bg-[var(--gold)]/5"
-                            : "border-[var(--border-light)]"
-                      } focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20 disabled:opacity-50`}
-                    />
-                  ))}
-                  <span
-                    className="flex min-h-[3rem] min-w-[1.25rem] items-center justify-center text-lg font-black leading-none text-[var(--gold)] sm:min-h-[4.25rem] sm:min-w-[1.5rem] sm:text-2xl"
-                    aria-hidden
-                  >
-                    –
-                  </span>
-                  {[3, 4, 5].map((i) => (
-                    <input
-                      key={i}
-                      ref={setRef(i)}
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={1}
-                      value={digits[i]}
-                      onChange={(e) => handleChange(i, e.target.value)}
-                      onKeyDown={(e) => handleKeyDown(i, e)}
-                      disabled={codeRequesting}
-                      className={`box-border min-h-[3rem] w-full min-w-0 rounded-xl border-2 bg-[var(--surface)] px-0.5 text-center text-lg font-black tabular-nums text-[var(--foreground)] outline-none transition-colors duration-100 sm:min-h-[4.25rem] sm:rounded-2xl sm:text-2xl ${
-                        error
-                          ? "border-red-500 bg-red-500/10"
-                          : digits[i]
-                            ? "border-[var(--gold)] bg-[var(--gold)]/5"
-                            : "border-[var(--border-light)]"
-                      } focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20 disabled:opacity-50`}
-                    />
-                  ))}
+                  {[0, 1, 2, "sep", 3, 4, 5].map((slot, idx) => {
+                    if (slot === "sep") {
+                      return (
+                        <span
+                          key="sep"
+                          className="flex min-h-[3rem] min-w-[1.25rem] items-center justify-center text-lg font-black leading-none text-[var(--gold)] sm:min-h-[4.25rem] sm:min-w-[1.5rem] sm:text-2xl"
+                        >
+                          –
+                        </span>
+                      );
+                    }
+                    const i = slot as number;
+                    const filled = digits[i] !== "";
+                    const isActive = codeFocused && i === activeIndex;
+                    return (
+                      <div
+                        key={idx}
+                        className={`box-border flex min-h-[3rem] w-full min-w-0 items-center justify-center rounded-xl border-2 px-0.5 text-center text-lg font-black tabular-nums sm:min-h-[4.25rem] sm:rounded-2xl sm:text-2xl ${
+                          error
+                            ? "border-red-500 bg-red-500/10 text-[var(--foreground)]"
+                            : isActive
+                              ? "border-[var(--gold)] bg-[var(--gold)]/10 text-[var(--foreground)] shadow-[0_0_0_2px_color-mix(in_srgb,var(--gold)_25%,transparent)]"
+                              : filled
+                                ? "border-[var(--gold)] bg-[var(--gold)]/5 text-[var(--foreground)]"
+                                : "border-[var(--border-light)] bg-[var(--surface)] text-[var(--foreground)]"
+                        } ${codeRequesting ? "opacity-50" : ""}`}
+                      >
+                        {digits[i]}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
               {error && <p className="mt-4 text-base font-semibold text-red-400 animate-fade-in">{t(locale, "invalidCode")}</p>}
