@@ -13,6 +13,7 @@ import {
   useState,
 } from "react";
 import { LanguageToggle } from "@/components/language-toggle";
+import { OfflineBanner } from "@/components/offline-banner";
 import { useTimeLeft } from "@/components/room-timer";
 import { listRoomCheckInCodes } from "@/app/actions/checkin-codes";
 import { useDemo } from "@/contexts/demo-context";
@@ -506,7 +507,7 @@ export function ManagementShell({ children }: { children: ReactNode }) {
 
       <div className="flex flex-1 flex-col overflow-y-auto">
         {/* Topbar */}
-        <header className="sticky top-0 z-20 flex items-center justify-end gap-3 border-b border-[var(--border)] bg-[var(--card)]/95 px-6 py-3 backdrop-blur">
+        <header className="sticky top-0 z-20 flex items-center justify-end gap-3 border-b border-[var(--border)] bg-[var(--card)]/95 px-6 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 backdrop-blur">
           <LanguageToggle variant="shell" />
 
           {/* Theme toggle */}
@@ -624,6 +625,7 @@ export function ManagementShell({ children }: { children: ReactNode }) {
 
         {/* Main content */}
         <main className="flex-1">
+          <OfflineBanner />
           {useDatabase && (databaseSyncing || databaseSyncError) ? (
             <div
               className="border-b border-amber-500/40 bg-amber-500/15 px-4 py-2 text-center text-xs font-semibold text-amber-950 dark:text-amber-100"
@@ -639,7 +641,7 @@ export function ManagementShell({ children }: { children: ReactNode }) {
 
       {livePopup && (
         <div
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 p-3 backdrop-blur-lg sm:p-6"
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-lg sm:px-6 sm:pt-[max(1.5rem,env(safe-area-inset-top))] sm:pb-[max(1.5rem,env(safe-area-inset-bottom))]"
           role="dialog"
           aria-modal="true"
           aria-labelledby="live-popup-title"

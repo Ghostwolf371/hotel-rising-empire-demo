@@ -6,12 +6,12 @@ import { usePathname } from "next/navigation";
 import { LanguageToggle } from "@/components/language-toggle";
 import { useDemo } from "@/contexts/demo-context";
 import {
-  GUEST_MENU_STICKY_PAD_INSET,
+  GUEST_MENU_STICKY_PAD_SAFE_TOP,
   GUEST_MENU_STICKY_SHEET,
 } from "@/lib/guest-toolbar-styles";
 import { t } from "@/lib/i18n";
 
-const guestMainToolbarClass = `sticky top-0 z-20 ${GUEST_MENU_STICKY_SHEET} ${GUEST_MENU_STICKY_PAD_INSET}`;
+const guestMainToolbarClass = `sticky top-0 z-20 ${GUEST_MENU_STICKY_SHEET} ${GUEST_MENU_STICKY_PAD_SAFE_TOP}`;
 
 const iconChromeClass =
   "flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--muted)] transition hover:border-[var(--gold)]/30 hover:text-[var(--gold)]";

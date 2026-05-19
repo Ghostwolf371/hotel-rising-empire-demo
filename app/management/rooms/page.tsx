@@ -84,7 +84,7 @@ function RoomModal({ room, onClose }: { room: Room; onClose: () => void }) {
   const cfg = STATUS_STYLE[room.status];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-6 pt-16 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 px-6 pt-[max(4rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] backdrop-blur-sm" onClick={onClose}>
       <div className="animate-fade-in-scale w-full max-w-3xl rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-[var(--border)] px-6 py-4">
           <div className="flex items-center gap-3">

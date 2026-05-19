@@ -42,13 +42,17 @@ prisma/*.db-journal
 # vercel
 .vercel
 
-# PWA (generated at build)
+# PWA (generated at `next build --webpack` by @ducanh2912/next-pwa)
 public/sw.js
 public/sw.js.map
 public/swe-worker-*.js
+public/swe-worker-*.js.map
 public/workbox-*.js
 public/workbox-*.js.map
+public/worker-*.js
+public/worker-*.js.map
 public/fallback-*.js
+public/fallback-*.js.map
 
 # typescript
 *.tsbuildinfo
@@ -56,5 +60,8 @@ next-env.d.ts
 
 /lib/generated/prisma
 
+# This repo uses npm (committed `package-lock.json`). Running pnpm alongside
+# corrupts `node_modules` (see README "Getting started"). Lockfiles below are
+# ignored to make accidental dual-PM use less destructive, but please don't.
 pnpm-lock.yaml
 pnpm-workspace.yaml

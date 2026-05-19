@@ -125,7 +125,7 @@ export default function RoomEntryPage() {
 
   return (
     <div className="flex min-h-dvh flex-col bg-[var(--background)]">
-      <header className="flex items-center justify-between gap-3 bg-[var(--card)] px-4 py-4 shadow-sm shadow-black/30 sm:px-8 sm:py-5">
+      <header className="flex items-center justify-between gap-3 bg-[var(--card)] px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-4 shadow-sm shadow-black/30 sm:px-8 sm:pt-[max(1.25rem,env(safe-area-inset-top))] sm:pb-5">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <Image src="/logo.png" alt="Empire Apartments" width={48} height={48} className="h-10 w-10 shrink-0 rounded-lg sm:h-12 sm:w-12" />
           <span className="truncate text-lg font-black uppercase tracking-wider text-[var(--gold)] sm:text-2xl">
@@ -188,7 +188,7 @@ export default function RoomEntryPage() {
         </div>
       </main>
 
-      <footer className="flex flex-wrap items-center justify-between gap-4 border-t border-[var(--border)] bg-[var(--card)] px-4 py-4 text-xs uppercase tracking-wide text-[var(--muted)] sm:px-8 sm:py-5">
+      <footer className="flex flex-wrap items-center justify-between gap-4 border-t border-[var(--border)] bg-[var(--card)] px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] text-xs uppercase tracking-wide text-[var(--muted)] sm:px-8 sm:pt-5 sm:pb-[max(1.25rem,env(safe-area-inset-bottom))]">
         <span>{t(locale, "copyright")}</span>
         <nav className="flex flex-wrap items-center gap-6">
           <span className="cursor-default">{t(locale, "privacy")}</span>
@@ -202,7 +202,7 @@ export default function RoomEntryPage() {
 
       {/* Verify code modal */}
       {showVerify && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm sm:p-6" onClick={() => setShowVerify(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-sm sm:px-6 sm:pt-[max(1.5rem,env(safe-area-inset-top))] sm:pb-[max(1.5rem,env(safe-area-inset-bottom))]" onClick={() => setShowVerify(false)}>
           <div className="animate-fade-in-scale w-full max-w-lg rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5 text-center shadow-2xl shadow-black/30 sm:p-10" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-2xl font-black text-[var(--gold)] sm:text-3xl">{t(locale, "enterCode")}</h2>
             <p className="mt-3 text-sm text-[var(--muted)] sm:text-base">{t(locale, "codeHint")}</p>

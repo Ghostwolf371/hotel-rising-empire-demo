@@ -365,7 +365,7 @@ export default function GuestMainPage() {
         {/* Sticky bottom cart bar */}
         {cartCount > 0 && (
           <div
-            className={`sticky bottom-0 z-10 border-t border-[var(--border)] bg-[var(--card)]/95 p-4 backdrop-blur ${
+            className={`sticky bottom-0 z-10 border-t border-[var(--border)] bg-[var(--card)]/95 px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur ${
               theme === "light"
                 ? "shadow-[0_-6px_24px_-6px_rgba(42,36,30,0.1)]"
                 : "shadow-[0_-8px_28px_-8px_rgba(0,0,0,0.22)]"

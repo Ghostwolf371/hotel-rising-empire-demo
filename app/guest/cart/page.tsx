@@ -257,7 +257,7 @@ export default function GuestCartPage() {
 
       {showSuccess && (
         <div
-          className={`fixed inset-0 z-50 flex items-center justify-center p-6 backdrop-blur-md ${
+          className={`fixed inset-0 z-50 flex items-center justify-center px-6 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] backdrop-blur-md ${
             theme === "light" ? "bg-[color-mix(in_srgb,var(--foreground)_28%,transparent)]" : "bg-black/65"
           }`}
         >

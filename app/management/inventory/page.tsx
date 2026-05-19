@@ -192,7 +192,7 @@ function CategoryModal({
   const canSave = Boolean(category.name.trim());
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-6 backdrop-blur-md">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 px-6 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] backdrop-blur-md">
       <div className="animate-fade-in-scale w-full max-w-md rounded-3xl border border-[var(--border)] bg-[var(--card)] shadow-2xl">
         <div className="flex items-center justify-between border-b border-[var(--border)] px-6 py-4">
           <h3 className="text-lg font-bold text-[var(--gold)]">
@@ -623,7 +623,7 @@ function ProductModal({
   }, [product.id]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6 backdrop-blur-md">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] backdrop-blur-md">
       <div className="animate-fade-in-scale w-full max-w-lg rounded-3xl border border-[var(--border)] bg-[var(--card)] shadow-2xl">
         <div className="flex items-center justify-between border-b border-[var(--border)] px-6 py-4">
           <h3 className="text-lg font-bold text-[var(--gold)]">
