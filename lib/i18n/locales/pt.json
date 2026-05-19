@@ -74,6 +74,8 @@
   "confirmEndCancel": "Cancelar",
   "darkMode": "Escuro",
   "lightMode": "Claro",
+  "enterFullscreen": "Tela cheia",
+  "exitFullscreen": "Sair da tela cheia",
   "menu": "Cardápio",
   "all": "Todos",
   "snacks": "Lanches",

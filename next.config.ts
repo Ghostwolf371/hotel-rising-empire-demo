@@ -123,6 +123,11 @@ const nextConfig: NextConfig = {
   // `withPWA` only injects its webpack plugin in production builds, so this
   // empty Turbopack config is fine for the dev / `--turbopack` path.
   turbopack: {},
+  // Allow the dev server to accept HMR/RSC requests originating from the
+  // loopback host explicitly. Some embedded webviews (Cursor's IDE browser,
+  // some Android Chrome WebViews) resolve `localhost` to `127.0.0.1` and
+  // then trip Next 16's cross-origin guard. Production builds ignore this.
+  allowedDevOrigins: ["127.0.0.1", "localhost"],
 };
 
 // In development Next 16 uses Turbopack by default. `withPWA` is a no-op when

@@ -74,6 +74,8 @@
   "confirmEndCancel": "Annuleren",
   "darkMode": "Donker",
   "lightMode": "Licht",
+  "enterFullscreen": "Volledig scherm",
+  "exitFullscreen": "Volledig scherm sluiten",
   "menu": "Menu",
   "all": "Alles",
   "snacks": "Snacks",

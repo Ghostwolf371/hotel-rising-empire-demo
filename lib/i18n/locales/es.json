@@ -74,6 +74,8 @@
   "confirmEndCancel": "Cancelar",
   "darkMode": "Oscuro",
   "lightMode": "Claro",
+  "enterFullscreen": "Pantalla completa",
+  "exitFullscreen": "Salir de pantalla completa",
   "menu": "Menú",
   "all": "Todos",
   "snacks": "Snacks",

@@ -7,6 +7,7 @@ import {
   requestRoomCheckInCode,
   verifyRoomCheckInCode,
 } from "@/app/actions/checkin-codes";
+import { FullscreenButton } from "@/components/fullscreen-button";
 import { LanguageToggle } from "@/components/language-toggle";
 import {
   requestCheckInCodeLocal,
@@ -134,6 +135,10 @@ export default function RoomEntryPage() {
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
           <LanguageToggle variant="landing" />
+          <FullscreenButton
+            labelEnter={t(locale, "enterFullscreen")}
+            labelExit={t(locale, "exitFullscreen")}
+          />
           <button
             type="button"
             onClick={toggleTheme}
