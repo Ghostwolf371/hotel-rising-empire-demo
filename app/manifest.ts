@@ -10,7 +10,11 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: "/",
     lang: "en",
     dir: "ltr",
-    display: "standalone",
+    // Hide *all* system chrome on Android (status bar + nav bar) so the tablet
+    // runs edge-to-edge as a kiosk. `display_override` lets browsers that
+    // don't honour "fullscreen" fall back to the next-best display mode.
+    display: "fullscreen",
+    display_override: ["fullscreen", "standalone", "minimal-ui"],
     orientation: "any",
     background_color: "#0a0a0a",
     theme_color: "#0a0a0a",

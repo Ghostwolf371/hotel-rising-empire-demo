@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Instrument_Serif, Inter } from "next/font/google";
+import { AutoFullscreen } from "@/components/auto-fullscreen";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -131,6 +132,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
         {/* Runs as soon as the parser reaches it, before React hydrates. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+        <AutoFullscreen />
         <Providers useDatabase={useDatabase}>{children}</Providers>
         <div id="guest-portal-root" className="contents" />
       </body>
