@@ -1,4 +1,4 @@
-// https://pris.ly/d/prisma-schema — SQLite for local/dev; use Postgres in production (change provider + DATABASE_URL).
+// https://pris.ly/d/prisma-schema — PostgreSQL (Neon-hosted) for both dev and production.
 
 generator client {
   provider = "prisma-client"
@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 model Category {
@@ -30,15 +30,16 @@ model Room {
   id               String  @id
   number           String  @unique
   status           String
-  sessionStartedAt Int?
-  sessionEndsAt    Int?
+  // BigInt for ms-since-epoch — Postgres `INTEGER` (32-bit) would overflow.
+  sessionStartedAt BigInt?
+  sessionEndsAt    BigInt?
   durationHours    Int?
 }
 
 model Order {
   id         String      @id
   roomNumber String
-  createdAt  Int
+  createdAt  BigInt
   status     String
   notes      String?
   lines      OrderLine[]
@@ -59,13 +60,13 @@ model OrderLine {
 model PanicAlert {
   id         String @id
   roomNumber String
-  at         Int
+  at         BigInt
 }
 
 model GuestRating {
   id          String @id
   roomNumber  String
-  submittedAt Int
+  submittedAt BigInt
   cleanliness Int
   comfort     Int
   service     Int
@@ -82,9 +83,9 @@ model RoomCheckInCode {
   id          String  @id @default(cuid())
   roomNumber  String
   code        String
-  createdAt   Int
-  expiresAt   Int
-  consumedAt  Int?
+  createdAt   BigInt
+  expiresAt   BigInt
+  consumedAt  BigInt?
 
   @@index([roomNumber])
   @@index([expiresAt])

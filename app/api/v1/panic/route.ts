@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   const alerts: PanicAlert[] = rows.map((r) => ({
     id: r.id,
     roomNumber: r.roomNumber,
-    at: r.at,
+    at: Number(r.at),
   }));
   return jsonOk({ panicAlerts: alerts });
 }
@@ -36,13 +36,13 @@ export async function POST(request: Request) {
       data: {
         id,
         roomNumber: parsed.data.roomNumber,
-        at,
+        at: BigInt(at),
       },
     });
     const alert: PanicAlert = {
       id: row.id,
       roomNumber: row.roomNumber,
-      at: row.at,
+      at: Number(row.at),
     };
     return jsonOk({ panicAlert: alert }, { status: 201 });
   } catch {

@@ -55,12 +55,12 @@ export async function getDomainSnapshot(): Promise<DomainSnapshot> {
     panicAlerts: panicAlerts.map((r) => ({
       id: r.id,
       roomNumber: r.roomNumber,
-      at: r.at,
+      at: Number(r.at),
     })),
     guestRatings: guestRatings.map((r) => ({
       id: r.id,
       roomNumber: r.roomNumber,
-      submittedAt: r.submittedAt,
+      submittedAt: Number(r.submittedAt),
       cleanliness: r.cleanliness,
       comfort: r.comfort,
       service: r.service,
@@ -101,7 +101,7 @@ export async function createOrder(input: {
     data: {
       id: input.id,
       roomNumber: input.roomNumber,
-      createdAt: input.createdAt,
+      createdAt: BigInt(input.createdAt),
       status: input.status,
       notes: input.notes ?? null,
       lines: {
@@ -116,35 +116,45 @@ export async function createOrder(input: {
   });
 }
 
-export async function updateRoomById(
-  roomId: string,
-  data: {
+function toBigIntOrNull(v: number | null | undefined): bigint | null {
+  if (v === null || v === undefined) return null;
+  return BigInt(v);
+}
+
+type RoomTimestampPatch = {
+  status?: RoomStatus;
+  sessionStartedAt?: number | null;
+  sessionEndsAt?: number | null;
+  durationHours?: number | null;
+};
+
+function roomPatchToDb(data: RoomTimestampPatch) {
+  const out: {
     status?: RoomStatus;
-    sessionStartedAt?: number | null;
-    sessionEndsAt?: number | null;
+    sessionStartedAt?: bigint | null;
+    sessionEndsAt?: bigint | null;
     durationHours?: number | null;
-  },
-) {
+  } = {};
+  if (data.status !== undefined) out.status = data.status;
+  if (data.sessionStartedAt !== undefined) out.sessionStartedAt = toBigIntOrNull(data.sessionStartedAt);
+  if (data.sessionEndsAt !== undefined) out.sessionEndsAt = toBigIntOrNull(data.sessionEndsAt);
+  if (data.durationHours !== undefined) out.durationHours = data.durationHours;
+  return out;
+}
+
+export async function updateRoomById(roomId: string, data: RoomTimestampPatch) {
   const prisma = getPrisma();
   await prisma.room.update({
     where: { id: roomId },
-    data,
+    data: roomPatchToDb(data),
   });
 }
 
-export async function updateRoomByNumber(
-  roomNumber: string,
-  data: {
-    status?: RoomStatus;
-    sessionStartedAt?: number | null;
-    sessionEndsAt?: number | null;
-    durationHours?: number | null;
-  },
-) {
+export async function updateRoomByNumber(roomNumber: string, data: RoomTimestampPatch) {
   const prisma = getPrisma();
   await prisma.room.update({
     where: { number: roomNumber },
-    data,
+    data: roomPatchToDb(data),
   });
 }
 
@@ -155,8 +165,8 @@ export async function createRoom(room: Room) {
       id: room.id,
       number: room.number,
       status: room.status,
-      sessionStartedAt: room.sessionStartedAt ?? null,
-      sessionEndsAt: room.sessionEndsAt ?? null,
+      sessionStartedAt: toBigIntOrNull(room.sessionStartedAt ?? null),
+      sessionEndsAt: toBigIntOrNull(room.sessionEndsAt ?? null),
       durationHours: room.durationHours ?? null,
     },
   });
@@ -291,7 +301,7 @@ export async function createPanicAlert(alert: PanicAlert) {
     data: {
       id: alert.id,
       roomNumber: alert.roomNumber,
-      at: alert.at,
+      at: BigInt(alert.at),
     },
   });
 }
@@ -312,7 +322,7 @@ export async function createGuestRating(rating: GuestRating) {
     data: {
       id: rating.id,
       roomNumber: rating.roomNumber,
-      submittedAt: rating.submittedAt,
+      submittedAt: BigInt(rating.submittedAt),
       cleanliness: rating.cleanliness,
       comfort: rating.comfort,
       service: rating.service,

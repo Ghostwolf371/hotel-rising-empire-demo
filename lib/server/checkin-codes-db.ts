@@ -24,7 +24,7 @@ export async function requestCheckInCodeDb(roomNumber: string): Promise<CheckInC
     where: {
       roomNumber,
       consumedAt: null,
-      expiresAt: { gt: now },
+      expiresAt: { gt: BigInt(now) },
     },
   });
 
@@ -33,16 +33,16 @@ export async function requestCheckInCodeDb(roomNumber: string): Promise<CheckInC
     data: {
       roomNumber,
       code,
-      createdAt: now,
-      expiresAt,
+      createdAt: BigInt(now),
+      expiresAt: BigInt(expiresAt),
     },
   });
   return {
     id: row.id,
     roomNumber: row.roomNumber,
     code: row.code,
-    createdAt: row.createdAt,
-    expiresAt: row.expiresAt,
+    createdAt: Number(row.createdAt),
+    expiresAt: Number(row.expiresAt),
   };
 }
 
@@ -52,7 +52,7 @@ export async function listActiveCheckInCodesDb(): Promise<CheckInCodeRow[]> {
   const rows = await prisma.roomCheckInCode.findMany({
     where: {
       consumedAt: null,
-      expiresAt: { gt: now },
+      expiresAt: { gt: BigInt(now) },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -60,8 +60,8 @@ export async function listActiveCheckInCodesDb(): Promise<CheckInCodeRow[]> {
     id: r.id,
     roomNumber: r.roomNumber,
     code: r.code,
-    createdAt: r.createdAt,
-    expiresAt: r.expiresAt,
+    createdAt: Number(r.createdAt),
+    expiresAt: Number(r.expiresAt),
   }));
 }
 
@@ -76,13 +76,13 @@ export async function verifyCheckInCodeDb(
       roomNumber,
       code,
       consumedAt: null,
-      expiresAt: { gt: now },
+      expiresAt: { gt: BigInt(now) },
     },
   });
   if (!row) return false;
   await prisma.roomCheckInCode.update({
     where: { id: row.id },
-    data: { consumedAt: now },
+    data: { consumedAt: BigInt(now) },
   });
   return true;
 }

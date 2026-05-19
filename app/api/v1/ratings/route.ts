@@ -20,7 +20,7 @@ export async function GET(request: Request) {
   const guestRatings: GuestRating[] = rows.map((r) => ({
     id: r.id,
     roomNumber: r.roomNumber,
-    submittedAt: r.submittedAt,
+    submittedAt: Number(r.submittedAt),
     cleanliness: r.cleanliness,
     comfort: r.comfort,
     service: r.service,
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
       data: {
         id,
         roomNumber: parsed.data.roomNumber,
-        submittedAt: now,
+        submittedAt: BigInt(now),
         cleanliness: parsed.data.cleanliness,
         comfort: parsed.data.comfort,
         service: parsed.data.service,
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
     const rating: GuestRating = {
       id: row.id,
       roomNumber: row.roomNumber,
-      submittedAt: row.submittedAt,
+      submittedAt: Number(row.submittedAt),
       cleanliness: row.cleanliness,
       comfort: row.comfort,
       service: row.service,
