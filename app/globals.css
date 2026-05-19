@@ -197,20 +197,6 @@ body {
   }
 }
 
-.duration-choice-collapsible-panel {
-  display: grid;
-  transition-property: grid-template-rows, opacity, margin-top;
-  transition-duration: 0.48s, 0.38s, 0.42s;
-  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1), ease-out,
-    cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .duration-choice-collapsible-panel {
-    transition-duration: 0.01ms, 0.01ms, 0.01ms !important;
-  }
-}
-
 /* Room-timer countdown strip — muted trench like legacy welcome */
 [data-theme="dark"] .guest-choice-bar-track {
   box-shadow:

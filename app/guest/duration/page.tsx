@@ -143,7 +143,7 @@ function DurationContent() {
                 className={`${cardBase} ${
                   choice === "preset"
                     ? "border-[var(--gold)] bg-[var(--gold)] text-black shadow-xl shadow-[var(--gold)]/25"
-                    : "border-[var(--border-light)] bg-[var(--card)]/80 text-[var(--foreground)] backdrop-blur-md hover:border-[var(--gold)]/55 motion-safe:hover:shadow-[var(--gold)]/8"
+                    : "border-[var(--border-light)] bg-[var(--card)]/90 text-[var(--foreground)] hover:border-[var(--gold)]/55 motion-safe:hover:shadow-[var(--gold)]/8"
                 }`}
               >
                 <div
@@ -170,7 +170,7 @@ function DurationContent() {
                 className={`${cardBase} ${
                   choice === "custom"
                     ? "border-[var(--gold)] bg-[var(--gold)] text-black shadow-xl shadow-[var(--gold)]/25"
-                    : "border-[var(--border-light)] bg-[var(--card)]/80 text-[var(--foreground)] backdrop-blur-md hover:border-[var(--gold)]/55 motion-safe:hover:shadow-[var(--gold)]/8"
+                    : "border-[var(--border-light)] bg-[var(--card)]/90 text-[var(--foreground)] hover:border-[var(--gold)]/55 motion-safe:hover:shadow-[var(--gold)]/8"
                 }`}
               >
                 <div
@@ -192,16 +192,9 @@ function DurationContent() {
             </div>
 
             {/* Custom hours panel */}
-            <div
-              className={`duration-choice-collapsible-panel mt-3 w-full overflow-hidden ${
-                choice === "custom"
-                  ? "opacity-100 [grid-template-rows:1fr] motion-safe:delay-[40ms]"
-                  : "pointer-events-none [grid-template-rows:0fr] opacity-0"
-              }`}
-              aria-hidden={choice !== "custom"}
-            >
-              <div className="min-h-0">
-                <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)]/90 px-5 py-4 shadow-lg shadow-black/20 backdrop-blur-sm motion-safe:duration-450 sm:shadow-black/14 motion-safe:[animation:duration-choice-in_0.5s_ease-out_both]">
+            {choice === "custom" && (
+              <div className="mt-3 w-full">
+                <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)]/95 px-5 py-4 shadow-lg shadow-black/20 sm:shadow-black/14 motion-safe:[animation:duration-choice-in_0.32s_ease-out_both] motion-safe:[will-change:opacity,transform]">
                   <label htmlFor="custom-hours" className="block text-left text-sm font-semibold text-[var(--foreground)]">
                     {t(locale, "customHoursLabel")}
                   </label>
@@ -223,7 +216,7 @@ function DurationContent() {
                   </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Price + CTA */}
