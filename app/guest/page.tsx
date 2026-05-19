@@ -297,8 +297,10 @@ export default function GuestMainPage() {
             </div>
           </div>
 
-          {/* Product grid — 1 col on very narrow, 2 from ~520px, 3 on xl */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {/* Product grid — 1 col on phones, 2 on small tablets in portrait,
+              3 from md (≥768 px) so an 11" landscape tablet always shows
+              three cards per row. */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 md:grid-cols-3">
             {filtered.map((p, idx) => {
               const name = p.name;
               const catLabel = categoryLabel(categories, p.category);
@@ -354,12 +356,12 @@ export default function GuestMainPage() {
                         sizes="(max-width: 639px) 100vw, (max-width: 1279px) 50vw, 33vw"
                       />
                     </div>
-                    <div className="flex flex-1 flex-col p-4">
-                      <h3 className="text-base font-bold text-[var(--foreground)]">{name}</h3>
-                      <p className="text-xs text-[var(--muted)]">{catLabel}</p>
-                      <div className="mt-3 flex items-center justify-between">
-                        <span className="text-base font-bold text-[var(--gold)]">{formatSrd(p.priceSrd)}</span>
-                        <span className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all duration-200 ${
+                    <div className="flex flex-1 flex-col p-3 sm:p-3.5">
+                      <h3 className="text-sm font-bold leading-tight text-[var(--foreground)] sm:text-base">{name}</h3>
+                      <p className="mt-0.5 text-[0.7rem] text-[var(--muted)] sm:text-xs">{catLabel}</p>
+                      <div className="mt-2 flex items-center justify-between gap-2 sm:mt-3">
+                        <span className="text-sm font-bold text-[var(--gold)] sm:text-base">{formatSrd(p.priceSrd)}</span>
+                        <span className={`shrink-0 rounded-lg px-2.5 py-1 text-xs font-bold transition-all duration-200 sm:px-3 sm:py-1.5 ${
                           isInCart
                             ? "bg-[var(--gold)] text-[var(--dark)]"
                             : "bg-[var(--gold)]/10 text-[var(--gold)] group-hover:bg-[var(--gold)] group-hover:text-[var(--dark)]"
