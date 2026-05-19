@@ -359,13 +359,13 @@ export default function GuestMainPage() {
                     <div className="flex flex-1 flex-col p-3 sm:p-3.5">
                       <h3 className="text-sm font-bold leading-tight text-[var(--foreground)] sm:text-base">{name}</h3>
                       <p className="mt-0.5 text-[0.7rem] text-[var(--muted)] sm:text-xs">{catLabel}</p>
-                      {/* `mt-auto` anchors the row to the bottom of the
-                          card; `flex-wrap` lets the +Add chip drop to the
-                          next line only on truly narrow widths instead of
-                          colliding with the price. */}
-                      <div className="mt-auto flex flex-wrap items-center justify-between gap-x-2 gap-y-1 pt-2 sm:pt-3">
-                        <span className="text-sm font-bold text-[var(--gold)] sm:text-base">{formatSrd(p.priceSrd)}</span>
-                        <span className={`ml-auto shrink-0 rounded-lg px-2.5 py-1 text-xs font-bold transition-all duration-200 sm:px-3 sm:py-1.5 ${
+                      {/* Single-line footer: price left, +Add chip right.
+                          `flex-nowrap` forbids wrapping no matter how
+                          narrow the card gets. `min-w-0` on the price lets
+                          it ellipsise instead of pushing the chip down. */}
+                      <div className="mt-auto flex flex-nowrap items-center justify-between gap-2 pt-2 sm:pt-3">
+                        <span className="min-w-0 truncate text-sm font-bold text-[var(--gold)] sm:text-base">{formatSrd(p.priceSrd)}</span>
+                        <span className={`shrink-0 whitespace-nowrap rounded-lg px-2.5 py-1 text-xs font-bold transition-all duration-200 sm:px-3 sm:py-1.5 ${
                           isInCart
                             ? "bg-[var(--gold)] text-[var(--dark)]"
                             : "bg-[var(--gold)]/10 text-[var(--gold)] group-hover:bg-[var(--gold)] group-hover:text-[var(--dark)]"
