@@ -72,6 +72,29 @@ html {
   height: 100%;
 }
 
+/* Compact-UI scaling for tablet kiosks.
+ *
+ * 11" Android tablets report ~1280 CSS px landscape / ~800 portrait. The
+ * default 16 px root font-size leaves the management shell and guest cart
+ * just barely overflowing on those viewports. Shrinking the root font-size
+ * scales every rem-based Tailwind utility (spacing, padding, gap, text size)
+ * proportionally, so we get a uniform ~12 % size reduction without having
+ * to retouch every component.
+ *
+ * Desktop / laptop screens (>= 1367 CSS px) are unaffected, so the
+ * management user on a PC keeps the full-size layout. */
+@media (max-width: 1366px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 900px) {
+  html {
+    font-size: 13px;
+  }
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
