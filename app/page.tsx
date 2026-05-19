@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import {
   requestRoomCheckInCode,
   verifyRoomCheckInCode,
@@ -43,29 +44,29 @@ export default function RoomEntryPage() {
       setRoomError(true);
       return;
     }
-    setRoomError(false);
-    setShowVerify(true);
-    setCode("");
-    setError(false);
-    setCodeRequestError(null);
+    // Flush the state update synchronously so the modal (and its hidden
+    // input) is in the DOM before we focus it. Calling .focus() in the
+    // same user gesture is what convinces iPadOS/iOS Safari to actually
+    // pop the soft keyboard for the code input.
+    flushSync(() => {
+      setRoomError(false);
+      setShowVerify(true);
+      setCode("");
+      setError(false);
+      setCodeRequestError(null);
+    });
+    codeInputRef.current?.focus({ preventScroll: true });
   }
 
-  // Focus the hidden code input once the modal actually mounts. Double rAF
-  // waits for both the React commit and the first paint so we never race the
-  // modal's fade-in-scale animation. preventScroll keeps tablet viewports
-  // (especially in browser fullscreen) from jumping when the keyboard opens.
+  // Belt-and-suspenders: if showVerify flips on via some other path (e.g.
+  // React StrictMode or a future entry point), still try to focus once the
+  // modal commits. Harmless when the synchronous focus above already won.
   useEffect(() => {
     if (!showVerify) return;
-    let raf2 = 0;
-    const raf1 = requestAnimationFrame(() => {
-      raf2 = requestAnimationFrame(() => {
-        codeInputRef.current?.focus({ preventScroll: true });
-      });
+    const id = requestAnimationFrame(() => {
+      codeInputRef.current?.focus({ preventScroll: true });
     });
-    return () => {
-      cancelAnimationFrame(raf1);
-      if (raf2) cancelAnimationFrame(raf2);
-    };
+    return () => cancelAnimationFrame(id);
   }, [showVerify]);
 
   useEffect(() => {
@@ -237,9 +238,8 @@ export default function RoomEntryPage() {
                   onChange={(e) => handleCodeChange(e.target.value)}
                   onFocus={() => setCodeFocused(true)}
                   onBlur={() => setCodeFocused(false)}
-                  disabled={codeRequesting}
                   aria-label={t(locale, "enterCode")}
-                  className="absolute inset-0 z-10 h-full w-full cursor-pointer bg-transparent text-transparent caret-transparent outline-none disabled:cursor-not-allowed"
+                  className="absolute inset-0 z-10 h-full w-full cursor-pointer bg-transparent text-transparent caret-transparent outline-none"
                   style={{
                     // Hide the native caret/selection without using opacity:0
                     // (Safari sometimes refuses to focus opacity:0 inputs).
