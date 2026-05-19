@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { ProductThumb } from "@/components/product-thumb";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -51,7 +50,7 @@ export default function GuestCartPage() {
       name: string;
       lineTotal: number;
     }[];
-  }, [cart, productById, locale]);
+  }, [cart, productById]);
 
   const total = lines.reduce((s, l) => s + l.lineTotal, 0);
 

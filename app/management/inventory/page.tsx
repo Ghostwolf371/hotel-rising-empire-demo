@@ -389,7 +389,11 @@ function InventoryContent({
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
-        <div className="relative min-w-0 flex-1">
+        {/* Reserve the entire row for the search input below `md`. On smaller
+            tablets the chips + Add-Product button were squeezing the search
+            field down to a ~40 px sliver where only the magnifier icon was
+            visible. At `md+` it goes back to a single-row flexible layout. */}
+        <div className="relative w-full min-w-0 md:flex-1 md:min-w-[14rem] md:w-auto">
           <svg
             className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted)]"
             fill="none"
@@ -616,9 +620,21 @@ function ProductModal({
     [locale, setProduct],
   );
 
-  useEffect(() => {
+  /**
+   * Reset transient upload state when the parent swaps the edited product
+   * without unmounting the modal. The state resets use React's documented
+   * "store the previous prop" pattern (which avoids the cascading
+   * re-render `react-hooks/set-state-in-effect` warns about); the ref
+   * reset has to live in `useEffect` because writing to refs during
+   * render is forbidden by `react-hooks/refs`.
+   */
+  const [lastSeenProductId, setLastSeenProductId] = useState(product.id);
+  if (lastSeenProductId !== product.id) {
+    setLastSeenProductId(product.id);
     setUploadHint(null);
     setDragActive(false);
+  }
+  useEffect(() => {
     dragDepth.current = 0;
   }, [product.id]);
 

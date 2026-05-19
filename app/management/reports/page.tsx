@@ -418,7 +418,11 @@ export default function ManagementReportsPage() {
           {t(locale, "mgmtRevenue")} · {filterLabel}
         </p>
 
-        <div className="mb-8 grid grid-cols-1 gap-5 sm:grid-cols-3 sm:gap-6">
+        {/* 3-up only above 1024 CSS px; below that the management sidebar eats
+            enough horizontal space that the SRD currency value (e.g.
+            "SRD 1,167.00") can't fit on one line and used to wrap one digit
+            per row. 2-up at md, single column on narrow tablets/phones. */}
+        <div className="mb-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6">
           <KpiCard label={t(locale, "mgmtRevenue")} value={formatSrd(stats.totalRevenue)} icon="revenue" size="hero" />
           <KpiCard label={t(locale, "mgmtTotalOrders")} value={String(stats.totalOrders)} icon="orders" size="hero" />
           <KpiCard label={t(locale, "mgmtUnitsSold")} value={String(stats.unitsSold)} icon="units" size="hero" />

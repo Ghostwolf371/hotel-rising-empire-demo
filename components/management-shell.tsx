@@ -203,8 +203,11 @@ export function ManagementShell({ children }: { children: ReactNode }) {
   /**
    * Only enqueue “live” events that happen after this tab mounted (with a small skew),
    * so a full page refresh does not replay popups for old orders / sessions / codes.
+   * `useState` lazy initializer runs once before the first render, satisfying the
+   * `react-hooks/purity` rule (which forbids calling `Date.now()` directly in render).
    */
-  const pageMountAtRef = useRef(Date.now());
+  const [pageMountAt] = useState(() => Date.now());
+  const pageMountAtRef = useRef(pageMountAt);
   /** Allow events up to this many ms *before* mount (clock skew / same-tick ordering). */
   const LIVE_EVENT_SKEW_MS = 4000;
   const shownLiveOrderIdsRef = useRef(new Set<string>());
@@ -368,6 +371,11 @@ export function ManagementShell({ children }: { children: ReactNode }) {
   }, [pathname, useDatabase, enqueueLive]);
 
   useEffect(() => {
+    // Clean up dismissals when their underlying order leaves "processing".
+    // The functional updater bails out (returns `prev`) when nothing changed,
+    // so this does not trigger a cascading render — but the lint rule cannot
+    // statically prove that, hence the targeted disable.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDismissedOrderNotifs((prev) => {
       const next = new Set(prev);
       let changed = false;

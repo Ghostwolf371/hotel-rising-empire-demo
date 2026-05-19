@@ -34,8 +34,12 @@ export function ProductThumb({
   if (!src) return null;
 
   if (isProductDataImageUrl(src)) {
+    // next/image cannot route base64 data URLs through the image optimizer
+    // (the URL is the payload), so we render uploaded thumbnails with a
+    // plain <img>. Disabling the rule once locally is the documented escape.
     if (fill) {
       return (
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={src}
           alt={alt}
@@ -45,6 +49,7 @@ export function ProductThumb({
       );
     }
     return (
+      // eslint-disable-next-line @next/next/no-img-element
       <img
         src={src}
         alt={alt}
