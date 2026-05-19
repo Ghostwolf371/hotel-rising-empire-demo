@@ -359,13 +359,14 @@ export default function GuestMainPage() {
                     <div className="flex flex-1 flex-col p-3 sm:p-3.5">
                       <h3 className="text-sm font-bold leading-tight text-[var(--foreground)] sm:text-base">{name}</h3>
                       <p className="mt-0.5 text-[0.7rem] text-[var(--muted)] sm:text-xs">{catLabel}</p>
-                      {/* `mt-auto` parks this row at the bottom of the card
-                          so the +Add chip is always anchored to the
-                          bottom-right corner, even when card heights vary
-                          (longer product names push the title down). */}
-                      <div className="mt-auto flex items-center justify-between gap-2 pt-2 sm:pt-3">
+                      {/* `mt-auto` parks this footer at the bottom of the
+                          card. Price sits on its own line above; the +Add
+                          chip is right-aligned on its own line below so it
+                          never crowds the price even when the card is
+                          narrow (3-col tablet). */}
+                      <div className="mt-auto flex flex-col items-stretch gap-2 pt-2 sm:pt-3">
                         <span className="text-sm font-bold text-[var(--gold)] sm:text-base">{formatSrd(p.priceSrd)}</span>
-                        <span className={`shrink-0 rounded-lg px-2.5 py-1 text-xs font-bold transition-all duration-200 sm:px-3 sm:py-1.5 ${
+                        <span className={`self-end shrink-0 rounded-lg px-2.5 py-1 text-xs font-bold transition-all duration-200 sm:px-3 sm:py-1.5 ${
                           isInCart
                             ? "bg-[var(--gold)] text-[var(--dark)]"
                             : "bg-[var(--gold)]/10 text-[var(--gold)] group-hover:bg-[var(--gold)] group-hover:text-[var(--dark)]"
