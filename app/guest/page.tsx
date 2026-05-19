@@ -335,13 +335,17 @@ export default function GuestMainPage() {
                     onClick={() => handleTapProduct(p.id)}
                     className="flex w-full touch-manipulation flex-col overflow-hidden rounded-2xl text-left active:scale-[0.97]"
                   >
-                    {/* Explicit pixel height with `aspect-[4/3]` as a hint:
-                        some older Android WebView/Chrome builds collapse a
-                        flex-column child whose only sizing is CSS aspect-ratio
-                        to 0 px, so the product photo silently disappears
-                        (the cart works because it uses fixed h-24 w-24).
-                        The `h-*` values keep us in 4:3 across breakpoints. */}
-                    <div className="relative h-44 w-full overflow-hidden bg-[var(--surface)] sm:h-48 md:h-52 xl:h-44 [aspect-ratio:4/3]">
+                    {/* Padding-bottom aspect-ratio hack: `padding-bottom: 75%`
+                        makes the box 3/4 as tall as it is wide, i.e. 4:3,
+                        with no dependency on the CSS `aspect-ratio` property
+                        which some older Android WebView/Chrome builds drop
+                        when applied to a flex-column child (collapsing the
+                        photo to 0 px). Image is positioned absolute inset-0
+                        inside, so it fills the computed box. */}
+                    <div
+                      className="relative w-full overflow-hidden bg-[var(--surface)]"
+                      style={{ paddingBottom: "75%" }}
+                    >
                       <ProductThumb
                         src={p.image}
                         alt={name}
