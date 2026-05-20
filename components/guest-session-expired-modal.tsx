@@ -20,9 +20,11 @@ type ExpiredView = "choice" | "extend";
 
 function ExpiredModalIdleChooser({
   onAutoEnd,
+  onIdleAfterDismiss,
   ariaLabel,
 }: {
   onAutoEnd: () => void;
+  onIdleAfterDismiss: () => void;
   ariaLabel: string;
 }) {
   const [countdownVisible, setCountdownVisible] = useState(true);
@@ -49,7 +51,7 @@ function ExpiredModalIdleChooser({
       clearIdle();
       idleTimerRef.current = setTimeout(() => {
         idleTimerRef.current = null;
-        onAutoEnd();
+        onIdleAfterDismiss();
       }, GUEST_RATE_IDLE_AFTER_DISMISS_MS);
     }
 
@@ -78,7 +80,7 @@ function ExpiredModalIdleChooser({
       window.removeEventListener("pointerdown", onActivity);
       window.removeEventListener("keydown", onActivity);
     };
-  }, [onAutoEnd]);
+  }, [onAutoEnd, onIdleAfterDismiss]);
 
   if (!countdownVisible) return null;
 
@@ -94,7 +96,14 @@ function ExpiredModalIdleChooser({
 export function GuestSessionExpiredModal() {
   const router = useRouter();
   const { sessionExpiredOpen, closeSessionExpiredModal } = useGuestSessionExpiryUi();
-  const { guestSession, dispatch, locale, hourlyRate, registeredGuestRoom } = useDemo();
+  const {
+    guestSession,
+    dispatch,
+    locale,
+    hourlyRate,
+    registeredGuestRoom,
+    armGuestNavToRatingAfterSessionEnd,
+  } = useDemo();
   const [view, setView] = useState<ExpiredView>("choice");
   const [extendHours, setExtendHours] = useState(2);
 
@@ -117,6 +126,32 @@ export function GuestSessionExpiredModal() {
     registeredGuestRoom,
   ]);
 
+  const finishToRate = useCallback(() => {
+    if (guestSession) {
+      armGuestNavToRatingAfterSessionEnd();
+      dispatch({ type: "END_GUEST_SESSION" });
+    }
+    closeSessionExpiredModal();
+    setView("choice");
+    router.replace(guestPath("/guest/rate", registeredGuestRoom));
+  }, [
+    guestSession,
+    armGuestNavToRatingAfterSessionEnd,
+    dispatch,
+    closeSessionExpiredModal,
+    router,
+    registeredGuestRoom,
+  ]);
+
+  useEffect(() => {
+    if (!sessionExpiredOpen) return;
+    const prev = document.documentElement.style.overflow;
+    document.documentElement.style.overflow = "hidden";
+    return () => {
+      document.documentElement.style.overflow = prev;
+    };
+  }, [sessionExpiredOpen]);
+
   useEffect(() => {
     if (!sessionExpiredOpen) {
       setView("choice");
@@ -133,14 +168,16 @@ export function GuestSessionExpiredModal() {
 
   if (!sessionExpiredOpen || !guestSession) return null;
 
+  const showChoiceCountdown = view === "choice";
+
   return (
     <>
       <div
-        className="fixed inset-0 z-[55] flex items-center justify-center bg-black/70 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-md sm:px-6"
+        className="fixed inset-0 z-[55] flex touch-none flex-col items-center justify-center overflow-hidden bg-black/70 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(5.5rem,env(safe-area-inset-bottom))] backdrop-blur-md sm:px-6"
         role="presentation"
       >
         <div
-          className="animate-fade-in-scale w-full max-w-md rounded-3xl border border-[var(--border)] bg-[var(--card)] px-6 py-8 shadow-2xl sm:px-8 sm:py-10"
+          className="animate-fade-in-scale max-h-[min(88dvh,720px)] w-full max-w-lg overflow-y-auto overscroll-contain rounded-3xl border border-[var(--border)] bg-[var(--card)] px-6 py-8 text-center shadow-2xl sm:px-8 max-h-[850px]:py-6"
           onClick={(e) => e.stopPropagation()}
           role="dialog"
           aria-modal="true"
@@ -155,25 +192,25 @@ export function GuestSessionExpiredModal() {
               </div>
               <h2
                 id="session-expired-title"
-                className="mt-6 text-center text-2xl font-bold tracking-tight text-[var(--foreground)] sm:text-3xl"
+                className="mt-6 text-center text-2xl font-black leading-tight tracking-tight text-[var(--foreground)] sm:text-3xl"
               >
                 {t(locale, "extendSessionTitle")}
               </h2>
               <p className="mt-3 text-center text-sm leading-relaxed text-[var(--muted)] sm:text-base">
                 {t(locale, "extendSessionSub")}
               </p>
-              <div className="mt-8 flex flex-col gap-3">
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
                 <button
                   type="button"
                   onClick={() => setView("extend")}
-                  className="flex w-full min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-[var(--gold)] py-4 text-lg font-bold text-[var(--dark)] shadow-lg transition hover:bg-[var(--gold-light)] active:scale-[0.99]"
+                  className="min-h-[52px] flex-1 rounded-2xl bg-[var(--gold)] px-6 py-4 text-lg font-bold text-[var(--dark)] shadow-lg transition hover:bg-[var(--gold-light)] active:scale-[0.99] sm:min-w-[200px] sm:flex-none"
                 >
                   {t(locale, "addTime")}
                 </button>
                 <button
                   type="button"
-                  onClick={finishToDuration}
-                  className="flex w-full min-h-[52px] items-center justify-center gap-2 rounded-2xl border-2 border-[var(--border-light)] bg-[var(--surface)] py-4 text-lg font-bold text-[var(--foreground)] transition hover:border-red-500/40 hover:bg-red-500/10 active:scale-[0.99]"
+                  onClick={finishToRate}
+                  className="min-h-[52px] flex-1 rounded-2xl border-2 border-[var(--border-light)] bg-[var(--surface)] px-6 py-4 text-lg font-bold text-[var(--foreground)] transition hover:border-[var(--gold)]/40 hover:bg-[var(--card-hover)] active:scale-[0.99] sm:min-w-[200px] sm:flex-none"
                 >
                   {t(locale, "endNow")}
                 </button>
@@ -194,8 +231,8 @@ export function GuestSessionExpiredModal() {
               <p className="mt-3 text-center text-sm leading-relaxed text-[var(--muted)]">
                 {t(locale, "extendModalIntro")}
               </p>
-              <div className="mt-8 overflow-x-auto px-1 [-webkit-overflow-scrolling:touch]">
-                <div className="flex min-w-[min(100%,18rem)] justify-between gap-1 px-[2px] sm:min-w-0">
+              <div className="mt-6 overflow-hidden px-1">
+                <div className="grid grid-cols-6 gap-1 px-[2px]">
                   {[1, 2, 3, 4, 5, 6].map((h) => (
                     <button
                       key={h}
@@ -257,9 +294,10 @@ export function GuestSessionExpiredModal() {
         </div>
       </div>
 
-      {view === "choice" ? (
+      {showChoiceCountdown ? (
         <ExpiredModalIdleChooser
-          onAutoEnd={finishToDuration}
+          onAutoEnd={finishToRate}
+          onIdleAfterDismiss={finishToDuration}
           ariaLabel={t(locale, "guestTimerAria")}
         />
       ) : null}

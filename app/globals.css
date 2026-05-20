@@ -234,6 +234,12 @@ body {
   padding-bottom: max(0.25rem, env(safe-area-inset-bottom, 0px));
 }
 
+/* Session-expired / order-choice modals — bar sits in the band below the centered card */
+.guest-choice-countdown-slot[data-slot="guest-session-expired"] {
+  bottom: clamp(6.5rem, 22vh, 15rem);
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+}
+
 .stagger-1 { animation-delay: 0.05s; }
 .stagger-2 { animation-delay: 0.1s; }
 .stagger-3 { animation-delay: 0.15s; }

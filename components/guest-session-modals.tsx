@@ -109,8 +109,8 @@ export function GuestSessionModals({
       )}
 
       {modal === "extend" && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] backdrop-blur-md">
-          <div className="animate-fade-in-scale w-full max-w-md rounded-3xl border border-[var(--border)] bg-[var(--card)] px-8 py-10 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex touch-none items-center justify-center overflow-hidden bg-black/60 px-6 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] backdrop-blur-md">
+          <div className="animate-fade-in-scale max-h-[min(88dvh,720px)] w-full max-w-md overflow-y-auto overscroll-contain rounded-3xl border border-[var(--border)] bg-[var(--card)] px-8 py-8 shadow-2xl max-h-[850px]:py-6">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--gold)]/10 text-[var(--gold)]">
               <svg className="h-9 w-9" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -118,8 +118,8 @@ export function GuestSessionModals({
             </div>
             <h3 className="mt-6 text-center text-2xl font-bold text-[var(--gold)]">{t(locale, "extendModalTitle")}</h3>
             <p className="mt-3 text-center text-sm leading-relaxed text-[var(--muted)]">{t(locale, "extendModalIntro")}</p>
-            <div className="mt-8 overflow-x-auto px-1 [-webkit-overflow-scrolling:touch]">
-              <div className="flex min-w-[min(100%,18rem)] justify-between gap-1 px-[2px] sm:min-w-0">
+            <div className="mt-6 overflow-hidden px-1">
+              <div className="grid grid-cols-6 gap-1 px-[2px]">
                 {[1, 2, 3, 4, 5, 6].map((h) => (
                   <button
                     key={h}

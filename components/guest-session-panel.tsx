@@ -31,10 +31,10 @@ export function GuestSessionPanel({
 }: GuestSessionPanelProps) {
   const isFs = variant === "fullscreen";
 
-  return (
+  const panelBody = (
     <>
       {!isFs && (
-        <div className="flex items-center gap-3 border-b border-[var(--border)] px-4 py-2.5 sm:px-6">
+        <div className="flex shrink-0 items-center gap-3 border-b border-[var(--border)] px-4 py-2.5 sm:px-6">
           <Image src="/logo.png" alt="Empire Apartments" width={36} height={36} className="h-9 w-9 shrink-0 self-center rounded-lg" />
           <span className="text-sm font-black uppercase leading-none tracking-wider text-[var(--gold)]">{t(locale, "brand")}</span>
         </div>
@@ -43,7 +43,7 @@ export function GuestSessionPanel({
       {/* Vertical padding and type scale tightened so the full panel
           (room number + countdown + 3 action buttons) fits inside an 11"
           landscape tablet (~800 CSS px tall) without forcing a scroll. */}
-      <div className={`border-b border-[var(--border)] ${isFs ? "px-6 py-4 text-center sm:px-8 sm:py-5" : "px-5 py-5"}`}>
+      <div className={`shrink-0 border-b border-[var(--border)] ${isFs ? "px-6 py-4 text-center sm:px-8 sm:py-5" : "px-5 py-4"}`}>
         <p className={`font-bold uppercase tracking-wider text-[var(--muted)] ${isFs ? "text-sm" : "text-xs"}`}>{t(locale, "roomNumber")}</p>
         <p className={`mt-1 font-black text-[var(--gold)] ${isFs ? "text-4xl sm:text-5xl" : "mt-1 text-3xl"}`}>{guestSession.roomNumber}</p>
         <p className={`mt-2 flex items-center justify-center gap-1.5 text-[var(--muted)] ${isFs ? "text-sm" : "mt-2 text-xs"}`}>
@@ -54,7 +54,7 @@ export function GuestSessionPanel({
         </p>
       </div>
 
-      <div className={`border-b border-[var(--border)] text-center ${isFs ? "px-6 py-4 sm:px-8 sm:py-5" : "px-5 py-5"}`}>
+      <div className={`shrink-0 border-b border-[var(--border)] text-center ${isFs ? "px-6 py-4 sm:px-8 sm:py-5" : "px-5 py-4"}`}>
         <p className={`font-bold uppercase tracking-wider text-[var(--muted)] ${isFs ? "text-sm" : "text-xs"}`}>{t(locale, "timeLeft")}</p>
         <p
           className={`mt-2 font-mono font-black tabular-nums ${isFs ? "text-5xl sm:text-6xl" : "mt-2 text-4xl"} ${
@@ -65,17 +65,15 @@ export function GuestSessionPanel({
         </p>
         {nearlyDone && leftMs > 0 && (
           <span
-            className={`mt-3 inline-flex animate-pulse items-center rounded-full bg-amber-500/25 font-bold text-amber-950 ${isFs ? "px-4 py-2 text-sm" : "mt-2 px-3 py-1 text-[10px]"}`}
+            className={`mt-3 inline-flex animate-pulse items-center rounded-full bg-amber-500 font-bold text-white ${isFs ? "px-4 py-2 text-sm" : "mt-2 px-3 py-1 text-[10px]"}`}
           >
             {t(locale, "nearlyDone")}
           </span>
         )}
       </div>
 
-      {!isFs && <div className="min-h-0 flex-1" aria-hidden />}
-
       <div
-        className={`border-[var(--border)] ${isFs ? "mt-1 border-t px-4 pb-4 pt-4 sm:px-6 sm:pb-5 sm:pt-5" : "space-y-2.5 border-t px-4 py-4 sm:px-5 sm:py-5"}`}
+        className={`shrink-0 border-[var(--border)] ${isFs ? "mt-1 border-t px-4 pb-4 pt-4 sm:px-6 sm:pb-5 sm:pt-5" : "mt-auto space-y-2 border-t px-4 py-3 sm:px-5 sm:py-4"}`}
       >
         <div className={isFs ? "grid grid-cols-2 gap-2.5" : "contents"}>
           <button
@@ -111,5 +109,13 @@ export function GuestSessionPanel({
         </button>
       </div>
     </>
+  );
+
+  if (isFs) return panelBody;
+
+  return (
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      {panelBody}
+    </div>
   );
 }

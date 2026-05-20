@@ -128,8 +128,9 @@ export default function GuestStayOnlyPage() {
           href="/guest"
           className="mt-4 flex w-full max-w-lg min-h-[48px] touch-manipulation items-center justify-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--gold)_55%,transparent)] bg-[var(--gold)] px-6 py-3.5 text-center text-base font-black tracking-wide text-[var(--dark)] shadow-lg shadow-[color-mix(in_srgb,var(--gold)_35%,transparent)] transition hover:bg-[var(--gold-light)] hover:shadow-xl active:scale-[0.98] sm:mt-5 sm:max-w-xl"
         >
-          <svg className="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+          <svg className="h-6 w-6 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+            <path d="M9.25 2.1c0 2.95-1.5 5.5-3.5 6.85V21.9h1.65V8.95c2-1.35 3.5-3.9 3.5-6.85 0-1-.85-1.85-1.85-1.85S7.4 1.45 6.5 2.1s2.75 0 2.75 0ZM8.1 2.1h.75v4.75c0 1.35-.85 2.45-2 2.95v12.1H5.1V9.8c-1.15-.5-2-1.6-2-2.95V2.1h5ZM7.35 2.1h.55v2.65c0 .5-.4.9-.9.9s-.9-.4-.9-.9V2.1h1.25ZM6.2 2.1h.55v2.65c0 .5-.4.9-.9.9s-.9-.4-.9-.9V2.1h.55Z" transform="rotate(-36 12 12)" />
+            <path d="M15.1 2.35 20.65 8.6 16.2 21.75l-1.55-.4 3.45-9.55L13.75 3.55l1.35-1.2Z" />
           </svg>
           {t(locale, "staySwitchToMenu")}
         </Link>

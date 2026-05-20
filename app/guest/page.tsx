@@ -169,7 +169,7 @@ export default function GuestMainPage() {
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-[var(--background)] md:flex-row">
       {/* ─── SIDEBAR: full-width strip on small tablets, column from md up ─── */}
-      <aside className="flex max-h-[min(42dvh,400px)] w-full shrink-0 flex-col overflow-y-auto overscroll-y-contain border-b border-[var(--border)] bg-[var(--card)] md:max-h-none md:h-full md:w-64 md:overflow-visible md:border-b-0 md:border-r lg:w-72">
+      <aside className="flex max-h-[min(42dvh,400px)] w-full shrink-0 flex-col overflow-hidden border-b border-[var(--border)] bg-[var(--card)] md:max-h-none md:h-full md:w-64 md:border-b-0 md:border-r lg:w-72">
         <GuestSessionPanel
           variant="sidebar"
           guestSession={guestSession}
