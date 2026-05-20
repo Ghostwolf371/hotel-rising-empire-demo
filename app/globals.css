@@ -237,12 +237,12 @@ body {
   padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
 }
 
-/* Roughly midway in the empty band below a centered rating card (not docked to screen edge) */
+/* Below the centered rating card — sit a bit lower in the empty band above the footer */
 .guest-choice-countdown-slot[data-slot="guest-rate"] {
   bottom: clamp(
-    calc(2.75rem + env(safe-area-inset-bottom, 0px)),
-    11vh,
-    10rem
+    calc(1.5rem + env(safe-area-inset-bottom, 0px)),
+    7vh,
+    7rem
   );
   padding-bottom: max(0.25rem, env(safe-area-inset-bottom, 0px));
 }
