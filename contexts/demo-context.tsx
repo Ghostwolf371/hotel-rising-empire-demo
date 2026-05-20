@@ -33,6 +33,10 @@ import {
   type Theme,
 } from "@/lib/types";
 import * as hotelSync from "@/app/actions/hotel-data";
+import {
+  normalizeExpiredOccupiedRooms,
+  resolveGuestDurationHours,
+} from "@/lib/room-session";
 
 const STORAGE_KEY = "hre-demo-v2";
 
@@ -78,6 +82,9 @@ export function normalizePersistedPayload(
   if (out.locale !== undefined && !isLocale(out.locale)) {
     out.locale = "en";
   }
+  if (out.rooms?.length) {
+    out.rooms = normalizeExpiredOccupiedRooms(out.rooms);
+  }
   return out;
 }
 
@@ -112,9 +119,15 @@ export type Action =
   | { type: "HYDRATE"; payload: Partial<PersistedState> }
   | { type: "SET_LOCALE"; locale: Locale }
   | { type: "SET_THEME"; theme: Theme }
-  | { type: "START_GUEST_SESSION"; roomNumber: string; durationHours: number }
+  | {
+      type: "START_GUEST_SESSION";
+      roomNumber: string;
+      durationHours: number;
+      sessionLengthMs?: number;
+    }
   | { type: "EXTEND_GUEST_SESSION"; extraHours: number }
   | { type: "END_GUEST_SESSION" }
+  | { type: "EXPIRE_ROOM_SESSION"; roomNumber: string }
   | {
       type: "SUBMIT_GUEST_RATING";
       roomNumber: string;
@@ -199,8 +212,11 @@ function reducer(state: DemoState, action: Action): DemoState {
       return { ...state, theme: action.theme };
     case "START_GUEST_SESSION": {
       const now = Date.now();
-      const durationHours = Math.min(168, Math.max(1, Math.round(action.durationHours)));
-      const ms = durationHours * 60 * 60 * 1000;
+      const durationHours = action.sessionLengthMs
+        ? Math.max(1, Math.round(action.durationHours))
+        : Math.min(168, resolveGuestDurationHours(action.durationHours));
+      const ms =
+        action.sessionLengthMs ?? durationHours * 60 * 60 * 1000;
       const guestSession: GuestSession = {
         roomNumber: action.roomNumber,
         durationHours,
@@ -219,6 +235,20 @@ function reducer(state: DemoState, action: Action): DemoState {
           : r
       );
       return { ...state, guestSession, rooms };
+    }
+    case "EXPIRE_ROOM_SESSION": {
+      const rooms = state.rooms.map((r) =>
+        r.number === action.roomNumber && r.status === "occupied"
+          ? {
+              ...r,
+              status: "cleaning" as const,
+              sessionStartedAt: undefined,
+              sessionEndsAt: undefined,
+              durationHours: undefined,
+            }
+          : r
+      );
+      return { ...state, rooms };
     }
     case "EXTEND_GUEST_SESSION": {
       if (!state.guestSession) return state;
@@ -408,7 +438,7 @@ function mergeDbHydrate(
   },
 ): Partial<PersistedState> {
   return {
-    rooms: server.rooms,
+    rooms: normalizeExpiredOccupiedRooms(server.rooms),
     orders: server.orders,
     panicAlerts: server.panicAlerts,
     guestRatings: server.guestRatings,
@@ -465,7 +495,11 @@ async function pushActionToDatabase(
       await hotelSync.syncGuestSessionStart(
         action.roomNumber,
         action.durationHours,
+        action.sessionLengthMs,
       );
+      return;
+    case "EXPIRE_ROOM_SESSION":
+      await hotelSync.syncGuestSessionEnd(action.roomNumber);
       return;
     case "EXTEND_GUEST_SESSION": {
       const room = ctx.guestExtendRoom;

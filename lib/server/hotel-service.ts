@@ -1,3 +1,4 @@
+import { resolveGuestDurationHours } from "@/lib/room-session";
 import { getPrisma } from "@/lib/server/prisma";
 import {
   toDomainCategory,
@@ -180,10 +181,15 @@ export async function deleteRoom(roomId: string) {
 export async function applyGuestSessionStart(
   roomNumber: string,
   durationHours: number,
+  sessionLengthMs?: number,
 ) {
-  const h = Math.max(4, Math.round(durationHours));
   const now = Date.now();
-  const ms = h * 60 * 60 * 1000;
+  const ms =
+    sessionLengthMs ??
+    resolveGuestDurationHours(durationHours) * 60 * 60 * 1000;
+  const h = sessionLengthMs
+    ? Math.max(1, Math.round(durationHours))
+    : resolveGuestDurationHours(durationHours);
   await updateRoomByNumber(roomNumber, {
     status: "occupied",
     sessionStartedAt: now,

@@ -11,11 +11,7 @@ import { formatSrd } from "@/lib/format";
 import { t } from "@/lib/i18n";
 
 const DEMO_ROOM = "104";
-
-function clampHours(n: number): number {
-  if (!Number.isFinite(n)) return 4;
-  return Math.max(4, Math.round(n));
-}
+const ONE_MINUTE_MS = 60_000;
 
 function DurationContent() {
   const router = useRouter();
@@ -24,22 +20,34 @@ function DurationContent() {
   const { hourlyRate, locale, theme, toggleTheme, dispatch } = useDemo();
 
   const [choice, setChoice] = useState<"preset" | "custom">("preset");
-  const [customHours, setCustomHours] = useState(12);
+  const [customHoursInput, setCustomHoursInput] = useState("12");
   const [visible, setVisible] = useState(false);
 
-  const effectiveHours = choice === "custom" ? clampHours(customHours) : 2;
-  const cost = useMemo(() => effectiveHours * hourlyRate, [effectiveHours, hourlyRate]);
+  const parsedCustom =
+    customHoursInput === ""
+      ? Number.NaN
+      : Number.parseInt(customHoursInput, 10);
+  const isCustomValid =
+    Number.isFinite(parsedCustom) && parsedCustom >= 4;
+  const canStart = choice === "preset" || isCustomValid;
+
+  const effectiveHours = choice === "preset" ? 2 : isCustomValid ? parsedCustom : null;
+  const cost = useMemo(
+    () => (effectiveHours != null ? effectiveHours * hourlyRate : null),
+    [effectiveHours, hourlyRate],
+  );
 
   useEffect(() => {
     const id = setTimeout(() => setVisible(true), 100);
     return () => clearTimeout(id);
   }, []);
 
-  function goToStart() {
+  function goToStart(durationHours: number, sessionLengthMs?: number) {
     dispatch({
       type: "START_GUEST_SESSION",
       roomNumber: room,
-      durationHours: effectiveHours,
+      durationHours,
+      sessionLengthMs,
     });
     router.push("/guest/start");
   }
@@ -201,19 +209,23 @@ function DurationContent() {
                   <div className="mt-3 flex flex-wrap items-center gap-3">
                     <input
                       id="custom-hours"
-                      type="number"
+                      type="text"
                       inputMode="numeric"
-                      min={4}
-                      value={customHours}
+                      pattern="[0-9]*"
+                      value={customHoursInput}
                       onChange={(e) => {
-                        const v = Number.parseInt(e.target.value, 10);
-                        setCustomHours(Number.isFinite(v) ? v : 1);
+                        const raw = e.target.value.replace(/\D/g, "");
+                        setCustomHoursInput(raw);
                       }}
-                      onBlur={() => setCustomHours((h) => clampHours(h))}
                       className="motion-safe:duration-300 w-full min-w-[8rem] max-w-[12rem] rounded-xl border-2 border-[var(--border-light)] bg-[var(--surface)] px-4 py-3 text-center text-2xl font-black text-[var(--foreground)] outline-none transition-colors motion-safe:ease-out focus:border-[var(--gold)] focus:ring-[3px] focus:ring-[var(--gold)]/25 hover:border-[color-mix(in_srgb,var(--gold)_52%,transparent)] sm:text-3xl sm:focus:ring-4"
                     />
                     <span className="motion-safe:duration-200 text-lg font-bold motion-safe:ease-out text-[var(--muted)]">{t(locale, "hours")}</span>
                   </div>
+                  {!isCustomValid && (
+                    <p className="mt-2 text-left text-xs text-[var(--muted)]">
+                      {t(locale, "customHoursMin4")}
+                    </p>
+                  )}
                 </div>
               </div>
             )}
@@ -231,18 +243,33 @@ function DurationContent() {
               </div>
               <div className="text-right">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">{t(locale, "total")}</p>
-                <p key={`total-${effectiveHours}-${cost}`} className="text-3xl font-black motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] text-[var(--gold)] motion-safe:[animation:duration-choice-total_0.38s_ease-out_both] motion-reduce:[animation-duration:0ms] tabular-nums">
-                  {formatSrd(cost)}
+                <p
+                  key={`total-${effectiveHours ?? "invalid"}-${cost ?? 0}`}
+                  className="text-3xl font-black motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] text-[var(--gold)] motion-safe:[animation:duration-choice-total_0.38s_ease-out_both] motion-reduce:[animation-duration:0ms] tabular-nums"
+                >
+                  {cost != null ? formatSrd(cost) : "—"}
                 </p>
               </div>
             </div>
 
             <button
               type="button"
-              onClick={goToStart}
-              className="animate-gold-pulse mt-5 w-full rounded-2xl bg-[var(--gold)] py-6 text-xl font-bold text-black shadow-xl shadow-[var(--gold)]/25 transition-[transform,box-shadow] duration-300 motion-safe:ease-out hover:bg-[var(--gold-light)] hover:shadow-2xl focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--gold)]/65 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] motion-safe:active:scale-[0.985]"
+              disabled={!canStart}
+              onClick={() => {
+                if (!canStart || effectiveHours == null) return;
+                goToStart(effectiveHours);
+              }}
+              className="animate-gold-pulse mt-5 w-full rounded-2xl bg-[var(--gold)] py-6 text-xl font-bold text-black shadow-xl shadow-[var(--gold)]/25 transition-[transform,box-shadow,opacity] duration-300 motion-safe:ease-out hover:bg-[var(--gold-light)] hover:shadow-2xl focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--gold)]/65 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] motion-safe:active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none disabled:hover:bg-[var(--gold)] motion-safe:disabled:active:scale-100"
             >
               {t(locale, "startSession")} →
+            </button>
+
+            <button
+              type="button"
+              onClick={() => goToStart(1, ONE_MINUTE_MS)}
+              className="mt-3 w-full rounded-xl border border-dashed border-[var(--border-light)] py-3 text-sm font-semibold text-[var(--muted)] transition hover:border-[var(--gold)]/40 hover:text-[var(--foreground)]"
+            >
+              {t(locale, "durationTestOneMin")}
             </button>
           </div>
         </div>

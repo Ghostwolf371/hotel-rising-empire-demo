@@ -26,6 +26,8 @@
   "durationCustom": "Aangepast",
   "durationCustomSub": "Uren instellen",
   "customHoursLabel": "Hoeveel uur?",
+  "customHoursMin4": "Minimaal 4 uur voor aangepaste verblijven.",
+  "durationTestOneMin": "1 min (test)",
   "orderSomethingTitle": "Wilt u iets bestellen van het kamermenu?",
   "orderSomethingSub": "Blader door eten en drinken op de kamer, of ga verder met alleen uw sessie en kamertools.",
   "orderSomethingYes": "Ja, open menu",

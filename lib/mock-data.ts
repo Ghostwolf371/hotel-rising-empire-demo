@@ -1,9 +1,10 @@
+import { normalizeExpiredOccupiedRooms } from "./room-session";
 import type { Category, Order, Product, Room } from "./types";
 
 export const HOURLY_RATE_SRD = 75;
 
-export const initialRooms = (): Room[] =>
-  Array.from({ length: 12 }, (_, i) => {
+export const initialRooms = (): Room[] => {
+  const rooms = Array.from({ length: 12 }, (_, i) => {
     const n = 101 + i;
     const id = `room-${n}`;
     if (n === 101) {
@@ -24,8 +25,21 @@ export const initialRooms = (): Room[] =>
     if (n === 103) {
       return { id, number: String(n), status: "maintenance" as const };
     }
+    if (n === 106) {
+      const now = Date.now();
+      return {
+        id,
+        number: String(n),
+        status: "occupied" as const,
+        sessionStartedAt: now - 2 * 60 * 60 * 1000,
+        sessionEndsAt: now - 60_000,
+        durationHours: 2,
+      };
+    }
     return { id, number: String(n), status: "available" as const };
   });
+  return normalizeExpiredOccupiedRooms(rooms);
+};
 
 export const defaultCategories: Category[] = [
   { id: "drink", name: "Drinks", color: "sky" },

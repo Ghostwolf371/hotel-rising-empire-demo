@@ -140,15 +140,33 @@ function SpinnerWheel({ className }: { className?: string }) {
   );
 }
 
-function ExpiryWatcher({ endsAt, roomNumber, onExpiry }: { endsAt: number; roomNumber: string; onExpiry: (roomNumber: string) => void }) {
+function ExpiryWatcher({
+  endsAt,
+  roomNumber,
+  onNearExpiry,
+  onExpired,
+}: {
+  endsAt: number;
+  roomNumber: string;
+  onNearExpiry: (roomNumber: string) => void;
+  onExpired: (roomNumber: string) => void;
+}) {
   const left = useTimeLeft(endsAt);
-  const firedRef = useRef(false);
+  const nearFiredRef = useRef(false);
+  const expiredFiredRef = useRef(false);
   useEffect(() => {
-    if (left > 0 && left < 15 * 60 * 1000 && !firedRef.current) {
-      firedRef.current = true;
-      onExpiry(roomNumber);
+    if (left <= 0) {
+      if (!expiredFiredRef.current) {
+        expiredFiredRef.current = true;
+        onExpired(roomNumber);
+      }
+      return;
     }
-  }, [left, roomNumber, onExpiry]);
+    if (left < 15 * 60 * 1000 && !nearFiredRef.current) {
+      nearFiredRef.current = true;
+      onNearExpiry(roomNumber);
+    }
+  }, [left, roomNumber, onNearExpiry, onExpired]);
   return null;
 }
 
@@ -249,6 +267,13 @@ export function ManagementShell({ children }: { children: ReactNode }) {
       requestAnimationFrame(() => setLivePopup(next));
     }
   }, []);
+
+  const handleRoomExpired = useCallback(
+    (roomNumber: string) => {
+      dispatch({ type: "EXPIRE_ROOM_SESSION", roomNumber });
+    },
+    [dispatch],
+  );
 
   useEffect(() => {
     const now = Date.now();
@@ -628,7 +653,13 @@ export function ManagementShell({ children }: { children: ReactNode }) {
 
         {/* Expiry watchers — hidden hooks for notification generation */}
         {rooms.filter((r) => r.status === "occupied" && r.sessionEndsAt).map((r) => (
-          <ExpiryWatcher key={r.id} endsAt={r.sessionEndsAt!} roomNumber={r.number} onExpiry={() => {}} />
+          <ExpiryWatcher
+            key={r.id}
+            endsAt={r.sessionEndsAt!}
+            roomNumber={r.number}
+            onNearExpiry={() => {}}
+            onExpired={handleRoomExpired}
+          />
         ))}
 
         {/* Main content */}

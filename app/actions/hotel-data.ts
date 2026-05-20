@@ -57,8 +57,13 @@ export async function syncManagementRoomSessionEnd(roomId: string) {
 export async function syncGuestSessionStart(
   roomNumber: string,
   durationHours: number,
+  sessionLengthMs?: number,
 ) {
-  await hotel.applyGuestSessionStart(roomNumber, durationHours);
+  await hotel.applyGuestSessionStart(
+    roomNumber,
+    durationHours,
+    sessionLengthMs,
+  );
 }
 
 export async function syncGuestSessionExtend(

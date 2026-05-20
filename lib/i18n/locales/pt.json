@@ -26,6 +26,8 @@
   "durationCustom": "Personalizado",
   "durationCustomSub": "Definir horas",
   "customHoursLabel": "Quantas horas?",
+  "customHoursMin4": "Mínimo de 4 horas para estadias personalizadas.",
+  "durationTestOneMin": "1 min (teste)",
   "orderSomethingTitle": "Gostaria de pedir algo do cardápio do quarto?",
   "orderSomethingSub": "Veja refeições e bebidas no quarto, ou continue apenas com o cronômetro da sessão e as opções do quarto.",
   "orderSomethingYes": "Sim, abrir cardápio",
