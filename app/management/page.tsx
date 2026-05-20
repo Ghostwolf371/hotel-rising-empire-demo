@@ -3,19 +3,36 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import {
+  signInManagement,
+  type ManagementSignInResult,
+} from "@/app/actions/management-auth";
 import { useDemo } from "@/contexts/demo-context";
 import { t } from "@/lib/i18n";
 
 export default function ManagementLoginPage() {
   const router = useRouter();
   const { locale } = useDemo();
-  const [email, setEmail] = useState("admin@empire.sr");
-  const [password, setPassword] = useState("••••••••");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<"invalid" | "not_configured" | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleLogin(e: React.FormEvent) {
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    sessionStorage.setItem("mgmt-demo", "1");
-    router.push("/management/rooms");
+    setError(null);
+    setSubmitting(true);
+    try {
+      const result = await signInManagement(email, password);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      router.push("/management/rooms");
+      router.refresh();
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -34,33 +51,49 @@ export default function ManagementLoginPage() {
 
           <form onSubmit={handleLogin} className="mt-8 space-y-5">
             <div>
-              <label className="mb-2 block text-sm font-semibold text-[var(--gold-light)]">{t(locale, "mgmtEmail")}</label>
+              <label className="mb-2 block text-sm font-semibold text-[var(--gold-light)]">
+                {t(locale, "mgmtEmail")}
+              </label>
               <input
-                type="text"
+                type="email"
+                autoComplete="username"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                required
                 className="w-full rounded-xl bg-[var(--surface)] px-4 py-3.5 text-base text-[var(--foreground)] outline-none ring-1 ring-[var(--border-light)] transition placeholder:text-[var(--muted)] focus:ring-[var(--gold)]/40"
               />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-semibold text-[var(--gold-light)]">{t(locale, "mgmtPassword")}</label>
+              <label className="mb-2 block text-sm font-semibold text-[var(--gold-light)]">
+                {t(locale, "mgmtPassword")}
+              </label>
               <input
                 type="password"
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                required
                 className="w-full rounded-xl bg-[var(--surface)] px-4 py-3.5 text-base text-[var(--foreground)] outline-none ring-1 ring-[var(--border-light)] transition placeholder:text-[var(--muted)] focus:ring-[var(--gold)]/40"
               />
             </div>
+            {error === "invalid" && (
+              <p className="text-center text-sm font-semibold text-red-500" role="alert">
+                {t(locale, "mgmtLoginInvalid")}
+              </p>
+            )}
+            {error === "not_configured" && (
+              <p className="text-center text-sm font-semibold text-amber-500" role="alert">
+                {t(locale, "mgmtLoginNotConfigured")}
+              </p>
+            )}
             <button
               type="submit"
-              className="w-full rounded-xl bg-[var(--gold)] py-4 text-lg font-bold text-[var(--dark)] shadow-lg transition hover:bg-[var(--gold-light)] active:scale-[0.98]"
+              disabled={submitting}
+              className="w-full rounded-xl bg-[var(--gold)] py-4 text-lg font-bold text-[var(--dark)] shadow-lg transition hover:bg-[var(--gold-light)] active:scale-[0.98] disabled:opacity-60"
             >
-              {t(locale, "mgmtSignIn")}
+              {submitting ? t(locale, "mgmtSigningIn") : t(locale, "mgmtSignIn")}
             </button>
           </form>
-          <p className="mt-6 text-center text-xs text-[var(--muted)]">
-            {t(locale, "mgmtLoginHint")}
-          </p>
         </div>
       </div>
     </div>

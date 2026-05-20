@@ -10,5 +10,6 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **Server Actions** (`app/actions/checkin-codes.ts`, `app/actions/hotel-data.ts`) have no caller authentication. Production should add session/device tokens and rate limits.
 - **Check-in codes** (6 digits) should be rate-limited per room/IP to reduce brute force (`lib/server/checkin-codes-db.ts`).
 - **REST `/api/v1/*`** requires `HRE_API_SECRET` in production (`lib/server/api-auth.ts`); dev skips auth when the secret is unset.
+- **Management `/management/*`** (except the login page) requires `MANAGEMENT_EMAIL` + `MANAGEMENT_PASSWORD` in env; session is an httpOnly cookie set by `app/actions/management-auth.ts` and enforced in `middleware.ts`.
 - **Guest routes** are guarded client-side only (`components/guest-device-guard.tsx`). Optional follow-up: httpOnly cookie + middleware.
 - **Staff logout** is the only customer-facing path back to `/` (5 taps on the logo on `/guest/duration`).

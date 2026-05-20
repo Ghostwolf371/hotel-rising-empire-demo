@@ -23,6 +23,8 @@ Open <http://localhost:3000> for the guest tablet UI, or <http://localhost:3000/
 | `DATABASE_URL`       | `file:./prisma/dev.db` | Prisma datasource. Override for Postgres in production.                                                |
 | `HRE_USE_DATABASE`   | `false`      | When `true`, guest & management UIs share state via Server Actions + Prisma. Required for the cross-device iPad-PWA + staff-browser demo. The root layout is `force-dynamic`, so flipping this takes effect on next request — no rebuild needed. |
 | `HRE_API_SECRET`     | unset        | Required in production: all `/api/v1/*` routes validate a `Bearer` token.                                     |
+| `MANAGEMENT_EMAIL`   | unset        | Staff login email for `/management`. Required with `MANAGEMENT_PASSWORD` for dashboard access.                 |
+| `MANAGEMENT_PASSWORD`| unset        | Staff login password (also used to sign the session cookie). Set both on Vercel for production.              |
 
 ## PWA
 

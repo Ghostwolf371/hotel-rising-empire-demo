@@ -15,6 +15,7 @@ import {
 import { LanguageToggle } from "@/components/language-toggle";
 import { OfflineBanner } from "@/components/offline-banner";
 import { useTimeLeft } from "@/components/room-timer";
+import { signOutManagement } from "@/app/actions/management-auth";
 import { listRoomCheckInCodes } from "@/app/actions/checkin-codes";
 import { useDemo } from "@/contexts/demo-context";
 import { listActiveCheckInCodesLocal } from "@/lib/checkin-codes-local";
@@ -465,9 +466,10 @@ export function ManagementShell({ children }: { children: ReactNode }) {
     return () => document.removeEventListener("mousedown", onClick);
   }, []);
 
-  function logout() {
-    sessionStorage.removeItem("mgmt-demo");
+  async function logout() {
+    await signOutManagement();
     router.push("/management");
+    router.refresh();
   }
 
   const notifCount = visibleNotifications.length;
