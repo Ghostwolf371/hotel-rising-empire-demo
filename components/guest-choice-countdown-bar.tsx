@@ -5,6 +5,9 @@ import { useLayoutEffect, useRef } from "react";
 /** Must stay in sync with guest idle redirects (ms). */
 export const GUEST_TIMED_CHOICE_MS = 5000;
 
+/** Rate page: after the guest dismisses the countdown, redirect if still idle. */
+export const GUEST_RATE_IDLE_AFTER_DISMISS_MS = 5 * 60 * 1000;
+
 export function GuestChoiceCountdownBar({
   active,
   className = "",

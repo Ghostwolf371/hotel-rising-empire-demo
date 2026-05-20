@@ -2,7 +2,11 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
-import { GuestChoiceCountdownBar, GUEST_TIMED_CHOICE_MS } from "@/components/guest-choice-countdown-bar";
+import {
+  GuestChoiceCountdownBar,
+  GUEST_RATE_IDLE_AFTER_DISMISS_MS,
+  GUEST_TIMED_CHOICE_MS,
+} from "@/components/guest-choice-countdown-bar";
 import { GuestChoiceCountdownPortal } from "@/components/guest-choice-countdown-portal";
 import { useDemo } from "@/contexts/demo-context";
 import { t } from "@/lib/i18n";
@@ -13,32 +17,57 @@ const DEMO_ROOM = "104";
 /** Keyed by `room`; owns idle redirect + fixed countdown strip (outside card layout). */
 function RateGuestIdleChooser({ goDuration, ariaLabel }: { goDuration: () => void; ariaLabel: string }) {
   const [timedChoiceDismissed, setTimedChoiceDismissed] = useState(false);
-  const idleDurationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const countdownDismissedRef = useRef(false);
+  const initialRedirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const idleAfterDismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    function clearIdleDuration() {
-      if (idleDurationTimerRef.current !== null) {
-        clearTimeout(idleDurationTimerRef.current);
-        idleDurationTimerRef.current = null;
+    function clearInitialRedirect() {
+      if (initialRedirectTimerRef.current !== null) {
+        clearTimeout(initialRedirectTimerRef.current);
+        initialRedirectTimerRef.current = null;
       }
     }
 
-    function onPointerDown() {
-      setTimedChoiceDismissed(true);
-      clearIdleDuration();
-      window.removeEventListener("pointerdown", onPointerDown);
+    function clearIdleAfterDismiss() {
+      if (idleAfterDismissTimerRef.current !== null) {
+        clearTimeout(idleAfterDismissTimerRef.current);
+        idleAfterDismissTimerRef.current = null;
+      }
     }
 
-    idleDurationTimerRef.current = setTimeout(() => {
-      idleDurationTimerRef.current = null;
+    function scheduleIdleAfterDismiss() {
+      clearIdleAfterDismiss();
+      idleAfterDismissTimerRef.current = setTimeout(() => {
+        idleAfterDismissTimerRef.current = null;
+        goDuration();
+      }, GUEST_RATE_IDLE_AFTER_DISMISS_MS);
+    }
+
+    function onActivity() {
+      if (!countdownDismissedRef.current) {
+        countdownDismissedRef.current = true;
+        setTimedChoiceDismissed(true);
+        clearInitialRedirect();
+        scheduleIdleAfterDismiss();
+        return;
+      }
+      scheduleIdleAfterDismiss();
+    }
+
+    initialRedirectTimerRef.current = setTimeout(() => {
+      initialRedirectTimerRef.current = null;
       goDuration();
     }, GUEST_TIMED_CHOICE_MS);
 
-    window.addEventListener("pointerdown", onPointerDown, { passive: true });
+    window.addEventListener("pointerdown", onActivity, { passive: true });
+    window.addEventListener("keydown", onActivity);
 
     return () => {
-      clearIdleDuration();
-      window.removeEventListener("pointerdown", onPointerDown);
+      clearInitialRedirect();
+      clearIdleAfterDismiss();
+      window.removeEventListener("pointerdown", onActivity);
+      window.removeEventListener("keydown", onActivity);
     };
   }, [goDuration]);
 
