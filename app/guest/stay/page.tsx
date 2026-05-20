@@ -129,7 +129,7 @@ export default function GuestStayOnlyPage() {
           href="/guest"
           className="mt-4 flex w-full max-w-lg min-h-[48px] touch-manipulation items-center justify-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--gold)_55%,transparent)] bg-[var(--gold)] px-6 py-3.5 text-center text-base font-black tracking-wide text-[var(--dark)] shadow-lg shadow-[color-mix(in_srgb,var(--gold)_35%,transparent)] transition hover:bg-[var(--gold-light)] hover:shadow-xl active:scale-[0.98] sm:mt-5 sm:max-w-xl"
         >
-          <UtensilsCrossedIcon className="h-6 w-6 shrink-0" />
+          <UtensilsCrossedIcon className="h-9 w-9 shrink-0 sm:h-10 sm:w-10" />
           {t(locale, "staySwitchToMenu")}
         </Link>
       </main>
