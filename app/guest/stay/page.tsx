@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { guestPath } from "@/lib/guest-routes";
 import { useEffect } from "react";
 import { GuestFlowHeader, guestFlowThemeButtonClassName } from "@/components/guest-flow-header";
 import { LanguageToggle } from "@/components/language-toggle";
@@ -35,7 +36,7 @@ export default function GuestStayOnlyPage() {
       guestPostSessionEndNavRef.current.skipDurationRedirectOnce = false;
       return;
     }
-    router.replace("/guest/duration");
+    router.replace(guestPath("/guest/duration"));
   }, [guestSession, router, guestPostSessionEndNavRef]);
 
   if (!guestSession) {
@@ -67,13 +68,13 @@ export default function GuestStayOnlyPage() {
       />
 
       <GuestFlowHeader>
-        <Link
-          href="/"
-          className="flex h-11 min-w-0 items-center gap-3 transition opacity-90 hover:opacity-100"
+        <div
+          className="flex h-11 min-w-0 items-center gap-3 opacity-90"
+          aria-hidden
         >
           <Image
             src="/logo.png"
-            alt={t(locale, "brand")}
+            alt=""
             width={40}
             height={40}
             className="h-9 w-9 shrink-0 self-center rounded-lg shadow-lg sm:h-10 sm:w-10"
@@ -81,7 +82,7 @@ export default function GuestStayOnlyPage() {
           <span className="truncate text-sm font-black uppercase leading-none tracking-[0.2em] text-[var(--gold)]">
             {t(locale, "brand")}
           </span>
-        </Link>
+        </div>
         <div className="flex h-11 min-h-[44px] shrink-0 items-center gap-2">
           <LanguageToggle variant="landing" />
           <button
@@ -109,7 +110,7 @@ export default function GuestStayOnlyPage() {
           more horizontal presence than the previous `max-w-lg` (which left
           a lot of empty side margin on an 11" tablet). */}
       <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-4 py-4 sm:px-6 sm:py-6">
-        <p className="mb-4 text-center text-sm font-semibold text-[var(--muted)] sm:mb-6">{t(locale, "yourStay")}</p>
+        <p className="mb-3 text-center text-sm font-semibold text-[var(--muted)] sm:mb-4">{t(locale, "yourStay")}</p>
         <div className="w-full max-w-lg overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--card)]/90 shadow-2xl backdrop-blur-sm sm:max-w-xl">
           <GuestSessionPanel
             variant="fullscreen"
@@ -125,7 +126,7 @@ export default function GuestStayOnlyPage() {
         </div>
         <Link
           href="/guest"
-          className="mt-6 flex w-full max-w-lg min-h-[52px] touch-manipulation items-center justify-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--gold)_55%,transparent)] bg-[var(--gold)] px-6 py-4 text-center text-base font-black tracking-wide text-[var(--dark)] shadow-lg shadow-[color-mix(in_srgb,var(--gold)_35%,transparent)] transition hover:bg-[var(--gold-light)] hover:shadow-xl active:scale-[0.98] sm:mt-8 sm:max-w-xl"
+          className="mt-4 flex w-full max-w-lg min-h-[48px] touch-manipulation items-center justify-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--gold)_55%,transparent)] bg-[var(--gold)] px-6 py-3.5 text-center text-base font-black tracking-wide text-[var(--dark)] shadow-lg shadow-[color-mix(in_srgb,var(--gold)_35%,transparent)] transition hover:bg-[var(--gold-light)] hover:shadow-xl active:scale-[0.98] sm:mt-5 sm:max-w-xl"
         >
           <svg className="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />

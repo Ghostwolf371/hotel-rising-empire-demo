@@ -1,18 +1,17 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Suspense, useEffect } from "react";
-
-const DEMO_ROOM = "104";
+import { useDemo } from "@/contexts/demo-context";
+import { guestPath } from "@/lib/guest-routes";
 
 function RedirectContent() {
   const router = useRouter();
-  const params = useSearchParams();
+  const { registeredGuestRoom } = useDemo();
 
   useEffect(() => {
-    const room = params.get("room")?.trim();
-    router.replace(`/guest/duration?room=${encodeURIComponent(room || DEMO_ROOM)}`);
-  }, [params, router]);
+    router.replace(guestPath("/guest/duration", registeredGuestRoom));
+  }, [registeredGuestRoom, router]);
 
   return (
     <div className="flex min-h-dvh items-center justify-center bg-[var(--background)]">

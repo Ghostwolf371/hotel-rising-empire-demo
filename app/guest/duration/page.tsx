@@ -1,27 +1,60 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { GuestFlowHeader, guestFlowThemeButtonClassName } from "@/components/guest-flow-header";
 import { LanguageToggle } from "@/components/language-toggle";
 import { useDemo } from "@/contexts/demo-context";
 import { formatSrd } from "@/lib/format";
 import { t } from "@/lib/i18n";
 
-const DEMO_ROOM = "104";
 const ONE_MINUTE_MS = 60_000;
+const STAFF_LOGOUT_TAPS = 5;
+const STAFF_LOGOUT_TAP_WINDOW_MS = 2000;
 
 function DurationContent() {
   const router = useRouter();
-  const params = useSearchParams();
-  const room = params.get("room") || DEMO_ROOM;
-  const { hourlyRate, locale, theme, toggleTheme, dispatch } = useDemo();
+  const {
+    hourlyRate,
+    locale,
+    theme,
+    toggleTheme,
+    dispatch,
+    registeredGuestRoom,
+    guestSession,
+    unbindGuestDeviceRoom,
+  } = useDemo();
+  const room = registeredGuestRoom ?? "";
 
   const [choice, setChoice] = useState<"preset" | "custom">("preset");
   const [customHoursInput, setCustomHoursInput] = useState("12");
   const [visible, setVisible] = useState(false);
+  const [logoutTapCount, setLogoutTapCount] = useState(0);
+  const logoutTapResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function handleLogoTap() {
+    if (logoutTapResetRef.current) clearTimeout(logoutTapResetRef.current);
+    const next = logoutTapCount + 1;
+    if (next >= STAFF_LOGOUT_TAPS) {
+      setLogoutTapCount(0);
+      if (guestSession) dispatch({ type: "END_GUEST_SESSION" });
+      unbindGuestDeviceRoom();
+      router.replace("/");
+      return;
+    }
+    setLogoutTapCount(next);
+    logoutTapResetRef.current = setTimeout(() => {
+      setLogoutTapCount(0);
+      logoutTapResetRef.current = null;
+    }, STAFF_LOGOUT_TAP_WINDOW_MS);
+  }
+
+  useEffect(() => {
+    return () => {
+      if (logoutTapResetRef.current) clearTimeout(logoutTapResetRef.current);
+    };
+  }, []);
 
   const parsedCustom =
     customHoursInput === ""
@@ -76,13 +109,15 @@ function DurationContent() {
       />
 
       <GuestFlowHeader>
-        <Link
-          href="/"
+        <button
+          type="button"
+          onClick={handleLogoTap}
           className="flex h-11 min-w-0 items-center gap-3 transition opacity-90 hover:opacity-100"
+          aria-label={t(locale, "brand")}
         >
           <Image
             src="/logo.png"
-            alt={t(locale, "brand")}
+            alt=""
             width={40}
             height={40}
             className="h-9 w-9 shrink-0 self-center rounded-lg shadow-lg sm:h-10 sm:w-10"
@@ -90,7 +125,7 @@ function DurationContent() {
           <span className="truncate text-sm font-black uppercase leading-none tracking-[0.2em] text-[var(--gold)]">
             {t(locale, "brand")}
           </span>
-        </Link>
+        </button>
         <div className="flex h-11 min-h-[44px] shrink-0 items-center gap-2">
           <LanguageToggle variant="landing" />
           <button

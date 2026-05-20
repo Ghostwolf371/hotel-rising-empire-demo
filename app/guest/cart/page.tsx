@@ -3,6 +3,7 @@
 import { ProductThumb } from "@/components/product-thumb";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { guestPath } from "@/lib/guest-routes";
 import { useEffect, useMemo, useState } from "react";
 import { GuestHeader } from "@/components/guest-header";
 import { useDemo } from "@/contexts/demo-context";
@@ -32,7 +33,7 @@ export default function GuestCartPage() {
       guestPostSessionEndNavRef.current.skipDurationRedirectOnce = false;
       return;
     }
-    router.replace("/guest/duration");
+    router.replace(guestPath("/guest/duration"));
   }, [guestSession, router, guestPostSessionEndNavRef]);
 
   const lines = useMemo(() => {

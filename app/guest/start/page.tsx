@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { guestPath } from "@/lib/guest-routes";
 import { useEffect, useRef, useState } from "react";
 import { GuestChoiceCountdownBar, GUEST_TIMED_CHOICE_MS } from "@/components/guest-choice-countdown-bar";
 import { GuestChoiceCountdownPortal } from "@/components/guest-choice-countdown-portal";
@@ -26,7 +26,7 @@ export default function GuestStartPage() {
       guestPostSessionEndNavRef.current.skipDurationRedirectOnce = false;
       return;
     }
-    router.replace("/guest/duration");
+    router.replace(guestPath("/guest/duration"));
   }, [guestSession, router, guestPostSessionEndNavRef]);
 
   useEffect(() => {
@@ -89,13 +89,13 @@ export default function GuestStartPage() {
       />
 
       <GuestFlowHeader ref={chromeRef}>
-        <Link
-          href="/"
-          className="flex h-11 min-w-0 items-center gap-3 transition opacity-90 hover:opacity-100"
+        <div
+          className="flex h-11 min-w-0 items-center gap-3 opacity-90"
+          aria-hidden
         >
           <Image
             src="/logo.png"
-            alt={t(locale, "brand")}
+            alt=""
             width={40}
             height={40}
             className="h-9 w-9 shrink-0 self-center rounded-lg shadow-lg sm:h-10 sm:w-10"
@@ -103,7 +103,7 @@ export default function GuestStartPage() {
           <span className="truncate text-sm font-black uppercase leading-none tracking-[0.2em] text-[var(--gold)]">
             {t(locale, "brand")}
           </span>
-        </Link>
+        </div>
         <div className="flex h-11 min-h-[44px] shrink-0 items-center gap-2">
           <LanguageToggle variant="landing" />
           <button

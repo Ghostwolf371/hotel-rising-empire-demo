@@ -34,6 +34,12 @@ import {
 } from "@/lib/types";
 import * as hotelSync from "@/app/actions/hotel-data";
 import {
+  clearRegisteredGuestRoom,
+  getRegisteredGuestRoom,
+  GUEST_DEVICE_STORAGE_KEY,
+  setRegisteredGuestRoom,
+} from "@/lib/guest-device";
+import {
   normalizeExpiredOccupiedRooms,
   resolveGuestDurationHours,
 } from "@/lib/room-session";
@@ -606,6 +612,11 @@ interface DemoContextValue {
   refreshDomainFromServer: () => Promise<void>;
   /** First server snapshot finished (or failed); always true when not using the database. */
   initialDomainHydrated: boolean;
+  /** Kiosk tablet room binding (persists across guest sessions). */
+  registeredGuestRoom: string | null;
+  guestDeviceHydrated: boolean;
+  bindGuestDeviceRoom: (roomNumber: string) => void;
+  unbindGuestDeviceRoom: () => void;
 }
 
 const DemoContext = createContext<DemoContextValue | null>(null);
@@ -633,6 +644,43 @@ export function DemoProvider({
   const guestPostSessionEndNavRef = useRef({ skipDurationRedirectOnce: false });
   const armGuestNavToRatingAfterSessionEnd = useCallback(() => {
     guestPostSessionEndNavRef.current.skipDurationRedirectOnce = true;
+  }, []);
+
+  const [registeredGuestRoom, setRegisteredGuestRoomState] = useState<
+    string | null
+  >(null);
+  const [guestDeviceHydrated, setGuestDeviceHydrated] = useState(false);
+
+  const refreshRegisteredGuestRoom = useCallback(() => {
+    setRegisteredGuestRoomState(getRegisteredGuestRoom());
+    setGuestDeviceHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    refreshRegisteredGuestRoom();
+  }, [refreshRegisteredGuestRoom]);
+
+  useEffect(() => {
+    function onDeviceStorage(e: StorageEvent) {
+      if (e.key !== GUEST_DEVICE_STORAGE_KEY) return;
+      refreshRegisteredGuestRoom();
+    }
+    window.addEventListener("storage", onDeviceStorage);
+    return () => window.removeEventListener("storage", onDeviceStorage);
+  }, [refreshRegisteredGuestRoom]);
+
+  const bindGuestDeviceRoom = useCallback(
+    (roomNumber: string) => {
+      setRegisteredGuestRoom(roomNumber);
+      setRegisteredGuestRoomState(roomNumber.trim());
+      setGuestDeviceHydrated(true);
+    },
+    [],
+  );
+
+  const unbindGuestDeviceRoom = useCallback(() => {
+    clearRegisteredGuestRoom();
+    setRegisteredGuestRoomState(null);
   }, []);
 
   useEffect(() => {
@@ -957,6 +1005,10 @@ export function DemoProvider({
       databaseSyncError,
       refreshDomainFromServer,
       initialDomainHydrated,
+      registeredGuestRoom,
+      guestDeviceHydrated,
+      bindGuestDeviceRoom,
+      unbindGuestDeviceRoom,
     }),
     [
       state.locale,
@@ -985,6 +1037,10 @@ export function DemoProvider({
       databaseSyncError,
       refreshDomainFromServer,
       initialDomainHydrated,
+      registeredGuestRoom,
+      guestDeviceHydrated,
+      bindGuestDeviceRoom,
+      unbindGuestDeviceRoom,
     ],
   );
 

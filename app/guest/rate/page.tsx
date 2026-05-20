@@ -9,9 +9,8 @@ import {
 } from "@/components/guest-choice-countdown-bar";
 import { GuestChoiceCountdownPortal } from "@/components/guest-choice-countdown-portal";
 import { useDemo } from "@/contexts/demo-context";
+import { guestPath } from "@/lib/guest-routes";
 import { t } from "@/lib/i18n";
-
-const DEMO_ROOM = "104";
 
 
 /** Keyed by `room`; owns idle redirect + fixed countdown strip (outside card layout). */
@@ -145,7 +144,15 @@ function StarRow({
 function RateContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { locale, dispatch, rooms, guestSession, armGuestNavToRatingAfterSessionEnd } = useDemo();
+  const {
+    locale,
+    dispatch,
+    rooms,
+    guestSession,
+    registeredGuestRoom,
+    armGuestNavToRatingAfterSessionEnd,
+  } = useDemo();
+  const room = registeredGuestRoom ?? "";
   const [cleanliness, setCleanliness] = useState(0);
   const [comfort, setComfort] = useState(0);
   const [service, setService] = useState(0);
@@ -154,39 +161,39 @@ function RateContent() {
   const [h3, setH3] = useState(0);
   const endedHandled = useRef(false);
 
-  const roomParam = searchParams.get("room")?.trim() ?? "";
-
   useEffect(() => {
     if (searchParams.get("ended") !== "1" || endedHandled.current) return;
     endedHandled.current = true;
-    const room = guestSession?.roomNumber ?? searchParams.get("room")?.trim() ?? "";
+    const endedRoom = guestSession?.roomNumber ?? room;
     if (guestSession) {
       armGuestNavToRatingAfterSessionEnd();
       dispatch({ type: "END_GUEST_SESSION" });
     }
-    router.replace(room ? `/guest/rate?room=${encodeURIComponent(room)}` : "/guest/rate", { scroll: false });
-  }, [armGuestNavToRatingAfterSessionEnd, dispatch, guestSession, router, searchParams]);
+    router.replace(
+      endedRoom ? guestPath("/guest/rate", endedRoom) : guestPath("/guest/rate"),
+      { scroll: false },
+    );
+  }, [armGuestNavToRatingAfterSessionEnd, dispatch, guestSession, room, router, searchParams]);
 
   useEffect(() => {
-    if (!roomParam) return;
-    const r = rooms.find((x) => x.number === roomParam);
+    if (!room) return;
+    const r = rooms.find((x) => x.number === room);
     if (r?.status === "available") {
-      router.replace(`/guest/duration?room=${encodeURIComponent(roomParam)}`);
+      router.replace(guestPath("/guest/duration", room));
     }
-  }, [rooms, roomParam, router]);
+  }, [rooms, room, router]);
 
   const goDuration = useCallback(() => {
-    const room = roomParam || DEMO_ROOM;
-    router.push(`/guest/duration?room=${encodeURIComponent(room)}`);
-  }, [roomParam, router]);
+    router.push(guestPath("/guest/duration", room));
+  }, [room, router]);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
     if (cleanliness < 1 || comfort < 1 || service < 1) return;
-    if (roomParam) {
+    if (room) {
       dispatch({
         type: "SUBMIT_GUEST_RATING",
-        roomNumber: roomParam,
+        roomNumber: room,
         cleanliness,
         comfort,
         service,
@@ -265,7 +272,7 @@ function RateContent() {
         </div>
 
         <RateGuestIdleChooser
-          key={roomParam || DEMO_ROOM}
+          key={room}
           goDuration={goDuration}
           ariaLabel={t(locale, "guestTimerAria")}
         />

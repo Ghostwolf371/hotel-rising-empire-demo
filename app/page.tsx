@@ -15,13 +15,23 @@ import {
   verifyCheckInCodeLocal,
 } from "@/lib/checkin-codes-local";
 import { useDemo } from "@/contexts/demo-context";
+import { guestPath } from "@/lib/guest-routes";
 import { t } from "@/lib/i18n";
 
 const DIGITS = 6;
 
 export default function RoomEntryPage() {
   const router = useRouter();
-  const { locale, theme, toggleTheme, rooms, useDatabase } = useDemo();
+  const {
+    locale,
+    theme,
+    toggleTheme,
+    rooms,
+    useDatabase,
+    registeredGuestRoom,
+    guestDeviceHydrated,
+    bindGuestDeviceRoom,
+  } = useDemo();
   const [room, setRoom] = useState("");
   const [showVerify, setShowVerify] = useState(false);
   const [code, setCode] = useState("");
@@ -34,6 +44,13 @@ export default function RoomEntryPage() {
 
   const digits = Array.from({ length: DIGITS }, (_, i) => code[i] ?? "");
   const activeIndex = Math.min(code.length, DIGITS - 1);
+
+  useEffect(() => {
+    if (!guestDeviceHydrated) return;
+    if (registeredGuestRoom) {
+      router.replace(guestPath("/guest/duration", registeredGuestRoom));
+    }
+  }, [guestDeviceHydrated, registeredGuestRoom, router]);
 
   function onSubmitRoom(e: React.FormEvent) {
     e.preventDefault();
@@ -121,7 +138,8 @@ export default function RoomEntryPage() {
       return;
     }
     setShowVerify(false);
-    router.push(`/guest/duration?room=${encodeURIComponent(n)}`);
+    bindGuestDeviceRoom(n);
+    router.replace(guestPath("/guest/duration", n));
   }
 
   return (

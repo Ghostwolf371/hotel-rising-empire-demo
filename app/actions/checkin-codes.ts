@@ -1,5 +1,7 @@
 "use server";
 
+/** Demo: no caller auth or rate limiting — see AGENTS.md “Guest kiosk security”. */
+
 import {
   listActiveCheckInCodesDb,
   requestCheckInCodeDb,

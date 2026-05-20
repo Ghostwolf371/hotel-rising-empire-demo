@@ -43,7 +43,7 @@ export function GuestSessionPanel({
       {/* Vertical padding and type scale tightened so the full panel
           (room number + countdown + 3 action buttons) fits inside an 11"
           landscape tablet (~800 CSS px tall) without forcing a scroll. */}
-      <div className={`border-b border-[var(--border)] ${isFs ? "px-6 py-5 text-center sm:px-10 sm:py-7" : "px-5 py-5"}`}>
+      <div className={`border-b border-[var(--border)] ${isFs ? "px-6 py-4 text-center sm:px-8 sm:py-5" : "px-5 py-5"}`}>
         <p className={`font-bold uppercase tracking-wider text-[var(--muted)] ${isFs ? "text-sm" : "text-xs"}`}>{t(locale, "roomNumber")}</p>
         <p className={`mt-1 font-black text-[var(--gold)] ${isFs ? "text-4xl sm:text-5xl" : "mt-1 text-3xl"}`}>{guestSession.roomNumber}</p>
         <p className={`mt-2 flex items-center justify-center gap-1.5 text-[var(--muted)] ${isFs ? "text-sm" : "mt-2 text-xs"}`}>
@@ -54,7 +54,7 @@ export function GuestSessionPanel({
         </p>
       </div>
 
-      <div className={`border-b border-[var(--border)] text-center ${isFs ? "px-6 py-6 sm:px-10 sm:py-8" : "px-5 py-5"}`}>
+      <div className={`border-b border-[var(--border)] text-center ${isFs ? "px-6 py-4 sm:px-8 sm:py-5" : "px-5 py-5"}`}>
         <p className={`font-bold uppercase tracking-wider text-[var(--muted)] ${isFs ? "text-sm" : "text-xs"}`}>{t(locale, "timeLeft")}</p>
         <p
           className={`mt-2 font-mono font-black tabular-nums ${isFs ? "text-5xl sm:text-6xl" : "mt-2 text-4xl"} ${
@@ -74,33 +74,37 @@ export function GuestSessionPanel({
 
       {!isFs && <div className="min-h-0 flex-1" aria-hidden />}
 
-      <div className={`space-y-2.5 border-[var(--border)] ${isFs ? "mt-2 border-t px-4 pb-5 pt-5 sm:px-6 sm:pb-6 sm:pt-6" : "border-t px-4 py-4 sm:px-5 sm:py-5"}`}>
-        <button
-          type="button"
-          onClick={onAddTime}
-          className={`flex w-full touch-manipulation items-center justify-center gap-2.5 rounded-xl border border-[var(--gold)]/30 bg-[var(--gold)]/5 font-bold text-[var(--gold-foreground)] transition hover:bg-[var(--gold)]/10 hover:text-[var(--gold)] active:scale-[0.98] ${isFs ? "py-3.5 text-base sm:py-4 sm:text-lg" : "px-4 py-3.5 text-sm"}`}
-        >
-          <svg className={isFs ? "h-5 w-5 sm:h-6 sm:w-6" : "h-5 w-5"} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          {t(locale, "addTime")}
-        </button>
-        <button
-          type="button"
-          onClick={onEndNow}
-          className={`flex w-full touch-manipulation items-center justify-center gap-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] font-bold text-[var(--foreground)] transition hover:bg-[var(--card-hover)] active:scale-[0.98] ${isFs ? "py-3.5 text-base sm:py-4 sm:text-lg" : "px-4 py-3.5 text-sm"}`}
-        >
-          <svg className={isFs ? "h-5 w-5 sm:h-6 sm:w-6" : "h-5 w-5"} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-          </svg>
-          {t(locale, "endNow")}
-        </button>
+      <div
+        className={`border-[var(--border)] ${isFs ? "mt-1 border-t px-4 pb-4 pt-4 sm:px-6 sm:pb-5 sm:pt-5" : "space-y-2.5 border-t px-4 py-4 sm:px-5 sm:py-5"}`}
+      >
+        <div className={isFs ? "grid grid-cols-2 gap-2.5" : "contents"}>
+          <button
+            type="button"
+            onClick={onAddTime}
+            className={`flex w-full touch-manipulation items-center justify-center gap-2 rounded-xl border border-[var(--gold)]/30 bg-[var(--gold)]/5 font-bold text-[var(--gold-foreground)] transition hover:bg-[var(--gold)]/10 hover:text-[var(--gold)] active:scale-[0.98] ${isFs ? "py-3 text-sm sm:py-3.5 sm:text-base" : "gap-2.5 px-4 py-3.5 text-sm"}`}
+          >
+            <svg className={isFs ? "h-5 w-5 shrink-0" : "h-5 w-5"} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className={isFs ? "truncate" : undefined}>{t(locale, "addTime")}</span>
+          </button>
+          <button
+            type="button"
+            onClick={onEndNow}
+            className={`flex w-full touch-manipulation items-center justify-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] font-bold text-[var(--foreground)] transition hover:bg-[var(--card-hover)] active:scale-[0.98] ${isFs ? "py-3 text-sm sm:py-3.5 sm:text-base" : "gap-2.5 px-4 py-3.5 text-sm"}`}
+          >
+            <svg className={isFs ? "h-5 w-5 shrink-0" : "h-5 w-5"} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            <span className={isFs ? "truncate" : undefined}>{t(locale, "endNow")}</span>
+          </button>
+        </div>
         <button
           type="button"
           onClick={onStaffAlert}
-          className={`flex w-full touch-manipulation items-center justify-center gap-2.5 rounded-xl bg-red-600/10 font-bold text-red-600 transition hover:bg-red-600/20 active:scale-[0.98] ${isFs ? "py-3.5 text-base sm:py-4 sm:text-lg" : "px-4 py-3.5 text-sm"}`}
+          className={`flex w-full touch-manipulation items-center justify-center gap-2.5 rounded-xl bg-red-600/10 font-bold text-red-600 transition hover:bg-red-600/20 active:scale-[0.98] ${isFs ? "mt-2.5 py-3 text-sm sm:py-3.5 sm:text-base" : "px-4 py-3.5 text-sm"}`}
         >
-          <svg className={isFs ? "h-5 w-5 sm:h-6 sm:w-6" : "h-5 w-5"} viewBox="0 0 24 24" fill="currentColor">
+          <svg className={isFs ? "h-5 w-5 shrink-0" : "h-5 w-5"} viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2L1 21h22L12 2zm0 4l7.53 13H4.47L12 6zm-1 5v4h2v-4h-2zm0 6v2h2v-2h-2z" />
           </svg>
           {t(locale, "panic")}

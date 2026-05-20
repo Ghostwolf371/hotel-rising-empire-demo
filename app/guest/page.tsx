@@ -4,6 +4,7 @@ import Image from "next/image";
 import { ProductThumb } from "@/components/product-thumb";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { guestPath } from "@/lib/guest-routes";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LanguageToggle } from "@/components/language-toggle";
 import { useDemo } from "@/contexts/demo-context";
@@ -107,7 +108,7 @@ export default function GuestMainPage() {
       guestPostSessionEndNavRef.current.skipDurationRedirectOnce = false;
       return;
     }
-    router.replace("/guest/duration");
+    router.replace(guestPath("/guest/duration"));
   }, [guestSession, router, guestPostSessionEndNavRef]);
 
   const effectiveCategory = useMemo(() => {
