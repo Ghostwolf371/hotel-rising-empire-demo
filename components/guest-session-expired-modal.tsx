@@ -3,12 +3,7 @@
 import type { CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  GuestChoiceCountdownBar,
-  GUEST_RATE_IDLE_AFTER_DISMISS_MS,
-  GUEST_TIMED_CHOICE_MS,
-} from "@/components/guest-choice-countdown-bar";
-import { GuestChoiceCountdownPortal } from "@/components/guest-choice-countdown-portal";
+import { GUEST_RATE_IDLE_AFTER_DISMISS_MS } from "@/components/guest-choice-countdown-bar";
 import { useTimeLeft } from "@/components/room-timer";
 import { useDemo } from "@/contexts/demo-context";
 import { useGuestSessionExpiryUi } from "@/contexts/guest-session-expiry-ui";
@@ -18,28 +13,11 @@ import { t } from "@/lib/i18n";
 
 type ExpiredView = "choice" | "extend";
 
-function ExpiredModalIdleChooser({
-  onAutoEnd,
-  onIdleAfterDismiss,
-  ariaLabel,
-}: {
-  onAutoEnd: () => void;
-  onIdleAfterDismiss: () => void;
-  ariaLabel: string;
-}) {
-  const [countdownVisible, setCountdownVisible] = useState(true);
-  const countdownDismissedRef = useRef(false);
-  const initialTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+/** After 5 minutes of no touch, end session and go to feedback. Resets on activity. */
+function ExpiredModalIdleTimeout({ onIdleEnd }: { onIdleEnd: () => void }) {
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    function clearInitial() {
-      if (initialTimerRef.current !== null) {
-        clearTimeout(initialTimerRef.current);
-        initialTimerRef.current = null;
-      }
-    }
-
     function clearIdle() {
       if (idleTimerRef.current !== null) {
         clearTimeout(idleTimerRef.current);
@@ -51,46 +29,27 @@ function ExpiredModalIdleChooser({
       clearIdle();
       idleTimerRef.current = setTimeout(() => {
         idleTimerRef.current = null;
-        onIdleAfterDismiss();
+        onIdleEnd();
       }, GUEST_RATE_IDLE_AFTER_DISMISS_MS);
     }
 
     function onActivity() {
-      if (!countdownDismissedRef.current) {
-        countdownDismissedRef.current = true;
-        setCountdownVisible(false);
-        clearInitial();
-        scheduleIdleEnd();
-        return;
-      }
       scheduleIdleEnd();
     }
 
-    initialTimerRef.current = setTimeout(() => {
-      initialTimerRef.current = null;
-      onAutoEnd();
-    }, GUEST_TIMED_CHOICE_MS);
+    scheduleIdleEnd();
 
     window.addEventListener("pointerdown", onActivity, { passive: true });
     window.addEventListener("keydown", onActivity);
 
     return () => {
-      clearInitial();
       clearIdle();
       window.removeEventListener("pointerdown", onActivity);
       window.removeEventListener("keydown", onActivity);
     };
-  }, [onAutoEnd, onIdleAfterDismiss]);
+  }, [onIdleEnd]);
 
-  if (!countdownVisible) return null;
-
-  return (
-    <GuestChoiceCountdownPortal>
-      <div className="guest-choice-countdown-slot" data-slot="guest-session-expired">
-        <GuestChoiceCountdownBar active ariaLabel={ariaLabel} className="px-6" />
-      </div>
-    </GuestChoiceCountdownPortal>
-  );
+  return null;
 }
 
 export function GuestSessionExpiredModal() {
@@ -110,21 +69,6 @@ export function GuestSessionExpiredModal() {
   const endsAt = guestSession?.sessionEndsAt ?? 0;
   const leftMs = useTimeLeft(endsAt);
   const extendCost = extendHours * hourlyRate;
-
-  const finishToDuration = useCallback(() => {
-    if (guestSession) {
-      dispatch({ type: "END_GUEST_SESSION" });
-    }
-    closeSessionExpiredModal();
-    setView("choice");
-    router.replace(guestPath("/guest/duration", registeredGuestRoom));
-  }, [
-    guestSession,
-    dispatch,
-    closeSessionExpiredModal,
-    router,
-    registeredGuestRoom,
-  ]);
 
   const finishToRate = useCallback(() => {
     if (guestSession) {
@@ -168,12 +112,10 @@ export function GuestSessionExpiredModal() {
 
   if (!sessionExpiredOpen || !guestSession) return null;
 
-  const showChoiceCountdown = view === "choice";
-
   return (
     <>
       <div
-        className="fixed inset-0 z-[55] flex touch-none flex-col items-center justify-center overflow-hidden bg-black/70 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(5.5rem,env(safe-area-inset-bottom))] backdrop-blur-md sm:px-6"
+        className="fixed inset-0 z-[55] flex touch-none flex-col items-center justify-center overflow-hidden bg-black/70 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-md sm:px-6"
         role="presentation"
       >
         <div
@@ -294,13 +236,7 @@ export function GuestSessionExpiredModal() {
         </div>
       </div>
 
-      {showChoiceCountdown ? (
-        <ExpiredModalIdleChooser
-          onAutoEnd={finishToRate}
-          onIdleAfterDismiss={finishToDuration}
-          ariaLabel={t(locale, "guestTimerAria")}
-        />
-      ) : null}
+      <ExpiredModalIdleTimeout onIdleEnd={finishToRate} />
     </>
   );
 }
