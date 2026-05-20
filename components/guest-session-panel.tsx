@@ -30,6 +30,7 @@ export function GuestSessionPanel({
   onStaffAlert,
 }: GuestSessionPanelProps) {
   const isFs = variant === "fullscreen";
+  const underOneMinute = leftMs > 0 && leftMs < 60 * 1000;
 
   const panelBody = (
     <>
@@ -56,20 +57,22 @@ export function GuestSessionPanel({
 
       <div className={`shrink-0 border-b border-[var(--border)] text-center ${isFs ? "px-6 py-4 sm:px-8 sm:py-5" : "px-5 py-4"}`}>
         <p className={`font-bold uppercase tracking-wider text-[var(--muted)] ${isFs ? "text-sm" : "text-xs"}`}>{t(locale, "timeLeft")}</p>
-        <p
-          className={`mt-2 font-mono font-black tabular-nums ${isFs ? "text-5xl sm:text-6xl" : "mt-2 text-4xl"} ${
-            leftMs <= 0 ? "text-red-500" : nearlyDone ? "text-amber-500" : "text-[var(--gold)]"
-          }`}
-        >
-          {formatCountdown(leftMs)}
-        </p>
-        {nearlyDone && leftMs > 0 && (
-          <span
-            className={`mt-3 inline-flex animate-pulse items-center rounded-full bg-amber-500 font-bold text-white ${isFs ? "px-4 py-2 text-sm" : "mt-2 px-3 py-1 text-[10px]"}`}
+        <div className={underOneMinute ? "animate-countdown-urgent" : undefined}>
+          <p
+            className={`mt-2 font-mono font-black tabular-nums ${isFs ? "text-5xl sm:text-6xl" : "mt-2 text-4xl"} ${
+              leftMs <= 0 ? "text-red-500" : underOneMinute ? "text-amber-500" : "text-[var(--gold)]"
+            }`}
           >
-            {t(locale, "nearlyDone")}
-          </span>
-        )}
+            {formatCountdown(leftMs)}
+          </p>
+          {nearlyDone && leftMs > 0 && (
+            <span
+              className={`mt-3 inline-flex items-center rounded-full bg-amber-500 font-bold text-white ${isFs ? "px-4 py-2 text-sm" : "mt-2 px-3 py-1 text-[10px]"} ${!underOneMinute ? "animate-pulse" : ""}`}
+            >
+              {t(locale, "nearlyDone")}
+            </span>
+          )}
+        </div>
       </div>
 
       <div

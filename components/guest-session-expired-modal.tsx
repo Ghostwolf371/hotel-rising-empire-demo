@@ -173,7 +173,7 @@ export function GuestSessionExpiredModal() {
               <p className="mt-3 text-center text-sm leading-relaxed text-[var(--muted)]">
                 {t(locale, "extendModalIntro")}
               </p>
-              <div className="mt-6 overflow-hidden px-1">
+              <div className="mt-6 px-1">
                 <div className="grid grid-cols-6 gap-1 px-[2px]">
                   {[1, 2, 3, 4, 5, 6].map((h) => (
                     <button
@@ -190,21 +190,23 @@ export function GuestSessionExpiredModal() {
                     </button>
                   ))}
                 </div>
-                <div className="relative mt-3">
-                  <input
-                    type="range"
-                    min={1}
-                    max={6}
-                    step={1}
-                    value={extendHours}
-                    onChange={(e) => setExtendHours(Number(e.target.value))}
-                    className="gold-slider"
-                    style={
-                      {
-                        "--slider-pct": `${((extendHours - 1) / 5) * 100}%`,
-                      } as CSSProperties
-                    }
-                  />
+                <div className="gold-slider-wrap mt-3">
+                  <div className="gold-slider-track">
+                    <input
+                      type="range"
+                      min={1}
+                      max={6}
+                      step={1}
+                      value={extendHours}
+                      onChange={(e) => setExtendHours(Number(e.target.value))}
+                      className="gold-slider"
+                      style={
+                        {
+                          "--slider-pct": `${((extendHours - 1) / 5) * 100}%`,
+                        } as CSSProperties
+                      }
+                    />
+                  </div>
                 </div>
               </div>
               <div className="mt-6 overflow-hidden rounded-2xl border border-[var(--gold)]/20 bg-[var(--gold)]/5">

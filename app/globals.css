@@ -175,6 +175,19 @@ body {
 }
 .animate-gold-pulse { animation: goldPulse 2s ease infinite; }
 
+@keyframes guest-countdown-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+.animate-countdown-urgent {
+  animation: guest-countdown-blink 1s ease-in-out infinite;
+}
+
 @keyframes duration-choice-in {
   from {
     opacity: 0;
@@ -248,9 +261,18 @@ body {
 .stagger-6 { animation-delay: 0.3s; }
 
 /* ── Premium range slider ─────────────────────────── */
+.gold-slider-wrap {
+  overflow: visible;
+  padding: 0.875rem 2px 1rem;
+}
+.gold-slider-wrap .gold-slider-track {
+  position: relative;
+}
+
 .gold-slider {
   -webkit-appearance: none;
   appearance: none;
+  display: block;
   width: 100%;
   height: 6px;
   border-radius: 9999px;

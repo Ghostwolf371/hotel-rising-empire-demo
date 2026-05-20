@@ -118,7 +118,7 @@ export function GuestSessionModals({
             </div>
             <h3 className="mt-6 text-center text-2xl font-bold text-[var(--gold)]">{t(locale, "extendModalTitle")}</h3>
             <p className="mt-3 text-center text-sm leading-relaxed text-[var(--muted)]">{t(locale, "extendModalIntro")}</p>
-            <div className="mt-6 overflow-hidden px-1">
+            <div className="mt-6 px-1">
               <div className="grid grid-cols-6 gap-1 px-[2px]">
                 {[1, 2, 3, 4, 5, 6].map((h) => (
                   <button
@@ -133,25 +133,27 @@ export function GuestSessionModals({
                   </button>
                 ))}
               </div>
-              <div className="relative mt-3">
-                <input
-                  type="range"
-                  min={1}
-                  max={6}
-                  step={1}
-                  value={extendHours}
-                  onChange={(e) => setExtendHours(Number(e.target.value))}
-                  className="gold-slider"
-                  style={{ "--slider-pct": `${((extendHours - 1) / 5) * 100}%` } as CSSProperties}
-                />
-                <div className="pointer-events-none absolute top-1/2 left-[2px] right-[2px] -translate-y-1/2">
-                  <div className="flex justify-between">
-                    {[1, 2, 3, 4, 5, 6].map((h) => (
-                      <span
-                        key={h}
-                        className={`block h-2 w-2 rounded-full transition-all duration-200 ${h <= extendHours ? "bg-[var(--gold)] shadow-sm shadow-[var(--gold)]/40" : "bg-[var(--border-light)]"}`}
-                      />
-                    ))}
+              <div className="gold-slider-wrap mt-3">
+                <div className="gold-slider-track">
+                  <input
+                    type="range"
+                    min={1}
+                    max={6}
+                    step={1}
+                    value={extendHours}
+                    onChange={(e) => setExtendHours(Number(e.target.value))}
+                    className="gold-slider"
+                    style={{ "--slider-pct": `${((extendHours - 1) / 5) * 100}%` } as CSSProperties}
+                  />
+                  <div className="pointer-events-none absolute top-1/2 left-[2px] right-[2px] -translate-y-1/2">
+                    <div className="flex justify-between">
+                      {[1, 2, 3, 4, 5, 6].map((h) => (
+                        <span
+                          key={h}
+                          className={`block h-2 w-2 rounded-full transition-all duration-200 ${h <= extendHours ? "bg-[var(--gold)] shadow-sm shadow-[var(--gold)]/40" : "bg-[var(--border-light)]"}`}
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
