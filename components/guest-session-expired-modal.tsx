@@ -8,6 +8,7 @@ import { useTimeLeft } from "@/components/room-timer";
 import { useDemo } from "@/contexts/demo-context";
 import { useGuestSessionExpiryUi } from "@/contexts/guest-session-expiry-ui";
 import { formatSrd } from "@/lib/format";
+import { clearGuestLanguageChosen } from "@/lib/guest-language-chosen";
 import { guestPath } from "@/lib/guest-routes";
 import { t } from "@/lib/i18n";
 
@@ -72,6 +73,7 @@ export function GuestSessionExpiredModal() {
 
   const finishToRate = useCallback(() => {
     if (guestSession) {
+      clearGuestLanguageChosen();
       armGuestNavToRatingAfterSessionEnd();
       dispatch({ type: "END_GUEST_SESSION" });
     }

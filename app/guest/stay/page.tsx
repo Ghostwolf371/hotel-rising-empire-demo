@@ -37,7 +37,7 @@ export default function GuestStayOnlyPage() {
       guestPostSessionEndNavRef.current.skipDurationRedirectOnce = false;
       return;
     }
-    router.replace(guestPath("/guest/duration"));
+    router.replace(guestPath("/guest/language"));
   }, [guestSession, router, guestPostSessionEndNavRef]);
 
   if (!guestSession) {

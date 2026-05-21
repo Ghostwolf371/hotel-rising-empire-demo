@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useTimeLeft } from "@/components/room-timer";
 import { useDemo } from "@/contexts/demo-context";
+import { clearGuestLanguageChosen } from "@/lib/guest-language-chosen";
 
 export type GuestModal = "extend" | "confirm-end" | "panic-sent" | null;
 
@@ -36,6 +37,7 @@ export function useGuestSessionUi() {
   function endSession() {
     if (!guestSession) return;
     const room = guestSession.roomNumber;
+    clearGuestLanguageChosen();
     armGuestNavToRatingAfterSessionEnd();
     dispatch({ type: "END_GUEST_SESSION" });
     setModal(null);

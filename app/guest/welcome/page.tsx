@@ -10,7 +10,7 @@ function RedirectContent() {
   const { registeredGuestRoom } = useDemo();
 
   useEffect(() => {
-    router.replace(guestPath("/guest/duration", registeredGuestRoom));
+    router.replace(guestPath("/guest/language", registeredGuestRoom));
   }, [registeredGuestRoom, router]);
 
   return (

@@ -39,6 +39,7 @@ import {
   GUEST_DEVICE_STORAGE_KEY,
   setRegisteredGuestRoom,
 } from "@/lib/guest-device";
+import { clearGuestLanguageChosen } from "@/lib/guest-language-chosen";
 import {
   normalizeExpiredOccupiedRooms,
   resolveGuestDurationHours,
@@ -671,6 +672,7 @@ export function DemoProvider({
 
   const bindGuestDeviceRoom = useCallback(
     (roomNumber: string) => {
+      clearGuestLanguageChosen();
       setRegisteredGuestRoom(roomNumber);
       setRegisteredGuestRoomState(roomNumber.trim());
       setGuestDeviceHydrated(true);

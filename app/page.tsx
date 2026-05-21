@@ -48,7 +48,7 @@ export default function RoomEntryPage() {
   useEffect(() => {
     if (!guestDeviceHydrated) return;
     if (registeredGuestRoom) {
-      router.replace(guestPath("/guest/duration", registeredGuestRoom));
+      router.replace(guestPath("/guest/language", registeredGuestRoom));
     }
   }, [guestDeviceHydrated, registeredGuestRoom, router]);
 
@@ -139,7 +139,7 @@ export default function RoomEntryPage() {
     }
     setShowVerify(false);
     bindGuestDeviceRoom(n);
-    router.replace(guestPath("/guest/duration", n));
+    router.replace(guestPath("/guest/language", n));
   }
 
   return (

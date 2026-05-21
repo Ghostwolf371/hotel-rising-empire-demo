@@ -7,9 +7,29 @@ import { guestPath } from "@/lib/guest-routes";
 import { useEffect, useMemo, useState } from "react";
 import { GuestHeader } from "@/components/guest-header";
 import { useDemo } from "@/contexts/demo-context";
-import { formatSrd } from "@/lib/format";
+import { formatDateTime, formatSrd } from "@/lib/format";
 import { t } from "@/lib/i18n";
 import type { OrderLine } from "@/lib/types";
+
+type PlacedReceiptLine = {
+  productId: string;
+  name: string;
+  qty: number;
+  unitPrice: number;
+  lineTotal: number;
+};
+
+type PlacedReceipt = {
+  orderId: string;
+  placedAt: number;
+  roomNumber: string;
+  durationHours: number;
+  hourlyRate: number;
+  roomCostSrd: number;
+  items: PlacedReceiptLine[];
+  orderSubtotal: number;
+  notes?: string;
+};
 
 export default function GuestCartPage() {
   const router = useRouter();
@@ -22,10 +42,12 @@ export default function GuestCartPage() {
     dispatch,
     locale,
     theme,
+    hourlyRate,
     guestPostSessionEndNavRef,
   } = useDemo();
   const [notes, setNotes] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
+  const [receipt, setReceipt] = useState<PlacedReceipt | null>(null);
 
   useEffect(() => {
     if (guestSession) return;
@@ -33,7 +55,7 @@ export default function GuestCartPage() {
       guestPostSessionEndNavRef.current.skipDurationRedirectOnce = false;
       return;
     }
-    router.replace(guestPath("/guest/duration"));
+    router.replace(guestPath("/guest/language"));
   }, [guestSession, router, guestPostSessionEndNavRef]);
 
   const lines = useMemo(() => {
@@ -65,6 +87,30 @@ export default function GuestCartPage() {
 
   function placeOrder() {
     if (!guestSession || lines.length === 0) return;
+    const orderId = `o-${Date.now()}`;
+    const placedAt = Date.now();
+    const orderSubtotal = lines.reduce((s, l) => s + l.lineTotal, 0);
+    const roomCostSrd = guestSession.durationHours * hourlyRate;
+    const receiptItems: PlacedReceiptLine[] = lines.map((l) => ({
+      productId: l.productId,
+      name: l.name,
+      qty: l.qty,
+      unitPrice: l.product.priceSrd,
+      lineTotal: l.lineTotal,
+    }));
+
+    setReceipt({
+      orderId,
+      placedAt,
+      roomNumber: guestSession.roomNumber,
+      durationHours: guestSession.durationHours,
+      hourlyRate,
+      roomCostSrd,
+      items: receiptItems,
+      orderSubtotal,
+      notes: notes.trim() || undefined,
+    });
+
     const items: OrderLine[] = lines.map((l) => ({
       productId: l.productId,
       name: l.name,
@@ -74,9 +120,9 @@ export default function GuestCartPage() {
     dispatch({
       type: "ADD_ORDER",
       order: {
-        id: `o-${Date.now()}`,
+        id: orderId,
         roomNumber: guestSession.roomNumber,
-        createdAt: Date.now(),
+        createdAt: placedAt,
         status: "processing",
         items,
         notes: notes.trim() || undefined,
@@ -85,6 +131,12 @@ export default function GuestCartPage() {
     clearCart();
     setNotes("");
     setShowSuccess(true);
+  }
+
+  function dismissReceipt() {
+    setShowSuccess(false);
+    setReceipt(null);
+    router.push("/guest");
   }
 
   return (
@@ -261,37 +313,125 @@ export default function GuestCartPage() {
         </div>
       </div>
 
-      {showSuccess && (
-        <div
-          className={`fixed inset-0 z-50 flex items-center justify-center px-6 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] backdrop-blur-md ${
+      {showSuccess && receipt && (
+        <button
+          type="button"
+          onClick={dismissReceipt}
+          className={`fixed inset-0 z-50 flex cursor-default flex-col items-center justify-center px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] backdrop-blur-md touch-manipulation sm:px-8 ${
             theme === "light" ? "bg-[color-mix(in_srgb,var(--foreground)_28%,transparent)]" : "bg-black/65"
           }`}
+          aria-label={t(locale, "tapToContinue")}
         >
-          <div className="animate-fade-in-scale w-full max-w-md overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--card)] shadow-2xl ring-1 ring-emerald-500/20">
-            <div className="bg-gradient-to-b from-emerald-500/10 to-transparent px-8 pb-2 pt-10 text-center">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/25">
-                <svg className="h-9 w-9" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
+          <div className="animate-fade-in-scale w-full max-w-xl overflow-y-auto overscroll-contain">
+            <div className="rounded-3xl border-2 border-dashed border-[var(--border-light)] bg-[var(--card)] px-6 py-7 font-mono text-base leading-relaxed text-[var(--foreground)] shadow-2xl sm:px-9 sm:py-9 sm:text-lg">
+              <div className="border-b border-dashed border-[var(--border)] pb-5 text-center">
+                <p className="text-xs font-bold uppercase tracking-[0.25em] text-[var(--gold)] sm:text-sm">
+                  {t(locale, "brand")}
+                </p>
+                <p className="mt-2 text-2xl font-black uppercase tracking-wide text-[var(--foreground)] sm:text-3xl">
+                  {t(locale, "receiptTitle")}
+                </p>
               </div>
-              <h3 className="mt-6 text-2xl font-black tracking-tight text-[var(--foreground)]">
-                {t(locale, "orderSuccessTitle")}
-              </h3>
-              <p className="mt-3 text-sm leading-relaxed text-[var(--muted)] sm:text-base">
-                {t(locale, "orderSuccessSub")}
-              </p>
-            </div>
-            <div className="px-8 pb-10 pt-2">
-              <button
-                type="button"
-                onClick={() => router.push("/guest")}
-                className="w-full rounded-2xl bg-[var(--gold)] py-4 text-base font-black text-[var(--dark)] shadow-lg transition hover:bg-[var(--gold-light)] active:scale-[0.98] sm:text-lg"
-              >
-                {t(locale, "orderSuccessOk")}
-              </button>
+
+              <dl className="mt-5 space-y-2.5 text-base text-[var(--muted)] sm:space-y-3 sm:text-lg">
+                <div className="flex justify-between gap-4">
+                  <dt>{t(locale, "receiptOrderNo")}</dt>
+                  <dd className="font-semibold tabular-nums text-[var(--foreground)]">
+                    #{receipt.orderId.replace(/^o-/, "")}
+                  </dd>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <dt>{t(locale, "receiptDate")}</dt>
+                  <dd className="text-right font-semibold text-[var(--foreground)]">
+                    {formatDateTime(receipt.placedAt, locale)}
+                  </dd>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <dt>{t(locale, "receiptRoom")}</dt>
+                  <dd className="text-xl font-black text-[var(--gold)] sm:text-2xl">{receipt.roomNumber}</dd>
+                </div>
+              </dl>
+
+              <div className="my-5 border-t border-dashed border-[var(--border)] sm:my-6" />
+
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] sm:text-sm">
+                  {t(locale, "receiptRoomCharge")}
+                </p>
+                <div className="mt-3 flex items-start justify-between gap-4 text-[var(--foreground)]">
+                  <span className="min-w-0 font-medium">
+                    {receipt.durationHours} {t(locale, "hours")} × {formatSrd(receipt.hourlyRate)}
+                  </span>
+                  <span className="shrink-0 text-lg font-bold tabular-nums sm:text-xl">
+                    {formatSrd(receipt.roomCostSrd)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="my-5 border-t border-dashed border-[var(--border)] sm:my-6" />
+
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] sm:text-sm">
+                  {t(locale, "receiptOrderItems")}
+                </p>
+                <ul className="mt-3 space-y-3 sm:space-y-4">
+                  {receipt.items.map((item) => (
+                    <li key={item.productId} className="flex items-start justify-between gap-4">
+                      <span className="min-w-0 text-[var(--foreground)]">
+                        <span className="text-lg font-bold text-[var(--gold)] sm:text-xl">{item.qty}×</span>{" "}
+                        <span className="font-medium">{item.name}</span>
+                        <span className="mt-0.5 block text-sm text-[var(--muted)] sm:text-base">
+                          @ {formatSrd(item.unitPrice)}
+                        </span>
+                      </span>
+                      <span className="shrink-0 text-lg font-bold tabular-nums text-[var(--foreground)] sm:text-xl">
+                        {formatSrd(item.lineTotal)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {receipt.notes && (
+                <p className="mt-4 rounded-xl border border-[var(--border)]/80 bg-[var(--surface)] px-4 py-3 text-sm italic text-[var(--muted)] sm:text-base">
+                  {receipt.notes}
+                </p>
+              )}
+
+              <div className="my-5 border-t border-dashed border-[var(--border)] sm:my-6" />
+
+              <div className="space-y-3 text-base sm:space-y-3.5 sm:text-lg">
+                <div className="flex justify-between gap-4 text-[var(--muted)]">
+                  <span>{t(locale, "receiptOrderSubtotal")}</span>
+                  <span className="font-semibold tabular-nums text-[var(--foreground)]">
+                    {formatSrd(receipt.orderSubtotal)}
+                  </span>
+                </div>
+                <div className="flex justify-between gap-4 text-[var(--muted)]">
+                  <span>{t(locale, "receiptRoomSubtotal")}</span>
+                  <span className="font-semibold tabular-nums text-[var(--foreground)]">
+                    {formatSrd(receipt.roomCostSrd)}
+                  </span>
+                </div>
+                <div className="flex items-baseline justify-between gap-4 border-t border-[var(--border)] pt-4">
+                  <span className="text-sm font-bold uppercase tracking-wider text-[var(--gold)] sm:text-base">
+                    {t(locale, "receiptGrandTotal")}
+                  </span>
+                  <span className="text-3xl font-black tabular-nums text-[var(--gold)] sm:text-4xl">
+                    {formatSrd(receipt.orderSubtotal + receipt.roomCostSrd)}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+          <p
+            className={`pointer-events-none mt-6 text-center text-sm font-semibold uppercase tracking-[0.2em] sm:text-base ${
+              theme === "light" ? "text-[var(--muted)]" : "text-white/55"
+            }`}
+          >
+            {t(locale, "tapToContinue")}
+          </p>
+        </button>
       )}
     </div>
   );

@@ -108,7 +108,7 @@ export default function GuestMainPage() {
       guestPostSessionEndNavRef.current.skipDurationRedirectOnce = false;
       return;
     }
-    router.replace(guestPath("/guest/duration"));
+    router.replace(guestPath("/guest/language"));
   }, [guestSession, router, guestPostSessionEndNavRef]);
 
   const effectiveCategory = useMemo(() => {

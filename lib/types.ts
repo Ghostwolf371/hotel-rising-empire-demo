@@ -60,7 +60,7 @@ export interface GuestRating {
   service: number;
 }
 
-export const LOCALES = ["en", "nl", "es", "pt"] as const;
+export const LOCALES = ["en", "nl", "es", "pt", "fr"] as const;
 export type Locale = (typeof LOCALES)[number];
 
 export function isLocale(value: unknown): value is Locale {

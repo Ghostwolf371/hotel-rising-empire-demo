@@ -11,6 +11,7 @@ const CODE_LABEL: Record<Locale, string> = {
   nl: "NL",
   es: "ES",
   pt: "PT",
+  fr: "FR",
 };
 
 const SETTINGS_LABEL: Record<Locale, string> = {
@@ -18,6 +19,7 @@ const SETTINGS_LABEL: Record<Locale, string> = {
   nl: "Nederlands",
   es: "Español",
   pt: "Português",
+  fr: "Français",
 };
 
 type Variant = "shell" | "guest" | "landing" | "duration" | "inline" | "settings";

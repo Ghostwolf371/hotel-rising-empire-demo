@@ -7,6 +7,11 @@ import { GuestFlowHeader, guestFlowThemeButtonClassName } from "@/components/gue
 import { LanguageToggle } from "@/components/language-toggle";
 import { useDemo } from "@/contexts/demo-context";
 import { formatSrd } from "@/lib/format";
+import {
+  clearGuestLanguageChosen,
+  hasGuestLanguageChosen,
+} from "@/lib/guest-language-chosen";
+import { guestPath } from "@/lib/guest-routes";
 import { t } from "@/lib/i18n";
 
 const ONE_MINUTE_MS = 60_000;
@@ -39,6 +44,7 @@ function DurationContent() {
     if (next >= STAFF_LOGOUT_TAPS) {
       setLogoutTapCount(0);
       if (guestSession) dispatch({ type: "END_GUEST_SESSION" });
+      clearGuestLanguageChosen();
       unbindGuestDeviceRoom();
       router.replace("/");
       return;
@@ -69,6 +75,12 @@ function DurationContent() {
     () => (effectiveHours != null ? effectiveHours * hourlyRate : null),
     [effectiveHours, hourlyRate],
   );
+
+  useEffect(() => {
+    if (!guestSession && !hasGuestLanguageChosen()) {
+      router.replace(guestPath("/guest/language", room));
+    }
+  }, [guestSession, room, router]);
 
   useEffect(() => {
     const id = setTimeout(() => setVisible(true), 100);

@@ -26,7 +26,13 @@ export function GuestSessionExpiryBridge() {
 
   useEffect(() => {
     if (!guestSession || endsAt === 0) return;
-    if (pathname === "/guest/duration" || pathname === "/guest/welcome") return;
+    if (
+      pathname === "/guest/language" ||
+      pathname === "/guest/duration" ||
+      pathname === "/guest/welcome"
+    ) {
+      return;
+    }
     if (leftMs > 0) return;
     if (sessionExpiredOpen) return;
     if (firedForKeyRef.current === sessionKey) return;

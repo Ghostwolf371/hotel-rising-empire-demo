@@ -9,6 +9,7 @@ import {
 } from "@/components/guest-choice-countdown-bar";
 import { GuestChoiceCountdownPortal } from "@/components/guest-choice-countdown-portal";
 import { useDemo } from "@/contexts/demo-context";
+import { clearGuestLanguageChosen } from "@/lib/guest-language-chosen";
 import { guestPath } from "@/lib/guest-routes";
 import { t } from "@/lib/i18n";
 
@@ -166,6 +167,7 @@ function RateContent() {
     endedHandled.current = true;
     const endedRoom = guestSession?.roomNumber ?? room;
     if (guestSession) {
+      clearGuestLanguageChosen();
       armGuestNavToRatingAfterSessionEnd();
       dispatch({ type: "END_GUEST_SESSION" });
     }
@@ -179,12 +181,12 @@ function RateContent() {
     if (!room) return;
     const r = rooms.find((x) => x.number === room);
     if (r?.status === "available") {
-      router.replace(guestPath("/guest/duration", room));
+      router.replace(guestPath("/guest/language", room));
     }
   }, [rooms, room, router]);
 
   const goDuration = useCallback(() => {
-    router.push(guestPath("/guest/duration", room));
+    router.push(guestPath("/guest/language", room));
   }, [room, router]);
 
   function submit(e: React.FormEvent) {
