@@ -62,7 +62,7 @@ export function GuestSessionExpiredModal() {
     locale,
     hourlyRate,
     registeredGuestRoom,
-    armGuestNavToRatingAfterSessionEnd,
+    guestPostSessionEndNavRef,
   } = useDemo();
   const [view, setView] = useState<ExpiredView>("choice");
   const [extendHours, setExtendHours] = useState(2);
@@ -71,18 +71,18 @@ export function GuestSessionExpiredModal() {
   const leftMs = useTimeLeft(endsAt);
   const extendCost = extendHours * hourlyRate;
 
-  const finishToRate = useCallback(() => {
+  const finishCheckout = useCallback(() => {
     if (guestSession) {
       clearGuestLanguageChosen();
-      armGuestNavToRatingAfterSessionEnd();
+      guestPostSessionEndNavRef.current.skipDurationRedirectOnce = true;
       dispatch({ type: "END_GUEST_SESSION" });
     }
     closeSessionExpiredModal();
     setView("choice");
-    router.replace(guestPath("/guest/rate", registeredGuestRoom));
+    router.replace(guestPath("/guest/language", registeredGuestRoom));
   }, [
     guestSession,
-    armGuestNavToRatingAfterSessionEnd,
+    guestPostSessionEndNavRef,
     dispatch,
     closeSessionExpiredModal,
     router,
@@ -153,7 +153,7 @@ export function GuestSessionExpiredModal() {
                 </button>
                 <button
                   type="button"
-                  onClick={finishToRate}
+                  onClick={finishCheckout}
                   className="min-h-[52px] flex-1 rounded-2xl border-2 border-[var(--border-light)] bg-[var(--surface)] px-6 py-4 text-lg font-bold text-[var(--foreground)] transition hover:border-[var(--gold)]/40 hover:bg-[var(--card-hover)] active:scale-[0.99] sm:min-w-[200px] sm:flex-none"
                 >
                   {t(locale, "endNow")}
@@ -240,7 +240,7 @@ export function GuestSessionExpiredModal() {
         </div>
       </div>
 
-      <ExpiredModalIdleTimeout onIdleEnd={finishToRate} />
+      <ExpiredModalIdleTimeout onIdleEnd={finishCheckout} />
     </>
   );
 }

@@ -78,11 +78,11 @@ export function GuestSessionPanel({
       <div
         className={`shrink-0 border-[var(--border)] ${isFs ? "mt-1 border-t px-4 pb-4 pt-4 sm:px-6 sm:pb-5 sm:pt-5" : "mt-auto space-y-2 border-t px-4 py-3 sm:px-5 sm:py-4"}`}
       >
-        <div className={isFs ? "grid grid-cols-2 gap-2.5" : "contents"}>
+        <div className={isFs ? "flex flex-col gap-2.5" : "space-y-2"}>
           <button
             type="button"
             onClick={onAddTime}
-            className={`flex w-full touch-manipulation items-center justify-center gap-2 rounded-xl border border-[var(--gold)]/30 bg-[var(--gold)]/5 font-bold text-[var(--gold-foreground)] transition hover:bg-[var(--gold)]/10 hover:text-[var(--gold)] active:scale-[0.98] ${isFs ? "py-3 text-sm sm:py-3.5 sm:text-base" : "gap-2.5 px-4 py-3.5 text-sm"}`}
+            className={`flex w-full touch-manipulation items-center justify-center gap-2 rounded-xl border border-[var(--gold)]/30 bg-[var(--gold)]/5 font-bold text-[var(--gold-foreground)] transition hover:bg-[var(--gold)]/10 hover:text-[var(--gold)] active:scale-[0.98] ${isFs ? "py-3 text-sm sm:py-3.5 sm:text-base" : "gap-2.5 px-4 py-3 text-sm"}`}
           >
             <svg className={isFs ? "h-5 w-5 shrink-0" : "h-5 w-5"} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -92,9 +92,9 @@ export function GuestSessionPanel({
           <button
             type="button"
             onClick={onEndNow}
-            className={`flex w-full touch-manipulation items-center justify-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] font-bold text-[var(--foreground)] transition hover:bg-[var(--card-hover)] active:scale-[0.98] ${isFs ? "py-3 text-sm sm:py-3.5 sm:text-base" : "gap-2.5 px-4 py-3.5 text-sm"}`}
+            className={`flex w-full touch-manipulation items-center justify-center gap-2.5 rounded-2xl bg-[var(--gold)] font-black text-black shadow-lg shadow-[var(--gold)]/25 transition hover:bg-[var(--gold-light)] active:scale-[0.98] ${isFs ? "py-5 text-lg sm:py-6 sm:text-xl" : "px-4 py-5 text-lg"}`}
           >
-            <svg className={isFs ? "h-5 w-5 shrink-0" : "h-5 w-5"} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className={isFs ? "h-6 w-6 shrink-0" : "h-5 w-5"} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
             <span className={isFs ? "truncate" : undefined}>{t(locale, "endNow")}</span>

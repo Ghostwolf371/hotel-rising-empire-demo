@@ -1,4 +1,9 @@
-export type RoomStatus = "available" | "occupied" | "cleaning" | "maintenance";
+export type RoomStatus =
+  | "available"
+  | "occupied"
+  | "just_checked_out"
+  | "cleaning"
+  | "maintenance";
 
 export type OrderStatus = "processing" | "completed";
 
@@ -48,16 +53,6 @@ export interface PanicAlert {
   id: string;
   roomNumber: string;
   at: number;
-}
-
-/** Guest post-stay star ratings (1–5); persisted for management reporting */
-export interface GuestRating {
-  id: string;
-  roomNumber: string;
-  submittedAt: number;
-  cleanliness: number;
-  comfort: number;
-  service: number;
 }
 
 export const LOCALES = ["en", "nl", "es", "pt", "fr"] as const;

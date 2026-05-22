@@ -1,11 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import { ProductThumb } from "@/components/product-thumb";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { guestPath } from "@/lib/guest-routes";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { LanguageToggle } from "@/components/language-toggle";
 import { useDemo } from "@/contexts/demo-context";
 import {
@@ -19,38 +18,6 @@ import { useGuestSessionUi } from "@/hooks/use-guest-session-ui";
 import { categoryLabel } from "@/lib/category-styles";
 import { t } from "@/lib/i18n";
 import type { ProductCategory } from "@/lib/types";
-
-// Self-hosted slides live in `public/products/`. Earlier these pointed at
-// Unsplash, but some kiosk Wi-Fi blocks third-party image CDNs and left
-// the carousel blank.
-const PROMO_SLIDES = [
-  {
-    image: "/products/promo-spa.jpg",
-    tag: "Spa & Wellness",
-    title: "Spa evening",
-    highlight: "20% off",
-    rest: "this week",
-    desc: "Relax and enjoy our premium spa experience. Book directly from your room.",
-  },
-  {
-    image: "/products/promo-dining.jpg",
-    tag: "Dining",
-    title: "Room service",
-    highlight: "Free delivery",
-    rest: "after 6 PM",
-    desc: "Enjoy gourmet meals delivered to your room. Fresh and hot, every time.",
-  },
-  {
-    image: "/products/promo-stay.jpg",
-    tag: "Special Offer",
-    title: "Extended stay",
-    highlight: "Save 15%",
-    rest: "on 3+ hours",
-    desc: "Stay longer and pay less. The perfect deal for a relaxing afternoon.",
-  },
-];
-
-const SLIDE_INTERVAL = 5000;
 
 export default function GuestMainPage() {
   const router = useRouter();
@@ -79,28 +46,6 @@ export default function GuestMainPage() {
   } = useGuestSessionUi();
   const [category, setCategory] = useState<"all" | ProductCategory>("all");
   const [tapped, setTapped] = useState<string | null>(null);
-
-  const [slide, setSlide] = useState(0);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const startTimer = useCallback(() => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => {
-      setSlide((s) => (s + 1) % PROMO_SLIDES.length);
-    }, SLIDE_INTERVAL);
-  }, []);
-
-  useEffect(() => {
-    startTimer();
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [startTimer]);
-
-  function goToSlide(idx: number) {
-    setSlide(idx);
-    startTimer();
-  }
 
   useEffect(() => {
     if (guestSession) return;
@@ -141,10 +86,8 @@ export default function GuestMainPage() {
     return m;
   }, [cart]);
 
-  // While the session is being torn down and /guest/rate is loading we get
-  // a brief render with guestSession=null. Returning null here painted a
-  // black screen on the way out; show the same lightweight loader the
-  // sibling guest pages use so the transition reads as "in flight".
+  // Brief render with guestSession=null while navigating after checkout.
+  // Show a lightweight loader so the transition reads as "in flight".
   if (!guestSession) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-[var(--background)]">
@@ -163,8 +106,6 @@ export default function GuestMainPage() {
     setTapped(productId);
     setTimeout(() => setTapped(null), 400);
   }
-
-  const currentSlide = PROMO_SLIDES[slide];
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-[var(--background)] md:flex-row">
@@ -233,55 +174,6 @@ export default function GuestMainPage() {
           </div>
         </div>
         <div className="flex-1 space-y-4 p-4 sm:space-y-6 sm:p-6">
-
-          {/* Promo carousel */}
-          <div className="animate-slide-up relative overflow-hidden rounded-2xl shadow-xl ring-1 ring-[var(--border)]">
-            <div className="relative h-44 min-h-[11rem] sm:h-52 md:h-60">
-              {PROMO_SLIDES.map((s, i) => (
-                <div
-                  key={s.image}
-                  className="absolute inset-0 transition-all duration-700 ease-in-out"
-                  style={{
-                    opacity: i === slide ? 1 : 0,
-                    transform: i === slide ? "scale(1)" : "scale(1.05)",
-                    pointerEvents: i === slide ? "auto" : "none",
-                    zIndex: i === slide ? 2 : 0,
-                  }}
-                >
-                  <Image
-                    src={s.image}
-                    alt={s.title}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 1200px) 100vw, 900px"
-                    priority={i === slide}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
-                </div>
-              ))}
-              <div className="relative z-10 flex h-full flex-col justify-center px-4 py-6 text-white sm:px-8 sm:py-8">
-                <p key={`tag-${slide}`} className="animate-fade-in text-xs font-semibold uppercase tracking-[0.2em] text-[var(--gold)]">{currentSlide.tag}</p>
-                <p key={`title-${slide}`} className="animate-fade-in stagger-1 mt-2 text-2xl font-black leading-tight sm:mt-3 sm:text-3xl">
-                  {currentSlide.title}<br />
-                  <span className="text-[var(--gold)]">{currentSlide.highlight}</span> {currentSlide.rest}
-                </p>
-                <p key={`desc-${slide}`} className="animate-fade-in stagger-2 mt-3 max-w-md text-sm text-white/70">{currentSlide.desc}</p>
-              </div>
-            </div>
-            <div className="absolute bottom-3 left-4 z-10 flex items-center gap-2 sm:bottom-4 sm:left-8">
-              {PROMO_SLIDES.map((_, i) => (
-                <button key={i} type="button" onClick={() => goToSlide(i)} className={`h-2 rounded-full transition-all duration-300 ${i === slide ? "w-6 bg-[var(--gold)]" : "w-2 bg-white/30 hover:bg-white/50"}`} aria-label={`Slide ${i + 1}`} />
-              ))}
-            </div>
-            <div className="absolute bottom-3 right-4 z-10 flex gap-1.5 sm:bottom-4 sm:right-5">
-              <button type="button" onClick={() => goToSlide((slide - 1 + PROMO_SLIDES.length) % PROMO_SLIDES.length)} className="flex h-10 w-10 touch-manipulation items-center justify-center rounded-full bg-white/15 text-white backdrop-blur transition hover:bg-white/30" aria-label="Previous">
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
-              </button>
-              <button type="button" onClick={() => goToSlide((slide + 1) % PROMO_SLIDES.length)} className="flex h-10 w-10 touch-manipulation items-center justify-center rounded-full bg-white/15 text-white backdrop-blur transition hover:bg-white/30" aria-label="Next">
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-              </button>
-            </div>
-          </div>
 
           {/* Menu section header */}
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">

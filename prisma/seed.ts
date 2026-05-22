@@ -1,4 +1,5 @@
 import { getPrisma } from "../lib/server/prisma";
+import { bootstrapManagementUserFromEnv } from "../lib/server/management-users";
 import {
   defaultCatalog,
   defaultCategories,
@@ -13,7 +14,7 @@ async function main() {
   await prisma.orderLine.deleteMany();
   await prisma.order.deleteMany();
   await prisma.panicAlert.deleteMany();
-  await prisma.guestRating.deleteMany();
+  await prisma.managementUser.deleteMany();
   await prisma.product.deleteMany();
   await prisma.category.deleteMany();
   await prisma.room.deleteMany();
@@ -55,6 +56,8 @@ async function main() {
       },
     });
   }
+
+  await bootstrapManagementUserFromEnv();
 
   for (const o of initialOrders()) {
     await prisma.order.create({

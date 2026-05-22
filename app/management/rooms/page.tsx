@@ -13,6 +13,12 @@ import type { Locale, Room, RoomStatus } from "@/lib/types";
 const STATUS_STYLE: Record<RoomStatus, { key: TKey; dot: string; bg: string; text: string }> = {
   available: { key: "mgmtStatusAvailable", dot: "bg-emerald-400", bg: "bg-emerald-400/10", text: "text-emerald-400" },
   occupied: { key: "mgmtStatusOccupied", dot: "bg-[var(--gold)]", bg: "bg-[var(--gold)]/10", text: "text-[var(--gold)]" },
+  just_checked_out: {
+    key: "mgmtStatusJustCheckedOut",
+    dot: "bg-amber-400",
+    bg: "bg-amber-400/10",
+    text: "text-amber-400",
+  },
   cleaning: { key: "mgmtStatusCleaning", dot: "bg-sky-400", bg: "bg-sky-400/10", text: "text-sky-400" },
   maintenance: { key: "mgmtStatusMaintenance", dot: "bg-red-400", bg: "bg-red-400/10", text: "text-red-400" },
 };
@@ -69,7 +75,32 @@ function RoomModal({ room, onClose }: { room: Room; onClose: () => void }) {
   const roomOrders = orders.filter((o) => o.roomNumber === room.number);
   const cost = durationHours * hourlyRate;
   const isOccupied = room.status === "occupied";
+  const isJustCheckedOut = room.status === "just_checked_out";
   const timeLoc = bcp47ForLocale(locale);
+
+  const statusToggleSection = (
+    <div className="mt-6">
+      <p className="mb-2 text-sm font-semibold text-[var(--gold-light)]">{t(locale, "mgmtRoomStatus")}</p>
+      {isJustCheckedOut && (
+        <p className="mb-3 text-sm text-amber-400/90">{t(locale, "mgmtJustCheckedOutHint")}</p>
+      )}
+      <div className="flex flex-wrap gap-2">
+        {statusButtons(locale).map((s) => {
+          const selected = room.status === s.value;
+          return (
+            <button
+              key={s.value}
+              type="button"
+              onClick={() => setStatus(s.value)}
+              className={roomStatusToggleClass(s.value as RoomStatusToggle, selected)}
+            >
+              {s.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 
   function startSession() {
     dispatch({ type: "START_ROOM_SESSION", roomId: room.id, durationHours: clampDuration(durationHours) });
@@ -137,6 +168,8 @@ function RoomModal({ room, onClose }: { room: Room; onClose: () => void }) {
                   {t(locale, "mgmtEndSession")}
                 </button>
               </>
+            ) : isJustCheckedOut ? (
+              statusToggleSection
             ) : (
               <>
                 <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.04]">
@@ -230,24 +263,7 @@ function RoomModal({ room, onClose }: { room: Room; onClose: () => void }) {
                   {t(locale, "mgmtStartSession")}
                 </button>
 
-                <div className="mt-6">
-                  <p className="mb-2 text-sm font-semibold text-[var(--gold-light)]">{t(locale, "mgmtRoomStatus")}</p>
-                  <div className="flex flex-wrap gap-2">
-                    {statusButtons(locale).map((s) => {
-                      const selected = room.status === s.value;
-                      return (
-                        <button
-                          key={s.value}
-                          type="button"
-                          onClick={() => setStatus(s.value)}
-                          className={roomStatusToggleClass(s.value as RoomStatusToggle, selected)}
-                        >
-                          {s.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+                {statusToggleSection}
               </>
             )}
           </div>
@@ -300,6 +316,7 @@ export default function ManagementRoomsPage() {
   const counts = {
     available: rooms.filter((r) => r.status === "available").length,
     occupied: rooms.filter((r) => r.status === "occupied").length,
+    just_checked_out: rooms.filter((r) => r.status === "just_checked_out").length,
     cleaning: rooms.filter((r) => r.status === "cleaning").length,
     maintenance: rooms.filter((r) => r.status === "maintenance").length,
   };
@@ -361,6 +378,9 @@ export default function ManagementRoomsPage() {
                 )}
 
                 {room.status === "available" && <p className="mt-5 text-sm text-[var(--muted)]">{t(locale, "mgmtReadyForCheckin")}</p>}
+                {room.status === "just_checked_out" && (
+                  <p className="mt-5 text-sm text-amber-400/90">{t(locale, "mgmtJustCheckedOutHint")}</p>
+                )}
                 {room.status === "cleaning" && <p className="mt-5 text-sm text-[var(--muted)]">{t(locale, "mgmtBeingCleaned")}</p>}
                 {room.status === "maintenance" && <p className="mt-5 text-sm text-[var(--muted)]">{t(locale, "mgmtUnderMaintenance")}</p>}
 

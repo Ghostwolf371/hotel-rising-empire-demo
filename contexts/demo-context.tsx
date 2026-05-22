@@ -23,7 +23,6 @@ import {
 import {
   isLocale,
   type Category,
-  type GuestRating,
   type Locale,
   type Order,
   type PanicAlert,
@@ -111,7 +110,6 @@ interface PersistedState {
   rooms: Room[];
   orders: Order[];
   panicAlerts: PanicAlert[];
-  guestRatings: GuestRating[];
   guestSession: GuestSession | null;
   locale: Locale;
   theme: Theme;
@@ -135,15 +133,6 @@ export type Action =
   | { type: "EXTEND_GUEST_SESSION"; extraHours: number }
   | { type: "END_GUEST_SESSION" }
   | { type: "EXPIRE_ROOM_SESSION"; roomNumber: string }
-  | {
-      type: "SUBMIT_GUEST_RATING";
-      roomNumber: string;
-      cleanliness: number;
-      comfort: number;
-      service: number;
-      /** When set (e.g. database sync), used as the persisted rating id. */
-      ratingId?: string;
-    }
   | { type: "UPDATE_ROOM_STATUS"; roomId: string; status: RoomStatus }
   | { type: "START_ROOM_SESSION"; roomId: string; durationHours: number }
   | { type: "END_ROOM_SESSION"; roomId: string }
@@ -184,7 +173,6 @@ function defaultState(): DemoState {
     rooms: initialRooms(),
     orders: initialOrders(),
     panicAlerts: [],
-    guestRatings: [],
     guestSession: null,
     locale: "en",
     theme: "dark",
@@ -201,9 +189,6 @@ function reducer(state: DemoState, action: Action): DemoState {
       return {
         ...state,
         ...action.payload,
-        guestRatings: Array.isArray(action.payload.guestRatings)
-          ? action.payload.guestRatings
-          : state.guestRatings,
         cart:
           action.payload.cart !== undefined
             ? action.payload.cart
@@ -248,7 +233,7 @@ function reducer(state: DemoState, action: Action): DemoState {
         r.number === action.roomNumber && r.status === "occupied"
           ? {
               ...r,
-              status: "cleaning" as const,
+              status: "just_checked_out" as const,
               sessionStartedAt: undefined,
               sessionEndsAt: undefined,
               durationHours: undefined,
@@ -276,7 +261,7 @@ function reducer(state: DemoState, action: Action): DemoState {
         r.number === roomNumber
           ? {
               ...r,
-              status: "cleaning" as const,
+              status: "just_checked_out" as const,
               sessionEndsAt: undefined,
               sessionStartedAt: undefined,
               durationHours: undefined,
@@ -284,20 +269,6 @@ function reducer(state: DemoState, action: Action): DemoState {
           : r
       );
       return { ...state, guestSession: null, rooms, cart: [] };
-    }
-    case "SUBMIT_GUEST_RATING": {
-      const rating: GuestRating = {
-        id:
-          action.ratingId ??
-          `rate-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-        roomNumber: action.roomNumber,
-        submittedAt: Date.now(),
-        cleanliness: action.cleanliness,
-        comfort: action.comfort,
-        service: action.service,
-      };
-      const next = [rating, ...state.guestRatings];
-      return { ...state, guestRatings: next.slice(0, 500) };
     }
     case "UPDATE_ROOM_STATUS":
       return {
@@ -448,7 +419,6 @@ function mergeDbHydrate(
     rooms: normalizeExpiredOccupiedRooms(server.rooms),
     orders: server.orders,
     panicAlerts: server.panicAlerts,
-    guestRatings: server.guestRatings,
     catalog: server.catalog,
     categories: server.categories,
     hourlyRate: server.hourlyRate,
@@ -521,16 +491,6 @@ async function pushActionToDatabase(
       if (room) await hotelSync.syncGuestSessionEnd(room);
       return;
     }
-    case "SUBMIT_GUEST_RATING":
-      await hotelSync.syncSubmitGuestRating({
-        id: action.ratingId!,
-        roomNumber: action.roomNumber,
-        submittedAt: Date.now(),
-        cleanliness: action.cleanliness,
-        comfort: action.comfort,
-        service: action.service,
-      });
-      return;
     case "PANIC":
       await hotelSync.syncPanic({
         id: action.alertId!,
@@ -579,7 +539,7 @@ async function pushActionToDatabase(
   }
 }
 
-/** When ending the guest session we clear `guestSession` before navigation to `/guest/rate` finishes; guest pages must skip their “no session → duration” redirect once. */
+/** When ending the guest session we clear `guestSession` before navigation finishes; guest pages must skip their “no session → language” redirect once. */
 type GuestPostSessionEndNavRef = MutableRefObject<{ skipDurationRedirectOnce: boolean }>;
 
 interface DemoContextValue {
@@ -591,7 +551,6 @@ interface DemoContextValue {
   rooms: Room[];
   orders: Order[];
   panicAlerts: PanicAlert[];
-  guestRatings: GuestRating[];
   guestSession: GuestSession | null;
   catalog: Product[];
   categories: Category[];
@@ -604,7 +563,6 @@ interface DemoContextValue {
   removeCartLine: (productId: string) => void;
   clearCart: () => void;
   guestPostSessionEndNavRef: GuestPostSessionEndNavRef;
-  armGuestNavToRatingAfterSessionEnd: () => void;
   /** When true, domain data is loaded and synced via Prisma (Server Actions), not only localStorage. */
   useDatabase: boolean;
   databaseSyncing: boolean;
@@ -643,9 +601,6 @@ export function DemoProvider({
   );
 
   const guestPostSessionEndNavRef = useRef({ skipDurationRedirectOnce: false });
-  const armGuestNavToRatingAfterSessionEnd = useCallback(() => {
-    guestPostSessionEndNavRef.current.skipDurationRedirectOnce = true;
-  }, []);
 
   const [registeredGuestRoom, setRegisteredGuestRoomState] = useState<
     string | null
@@ -821,12 +776,6 @@ export function DemoProvider({
             at,
           };
         }
-        if (action.type === "SUBMIT_GUEST_RATING") {
-          effectiveAction = {
-            ...action,
-            ratingId: `rate-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-          };
-        }
       }
 
       dispatchCore(effectiveAction);
@@ -891,7 +840,6 @@ export function DemoProvider({
         rooms: state.rooms,
         orders: state.orders,
         panicAlerts: state.panicAlerts,
-        guestRatings: state.guestRatings,
         guestSession: state.guestSession,
         locale: state.locale,
         theme: state.theme,
@@ -908,7 +856,6 @@ export function DemoProvider({
     state.rooms,
     state.orders,
     state.panicAlerts,
-    state.guestRatings,
     state.guestSession,
     state.locale,
     state.theme,
@@ -988,7 +935,6 @@ export function DemoProvider({
       rooms: state.rooms,
       orders: state.orders,
       panicAlerts: state.panicAlerts,
-      guestRatings: state.guestRatings,
       guestSession: state.guestSession,
       catalog: state.catalog,
       categories: state.categories,
@@ -1001,7 +947,6 @@ export function DemoProvider({
       removeCartLine,
       clearCart,
       guestPostSessionEndNavRef,
-      armGuestNavToRatingAfterSessionEnd,
       useDatabase,
       databaseSyncing,
       databaseSyncError,
@@ -1018,7 +963,6 @@ export function DemoProvider({
       state.rooms,
       state.orders,
       state.panicAlerts,
-      state.guestRatings,
       state.guestSession,
       state.catalog,
       state.categories,
@@ -1032,7 +976,6 @@ export function DemoProvider({
       setCartQty,
       removeCartLine,
       clearCart,
-      armGuestNavToRatingAfterSessionEnd,
       dispatch,
       useDatabase,
       databaseSyncing,

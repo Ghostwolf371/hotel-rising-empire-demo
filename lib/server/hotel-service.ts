@@ -8,7 +8,6 @@ import {
 } from "@/lib/server/mappers";
 import type {
   Category,
-  GuestRating,
   Order,
   OrderLine,
   PanicAlert,
@@ -18,13 +17,11 @@ import type {
 } from "@/lib/types";
 
 const ORDERS_LIMIT = 250;
-const RATINGS_LIMIT = 300;
 
 export type DomainSnapshot = {
   rooms: Room[];
   orders: Order[];
   panicAlerts: PanicAlert[];
-  guestRatings: GuestRating[];
   catalog: Product[];
   categories: Category[];
   hourlyRate: number;
@@ -32,7 +29,7 @@ export type DomainSnapshot = {
 
 export async function getDomainSnapshot(): Promise<DomainSnapshot> {
   const prisma = getPrisma();
-  const [rooms, orders, panicAlerts, guestRatings, products, categories, site] =
+  const [rooms, orders, panicAlerts, products, categories, site] =
     await Promise.all([
       prisma.room.findMany({ orderBy: { number: "asc" } }),
       prisma.order.findMany({
@@ -41,10 +38,6 @@ export async function getDomainSnapshot(): Promise<DomainSnapshot> {
         take: ORDERS_LIMIT,
       }),
       prisma.panicAlert.findMany({ orderBy: { at: "desc" } }),
-      prisma.guestRating.findMany({
-        orderBy: { submittedAt: "desc" },
-        take: RATINGS_LIMIT,
-      }),
       prisma.product.findMany({ orderBy: { id: "asc" } }),
       prisma.category.findMany({ orderBy: { id: "asc" } }),
       prisma.siteConfig.findUnique({ where: { id: 1 } }),
@@ -57,14 +50,6 @@ export async function getDomainSnapshot(): Promise<DomainSnapshot> {
       id: r.id,
       roomNumber: r.roomNumber,
       at: Number(r.at),
-    })),
-    guestRatings: guestRatings.map((r) => ({
-      id: r.id,
-      roomNumber: r.roomNumber,
-      submittedAt: Number(r.submittedAt),
-      cleanliness: r.cleanliness,
-      comfort: r.comfort,
-      service: r.service,
     })),
     catalog: products.map(toDomainProduct),
     categories: categories.map(toDomainCategory),
@@ -209,7 +194,7 @@ export async function applyGuestSessionExtend(
 
 export async function applyGuestSessionEnd(roomNumber: string) {
   await updateRoomByNumber(roomNumber, {
-    status: "cleaning",
+    status: "just_checked_out",
     sessionStartedAt: null,
     sessionEndsAt: null,
     durationHours: null,
@@ -322,16 +307,3 @@ export async function deletePanicAlert(id: string) {
   await prisma.panicAlert.delete({ where: { id } });
 }
 
-export async function createGuestRating(rating: GuestRating) {
-  const prisma = getPrisma();
-  await prisma.guestRating.create({
-    data: {
-      id: rating.id,
-      roomNumber: rating.roomNumber,
-      submittedAt: BigInt(rating.submittedAt),
-      cleanliness: rating.cleanliness,
-      comfort: rating.comfort,
-      service: rating.service,
-    },
-  });
-}

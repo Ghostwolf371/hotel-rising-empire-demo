@@ -98,7 +98,7 @@ function DurationContent() {
   }
 
   const cardBase =
-    "group relative overflow-hidden rounded-2xl border-2 py-6 text-center touch-manipulation " +
+    "group relative w-full overflow-hidden rounded-2xl border-2 text-center touch-manipulation " +
     "transition-[border-color,background-color,box-shadow,transform] motion-safe:duration-450 motion-safe:ease-out " +
     "motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-lg " +
     "motion-safe:active:translate-y-0 motion-safe:active:transition-transform motion-safe:active:duration-150 " +
@@ -190,12 +190,12 @@ function DurationContent() {
             className="mt-8 w-full"
             style={{ opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(20px)", transition: "opacity 0.8s ease-out 0.45s, transform 0.8s ease-out 0.45s" }}
           >
-            <div className="grid grid-cols-2 gap-3 sm:gap-4">
-              {/* 2 hours card */}
+            <div className="flex flex-col gap-3 sm:gap-4">
+              {/* 2 hours card — primary, full width */}
               <button
                 type="button"
                 onClick={() => setChoice("preset")}
-                className={`${cardBase} ${
+                className={`${cardBase} py-8 sm:py-10 ${
                   choice === "preset"
                     ? "border-[var(--gold)] bg-[var(--gold)] text-black shadow-xl shadow-[var(--gold)]/25"
                     : "border-[var(--border-light)] bg-[var(--card)]/90 text-[var(--foreground)] hover:border-[var(--gold)]/55 motion-safe:hover:shadow-[var(--gold)]/8"
@@ -207,24 +207,24 @@ function DurationContent() {
                   }`}
                   aria-hidden
                 />
-                <div className="relative flex flex-col items-center gap-1">
+                <div className="relative flex flex-col items-center gap-1.5">
                   <span className={`text-xs font-bold uppercase tracking-wider ${choice === "preset" ? "text-black/45" : "text-[var(--muted)]"}`}>
                     {t(locale, "durationEyebrow")}
                   </span>
-                  <span className="text-3xl font-black sm:text-4xl">{t(locale, "hours2")}</span>
-                  <span className={`text-sm font-semibold tabular-nums ${choice === "preset" ? "text-black/60" : "text-[var(--muted)]"}`}>
+                  <span className="text-4xl font-black sm:text-5xl">{t(locale, "hours2")}</span>
+                  <span className={`text-base font-semibold tabular-nums sm:text-lg ${choice === "preset" ? "text-black/60" : "text-[var(--muted)]"}`}>
                     {formatSrd(2 * hourlyRate)}
                   </span>
                 </div>
               </button>
 
-              {/* Custom card */}
+              {/* Custom card — secondary, smaller below */}
               <button
                 type="button"
                 onClick={() => setChoice("custom")}
-                className={`${cardBase} ${
+                className={`${cardBase} mx-auto max-w-sm py-4 sm:py-5 ${
                   choice === "custom"
-                    ? "border-[var(--gold)] bg-[var(--gold)] text-black shadow-xl shadow-[var(--gold)]/25"
+                    ? "border-[var(--gold)] bg-[var(--gold)] text-black shadow-lg shadow-[var(--gold)]/20"
                     : "border-[var(--border-light)] bg-[var(--card)]/90 text-[var(--foreground)] hover:border-[var(--gold)]/55 motion-safe:hover:shadow-[var(--gold)]/8"
                 }`}
               >
@@ -234,12 +234,12 @@ function DurationContent() {
                   }`}
                   aria-hidden
                 />
-                <div className="relative flex flex-col items-center gap-1">
-                  <span className={`text-xs font-bold uppercase tracking-wider ${choice === "custom" ? "text-black/45" : "text-[var(--muted)]"}`}>
+                <div className="relative flex flex-col items-center gap-0.5">
+                  <span className={`text-[10px] font-bold uppercase tracking-wider ${choice === "custom" ? "text-black/45" : "text-[var(--muted)]"}`}>
                     {t(locale, "durationEyebrow")}
                   </span>
-                  <span className="text-3xl font-black sm:text-4xl">{t(locale, "durationCustom")}</span>
-                  <span className={`text-sm font-semibold ${choice === "custom" ? "text-black/60" : "text-[var(--muted)]"}`}>
+                  <span className="text-xl font-black sm:text-2xl">{t(locale, "durationCustom")}</span>
+                  <span className={`text-xs font-semibold ${choice === "custom" ? "text-black/60" : "text-[var(--muted)]"}`}>
                     {t(locale, "durationCustomSub")}
                   </span>
                 </div>

@@ -1,11 +1,8 @@
 "use server";
 
 import { cookies } from "next/headers";
-import {
-  MANAGEMENT_AUTH_COOKIE,
-  getManagementSessionToken,
-  validateManagementLogin,
-} from "@/lib/management-auth";
+import { MANAGEMENT_AUTH_COOKIE, getLegacyManagementSessionToken } from "@/lib/management-auth";
+import { validateManagementLogin } from "@/lib/server/management-auth-server";
 
 export type ManagementSignInResult =
   | { ok: true }
@@ -15,17 +12,19 @@ export async function signInManagement(
   email: string,
   password: string,
 ): Promise<ManagementSignInResult> {
-  const token = await getManagementSessionToken();
-  if (!token) {
-    return { ok: false, error: "not_configured" };
-  }
+  const legacy = await getLegacyManagementSessionToken();
+  const hasBootstrap = legacy != null;
 
-  if (!validateManagementLogin(email, password)) {
+  const result = await validateManagementLogin(email, password);
+  if (!result.ok) {
+    if (!hasBootstrap) {
+      return { ok: false, error: "not_configured" };
+    }
     return { ok: false, error: "invalid" };
   }
 
   const cookieStore = await cookies();
-  cookieStore.set(MANAGEMENT_AUTH_COOKIE, token, {
+  cookieStore.set(MANAGEMENT_AUTH_COOKIE, result.token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",

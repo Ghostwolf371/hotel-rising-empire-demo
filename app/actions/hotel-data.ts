@@ -3,7 +3,6 @@
 import * as hotel from "@/lib/server/hotel-service";
 import type {
   Category,
-  GuestRating,
   Order,
   PanicAlert,
   Product,
@@ -128,6 +127,3 @@ export async function syncDeleteRoom(roomId: string) {
   await hotel.deleteRoom(roomId);
 }
 
-export async function syncSubmitGuestRating(rating: GuestRating) {
-  await hotel.createGuestRating(rating);
-}

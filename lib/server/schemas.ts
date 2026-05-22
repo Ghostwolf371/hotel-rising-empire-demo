@@ -4,6 +4,7 @@ export const orderStatusZ = z.enum(["processing", "completed"]);
 export const roomStatusZ = z.enum([
   "available",
   "occupied",
+  "just_checked_out",
   "cleaning",
   "maintenance",
 ]);
@@ -62,14 +63,6 @@ export const patchRoomZ = z
     durationHours: z.number().nullable().optional(),
   })
   .refine((o) => Object.keys(o).length > 0, { message: "empty patch" });
-
-export const guestRatingZ = z.object({
-  id: z.string().min(1).optional(),
-  roomNumber: z.string().min(1),
-  cleanliness: z.number().int().min(1).max(5),
-  comfort: z.number().int().min(1).max(5),
-  service: z.number().int().min(1).max(5),
-});
 
 export const panicCreateZ = z.object({
   id: z.string().min(1).optional(),

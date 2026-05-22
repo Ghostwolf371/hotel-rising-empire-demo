@@ -63,19 +63,20 @@ model PanicAlert {
   at         BigInt
 }
 
-model GuestRating {
-  id          String @id
-  roomNumber  String
-  submittedAt BigInt
-  cleanliness Int
-  comfort     Int
-  service     Int
-}
-
 /// Single-row app settings (row id = 1).
 model SiteConfig {
   id         Int @id @default(1)
   hourlyRate Int @default(75)
+}
+
+/// Management portal staff accounts.
+model ManagementUser {
+  id           String  @id @default(cuid())
+  email        String  @unique
+  passwordHash String
+  displayName  String?
+  active       Boolean @default(true)
+  createdAt    BigInt
 }
 
 /// One-time 6-digit codes for guest tablet room entry; staff reads from management UI.

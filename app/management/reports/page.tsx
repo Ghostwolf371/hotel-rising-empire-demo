@@ -6,7 +6,7 @@ import { useDemo } from "@/contexts/demo-context";
 import { formatSrd } from "@/lib/format";
 import { t, type TKey } from "@/lib/i18n";
 import { bcp47ForLocale } from "@/lib/locale-intl";
-import type { GuestRating, Order } from "@/lib/types";
+import type { Order } from "@/lib/types";
 
 type RoomSortKey = "room" | "orders" | "units" | "revenue" | "avgOrder";
 type SortDir = "asc" | "desc";
@@ -42,10 +42,6 @@ function orderTotal(o: Order): number {
 
 function totalUnits(o: Order): number {
   return o.items.reduce((s, i) => s + i.qty, 0);
-}
-
-function overallStars(r: Pick<GuestRating, "cleanliness" | "comfort" | "service">): number {
-  return (r.cleanliness + r.comfort + r.service) / 3;
 }
 
 function defaultMonthFrom(): string {
@@ -110,7 +106,7 @@ function SortableRoomTh({
 }
 
 export default function ManagementReportsPage() {
-  const { orders, rooms, locale, guestRatings } = useDemo();
+  const { orders, rooms, locale } = useDemo();
   const [dateFrom, setDateFrom] = useState(defaultMonthFrom);
   const [dateTo, setDateTo] = useState(() => toYmd(new Date()));
   const [preset, setPreset] = useState<Preset>("month");
@@ -121,40 +117,6 @@ export default function ManagementReportsPage() {
   const filtered = useMemo(
     () => orders.filter((o) => o.createdAt >= start && o.createdAt <= end),
     [orders, start, end]
-  );
-
-  const ratingsFiltered = useMemo(
-    () => guestRatings.filter((r) => r.submittedAt >= start && r.submittedAt <= end),
-    [guestRatings, start, end]
-  );
-
-  const ratingStats = useMemo(() => {
-    const n = ratingsFiltered.length;
-    if (n === 0) {
-      return { count: 0, avgClean: 0, avgComfort: 0, avgService: 0, avgOverall: 0 };
-    }
-    let c = 0;
-    let co = 0;
-    let s = 0;
-    let o = 0;
-    for (const r of ratingsFiltered) {
-      c += r.cleanliness;
-      co += r.comfort;
-      s += r.service;
-      o += overallStars(r);
-    }
-    return {
-      count: n,
-      avgClean: c / n,
-      avgComfort: co / n,
-      avgService: s / n,
-      avgOverall: o / n,
-    };
-  }, [ratingsFiltered]);
-
-  const ratingsTableRows = useMemo(
-    () => [...ratingsFiltered].sort((a, b) => b.submittedAt - a.submittedAt).slice(0, 50),
-    [ratingsFiltered]
   );
 
   const timeLoc = bcp47ForLocale(locale);
@@ -345,21 +307,6 @@ export default function ManagementReportsPage() {
       const items = o.items.map((i) => `${i.qty}x ${i.name}`).join("; ");
       lines.push(`${o.id},${o.roomNumber},${date},${time},"${items}",${orderTotal(o).toFixed(2)}`);
     }
-    lines.push("");
-    lines.push(
-      "Guest ratings summary,count,avgCleanliness,avgComfort,avgService,avgOverall"
-    );
-    lines.push(
-      `Summary,${ratingStats.count},${ratingStats.avgClean.toFixed(2)},${ratingStats.avgComfort.toFixed(2)},${ratingStats.avgService.toFixed(2)},${ratingStats.avgOverall.toFixed(2)}`
-    );
-    lines.push("Rating ID,Room,Date,Time,cleanliness,comfort,service,overall");
-    for (const r of [...ratingsFiltered].sort((a, b) => b.submittedAt - a.submittedAt)) {
-      const d = new Date(r.submittedAt);
-      const date = d.toLocaleDateString(timeLoc);
-      const time = d.toLocaleTimeString(timeLoc, { hour: "numeric", minute: "2-digit" });
-      const ov = overallStars(r);
-      lines.push(`${r.id},${r.roomNumber},${date},${time},${r.cleanliness},${r.comfort},${r.service},${ov.toFixed(2)}`);
-    }
     const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -367,7 +314,7 @@ export default function ManagementReportsPage() {
     a.download = `empire-report-${dateFrom}_${dateTo}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [dateFrom, dateTo, filtered, ratingStats, ratingsFiltered, roomSort, sortedRoomRows, stats, timeLoc]);
+  }, [dateFrom, dateTo, filtered, roomSort, sortedRoomRows, stats, timeLoc]);
 
   const exportPdf = useCallback(() => {
     window.print();
@@ -573,78 +520,6 @@ export default function ManagementReportsPage() {
               </tfoot>
             </table>
           </div>
-        </section>
-
-        <section className="mb-10 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-lg">
-          <div className="border-b border-[var(--border)] px-5 py-4 sm:px-6">
-            <h2 className="text-lg font-bold text-[var(--gold)]">{t(locale, "mgmtGuestFeedbackTitle")}</h2>
-            <p className="mt-1 text-xs text-[var(--muted)]">{t(locale, "mgmtGuestFeedbackSub")}</p>
-          </div>
-          {ratingStats.count === 0 ? (
-            <p className="px-5 py-8 text-sm text-[var(--muted)] sm:px-6">{t(locale, "mgmtNoRatingsPeriod")}</p>
-          ) : (
-            <>
-              <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2 lg:grid-cols-5 sm:p-6">
-                <KpiCard label={t(locale, "mgmtRatingsCount")} value={String(ratingStats.count)} icon="orders" />
-                <KpiCard
-                  label={t(locale, "mgmtRatingsAvgClean")}
-                  value={ratingStats.avgClean.toFixed(1)}
-                  icon="avg"
-                />
-                <KpiCard
-                  label={t(locale, "mgmtRatingsAvgComfort")}
-                  value={ratingStats.avgComfort.toFixed(1)}
-                  icon="avg"
-                />
-                <KpiCard
-                  label={t(locale, "mgmtRatingsAvgService")}
-                  value={ratingStats.avgService.toFixed(1)}
-                  icon="avg"
-                />
-                <KpiCard
-                  label={t(locale, "mgmtRatingsAvgOverall")}
-                  value={ratingStats.avgOverall.toFixed(1)}
-                  icon="avg"
-                />
-              </div>
-              <div className="overflow-x-auto border-t border-[var(--border)]">
-                <table className="w-full min-w-[640px] border-collapse text-left text-sm">
-                  <thead>
-                    <tr className="border-b border-[var(--border)] bg-[var(--surface)]/80">
-                      <th className="px-4 py-3 font-bold text-[var(--foreground)] sm:px-6">{t(locale, "mgmtRatingsTableRoom")}</th>
-                      <th className="px-4 py-3 font-bold text-[var(--foreground)] sm:px-6">{t(locale, "mgmtRatingsTableDate")}</th>
-                      <th className="px-4 py-3 text-right font-bold text-[var(--foreground)] sm:px-6">{t(locale, "mgmtRatingsTableClean")}</th>
-                      <th className="px-4 py-3 text-right font-bold text-[var(--foreground)] sm:px-6">{t(locale, "mgmtRatingsTableComfort")}</th>
-                      <th className="px-4 py-3 text-right font-bold text-[var(--foreground)] sm:px-6">{t(locale, "mgmtRatingsTableService")}</th>
-                      <th className="px-4 py-3 text-right font-bold text-[var(--foreground)] sm:px-6">{t(locale, "mgmtRatingsTableOverall")}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {ratingsTableRows.map((row) => {
-                      const d = new Date(row.submittedAt);
-                      return (
-                        <tr key={row.id} className="border-b border-[var(--border)] last:border-0 odd:bg-[var(--background)]/40">
-                          <td className="px-4 py-3 font-black text-[var(--gold)] sm:px-6">{row.roomNumber}</td>
-                          <td className="px-4 py-3 tabular-nums text-[var(--muted)] sm:px-6">
-                            {d.toLocaleDateString(timeLoc, { day: "numeric", month: "short" })}{" "}
-                            <span className="text-[var(--foreground)]">
-                              {d.toLocaleTimeString(timeLoc, { hour: "numeric", minute: "2-digit" })}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-right tabular-nums sm:px-6">{row.cleanliness}</td>
-                          <td className="px-4 py-3 text-right tabular-nums sm:px-6">{row.comfort}</td>
-                          <td className="px-4 py-3 text-right tabular-nums sm:px-6">{row.service}</td>
-                          <td className="px-4 py-3 text-right font-semibold tabular-nums text-[var(--gold)] sm:px-6">
-                            {overallStars(row).toFixed(1)}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
         </section>
 
         <div className="grid gap-8 lg:grid-cols-2 print:hidden">

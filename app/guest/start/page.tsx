@@ -142,7 +142,6 @@ export default function GuestStartPage() {
           style={{ opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(16px)" }}
         >
           <h1 className="text-2xl font-black leading-tight text-[var(--foreground)] sm:text-3xl">{t(locale, "orderSomethingTitle")}</h1>
-          <p className="mt-4 text-base leading-relaxed text-[var(--muted)]">{t(locale, "orderSomethingSub")}</p>
           <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:justify-center">
             <button
               type="button"

@@ -16,7 +16,7 @@ export function normalizeExpiredOccupiedRooms(
     }
     return {
       ...r,
-      status: "cleaning" as const,
+      status: "just_checked_out" as const,
       sessionStartedAt: undefined,
       sessionEndsAt: undefined,
       durationHours: undefined,
