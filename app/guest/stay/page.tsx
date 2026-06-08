@@ -28,22 +28,45 @@ export default function GuestStayOnlyPage() {
     leftMs,
     confirmExtend,
     endSession,
+    dismissCheckoutSent,
+    checkoutRoomNumber,
     panic,
   } = useGuestSessionUi();
 
   useEffect(() => {
     if (guestSession) return;
+    if (modal === "checkout-sent") return;
     if (guestPostSessionEndNavRef.current.skipDurationRedirectOnce) {
       guestPostSessionEndNavRef.current.skipDurationRedirectOnce = false;
       return;
     }
     router.replace(guestPath("/guest/language"));
-  }, [guestSession, router, guestPostSessionEndNavRef]);
+  }, [guestSession, modal, router, guestPostSessionEndNavRef]);
 
-  if (!guestSession) {
+  if (!guestSession && modal !== "checkout-sent") {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-[var(--background)]">
         <div className="h-8 w-8 animate-pulse rounded-full bg-[var(--gold)]/30" />
+      </div>
+    );
+  }
+
+  if (!guestSession) {
+    return (
+      <div className="min-h-dvh bg-[var(--background)]">
+        <GuestSessionModals
+          modal={modal}
+          setModal={setModal}
+          guestSession={null}
+          checkoutRoomNumber={checkoutRoomNumber}
+          locale={locale}
+          extendHours={extendHours}
+          setExtendHours={setExtendHours}
+          hourlyRate={hourlyRate}
+          confirmExtend={confirmExtend}
+          endSession={endSession}
+          dismissCheckoutSent={dismissCheckoutSent}
+        />
       </div>
     );
   }
@@ -112,7 +135,7 @@ export default function GuestStayOnlyPage() {
           a lot of empty side margin on an 11" tablet). */}
       <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-4 py-4 sm:px-6 sm:py-6">
         <p className="mb-3 text-center text-sm font-semibold text-[var(--muted)] sm:mb-4">{t(locale, "yourStay")}</p>
-        <div className="w-full max-w-lg overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--card)]/90 shadow-2xl backdrop-blur-sm sm:max-w-xl">
+        <div className="w-full max-w-lg rounded-3xl sm:max-w-2xl border border-[var(--border)] bg-[var(--card)]/90 shadow-2xl backdrop-blur-sm sm:max-w-xl">
           <GuestSessionPanel
             variant="fullscreen"
             guestSession={guestSession}
@@ -127,9 +150,9 @@ export default function GuestStayOnlyPage() {
         </div>
         <Link
           href="/guest"
-          className="mt-4 flex w-full max-w-lg min-h-[48px] touch-manipulation items-center justify-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--gold)_55%,transparent)] bg-[var(--gold)] px-6 py-3.5 text-center text-base font-black tracking-wide text-[var(--dark)] shadow-lg shadow-[color-mix(in_srgb,var(--gold)_35%,transparent)] transition hover:bg-[var(--gold-light)] hover:shadow-xl active:scale-[0.98] sm:mt-5 sm:max-w-xl"
+          className="mt-4 inline-flex min-h-[48px] touch-manipulation items-center justify-center gap-2.5 rounded-xl border border-[var(--border-light)] bg-[var(--surface)] px-5 py-2.5 text-center text-base font-bold text-[var(--foreground)] transition hover:border-[var(--gold)]/35 hover:bg-[var(--card-hover)] hover:text-[var(--gold)] active:scale-[0.98] sm:mt-5 sm:min-h-[52px] sm:px-6 sm:py-3"
         >
-          <UtensilsCrossedIcon className="h-9 w-9 shrink-0 sm:h-10 sm:w-10" />
+          <UtensilsCrossedIcon className="h-6 w-6 shrink-0 text-[var(--gold)] sm:h-7 sm:w-7" />
           {t(locale, "staySwitchToMenu")}
         </Link>
       </main>
@@ -138,12 +161,14 @@ export default function GuestStayOnlyPage() {
         modal={modal}
         setModal={setModal}
         guestSession={guestSession}
+        checkoutRoomNumber={checkoutRoomNumber}
         locale={locale}
         extendHours={extendHours}
         setExtendHours={setExtendHours}
         hourlyRate={hourlyRate}
         confirmExtend={confirmExtend}
         endSession={endSession}
+        dismissCheckoutSent={dismissCheckoutSent}
       />
     </div>
   );

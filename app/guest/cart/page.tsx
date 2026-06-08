@@ -7,7 +7,7 @@ import { guestPath } from "@/lib/guest-routes";
 import { useEffect, useMemo, useState } from "react";
 import { GuestHeader } from "@/components/guest-header";
 import { useDemo } from "@/contexts/demo-context";
-import { formatDateTime, formatSrd } from "@/lib/format";
+import { formatSrd } from "@/lib/format";
 import { t } from "@/lib/i18n";
 import type { OrderLine } from "@/lib/types";
 
@@ -48,6 +48,7 @@ export default function GuestCartPage() {
   const [notes, setNotes] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
   const [receipt, setReceipt] = useState<PlacedReceipt | null>(null);
+  const [receiptDetailsOpen, setReceiptDetailsOpen] = useState(false);
 
   useEffect(() => {
     if (guestSession) return;
@@ -130,13 +131,15 @@ export default function GuestCartPage() {
     });
     clearCart();
     setNotes("");
+    setReceiptDetailsOpen(false);
     setShowSuccess(true);
   }
 
   function dismissReceipt() {
     setShowSuccess(false);
     setReceipt(null);
-    router.push("/guest");
+    setReceiptDetailsOpen(false);
+    router.push("/guest/stay");
   }
 
   return (
@@ -314,13 +317,14 @@ export default function GuestCartPage() {
       </div>
 
       {showSuccess && receipt && (
-        <button
-          type="button"
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={t(locale, "receiptTitle")}
           onClick={dismissReceipt}
           className={`fixed inset-0 z-50 flex cursor-default flex-col items-center justify-center px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] backdrop-blur-md touch-manipulation sm:px-8 ${
             theme === "light" ? "bg-[color-mix(in_srgb,var(--foreground)_28%,transparent)]" : "bg-black/65"
           }`}
-          aria-label={t(locale, "tapToContinue")}
         >
           <div className="animate-fade-in-scale w-full max-w-xl overflow-y-auto overscroll-contain">
             <div className="rounded-3xl border-2 border-dashed border-[var(--border-light)] bg-[var(--card)] px-6 py-7 font-mono text-base leading-relaxed text-[var(--foreground)] shadow-2xl sm:px-9 sm:py-9 sm:text-lg">
@@ -341,12 +345,6 @@ export default function GuestCartPage() {
                   </dd>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <dt>{t(locale, "receiptDate")}</dt>
-                  <dd className="text-right font-semibold text-[var(--foreground)]">
-                    {formatDateTime(receipt.placedAt, locale)}
-                  </dd>
-                </div>
-                <div className="flex justify-between gap-4">
                   <dt>{t(locale, "receiptRoom")}</dt>
                   <dd className="text-xl font-black text-[var(--gold)] sm:text-2xl">{receipt.roomNumber}</dd>
                 </div>
@@ -354,73 +352,89 @@ export default function GuestCartPage() {
 
               <div className="my-5 border-t border-dashed border-[var(--border)] sm:my-6" />
 
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] sm:text-sm">
-                  {t(locale, "receiptRoomCharge")}
-                </p>
-                <div className="mt-3 flex items-start justify-between gap-4 text-[var(--foreground)]">
-                  <span className="min-w-0 font-medium">
-                    {receipt.durationHours} {t(locale, "hours")} × {formatSrd(receipt.hourlyRate)}
-                  </span>
-                  <span className="shrink-0 text-lg font-bold tabular-nums sm:text-xl">
-                    {formatSrd(receipt.roomCostSrd)}
-                  </span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setReceiptDetailsOpen((open) => !open);
+                }}
+                className="flex w-full items-center justify-between gap-3 rounded-xl border border-[var(--border)]/80 bg-[var(--surface)] px-4 py-3 text-left transition-colors hover:bg-[var(--surface)]/80 sm:px-5 sm:py-3.5"
+                aria-expanded={receiptDetailsOpen}
+              >
+                <span className="text-sm font-bold uppercase tracking-wider text-[var(--muted)] sm:text-base">
+                  {t(locale, "receiptOrderDetails")}
+                </span>
+                <svg
+                  className={`h-5 w-5 shrink-0 text-[var(--gold)] transition-transform duration-200 sm:h-6 sm:w-6 ${
+                    receiptDetailsOpen ? "rotate-180" : ""
+                  }`}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <path d="M6 9l6 6 6-6" />
+                </svg>
+              </button>
+
+              {receiptDetailsOpen && (
+                <div className="mt-3 space-y-4 border-l-2 border-[var(--border)] pl-4 sm:mt-4 sm:pl-5">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] sm:text-sm">
+                      {t(locale, "receiptRoomCharge")}
+                    </p>
+                    <div className="mt-2 flex items-start justify-between gap-4 text-[var(--foreground)]">
+                      <span className="min-w-0 font-medium">
+                        {receipt.durationHours} {t(locale, "hours")} × {formatSrd(receipt.hourlyRate)}
+                      </span>
+                      <span className="shrink-0 font-bold tabular-nums">
+                        {formatSrd(receipt.roomCostSrd)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {receipt.items.length > 0 && (
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] sm:text-sm">
+                        {t(locale, "receiptOrderItems")}
+                      </p>
+                      <ul className="mt-2 space-y-2.5 sm:space-y-3">
+                        {receipt.items.map((item) => (
+                          <li key={item.productId} className="flex items-start justify-between gap-4">
+                            <span className="min-w-0 text-[var(--foreground)]">
+                              <span className="font-bold text-[var(--gold)]">{item.qty}×</span>{" "}
+                              <span className="font-medium">{item.name}</span>
+                              <span className="mt-0.5 block text-sm text-[var(--muted)]">
+                                @ {formatSrd(item.unitPrice)}
+                              </span>
+                            </span>
+                            <span className="shrink-0 font-bold tabular-nums text-[var(--foreground)]">
+                              {formatSrd(item.lineTotal)}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {receipt.notes && (
+                    <p className="rounded-xl border border-[var(--border)]/80 bg-[var(--surface)] px-3 py-2.5 text-sm italic text-[var(--muted)] sm:text-base">
+                      {receipt.notes}
+                    </p>
+                  )}
                 </div>
-              </div>
-
-              <div className="my-5 border-t border-dashed border-[var(--border)] sm:my-6" />
-
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] sm:text-sm">
-                  {t(locale, "receiptOrderItems")}
-                </p>
-                <ul className="mt-3 space-y-3 sm:space-y-4">
-                  {receipt.items.map((item) => (
-                    <li key={item.productId} className="flex items-start justify-between gap-4">
-                      <span className="min-w-0 text-[var(--foreground)]">
-                        <span className="text-lg font-bold text-[var(--gold)] sm:text-xl">{item.qty}×</span>{" "}
-                        <span className="font-medium">{item.name}</span>
-                        <span className="mt-0.5 block text-sm text-[var(--muted)] sm:text-base">
-                          @ {formatSrd(item.unitPrice)}
-                        </span>
-                      </span>
-                      <span className="shrink-0 text-lg font-bold tabular-nums text-[var(--foreground)] sm:text-xl">
-                        {formatSrd(item.lineTotal)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {receipt.notes && (
-                <p className="mt-4 rounded-xl border border-[var(--border)]/80 bg-[var(--surface)] px-4 py-3 text-sm italic text-[var(--muted)] sm:text-base">
-                  {receipt.notes}
-                </p>
               )}
 
-              <div className="my-5 border-t border-dashed border-[var(--border)] sm:my-6" />
-
-              <div className="space-y-3 text-base sm:space-y-3.5 sm:text-lg">
-                <div className="flex justify-between gap-4 text-[var(--muted)]">
-                  <span>{t(locale, "receiptOrderSubtotal")}</span>
-                  <span className="font-semibold tabular-nums text-[var(--foreground)]">
-                    {formatSrd(receipt.orderSubtotal)}
-                  </span>
-                </div>
-                <div className="flex justify-between gap-4 text-[var(--muted)]">
-                  <span>{t(locale, "receiptRoomSubtotal")}</span>
-                  <span className="font-semibold tabular-nums text-[var(--foreground)]">
-                    {formatSrd(receipt.roomCostSrd)}
-                  </span>
-                </div>
-                <div className="flex items-baseline justify-between gap-4 border-t border-[var(--border)] pt-4">
-                  <span className="text-sm font-bold uppercase tracking-wider text-[var(--gold)] sm:text-base">
-                    {t(locale, "receiptGrandTotal")}
-                  </span>
-                  <span className="text-3xl font-black tabular-nums text-[var(--gold)] sm:text-4xl">
-                    {formatSrd(receipt.orderSubtotal + receipt.roomCostSrd)}
-                  </span>
-                </div>
+              <div className="my-6 border-t border-dashed border-[var(--border)] pt-8 text-center sm:my-8 sm:pt-10">
+                <p className="text-lg font-bold uppercase tracking-[0.2em] text-[var(--muted)] sm:text-xl">
+                  {t(locale, "receiptPayAtHatch")}
+                </p>
+                <p className="mt-4 text-5xl font-black tabular-nums leading-none text-[var(--gold)] sm:text-6xl">
+                  {formatSrd(receipt.orderSubtotal + receipt.roomCostSrd)}
+                </p>
               </div>
             </div>
           </div>
@@ -431,7 +445,7 @@ export default function GuestCartPage() {
           >
             {t(locale, "tapToContinue")}
           </p>
-        </button>
+        </div>
       )}
     </div>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState, type ReactNode } from "react";
+import { Suspense, useEffect, type ReactNode } from "react";
 import { useDemo } from "@/contexts/demo-context";
 import { guestPath } from "@/lib/guest-routes";
 
@@ -9,7 +9,7 @@ function GuestDeviceGuardInner({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { registeredGuestRoom, guestDeviceHydrated } = useDemo();
+  const { registeredGuestRoom, guestDeviceHydrated, useDatabase } = useDemo();
 
   const urlRoom = searchParams.get("room")?.trim() ?? "";
 
@@ -30,6 +30,7 @@ function GuestDeviceGuardInner({ children }: { children: ReactNode }) {
     urlRoom,
     pathname,
     router,
+    useDatabase,
   ]);
 
   if (!guestDeviceHydrated) {

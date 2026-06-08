@@ -13,6 +13,7 @@ import {
   type MutableRefObject,
   type ReactNode,
 } from "react";
+import { usePathname } from "next/navigation";
 import {
   defaultCatalog,
   defaultCategories,
@@ -33,6 +34,10 @@ import {
 } from "@/lib/types";
 import * as hotelSync from "@/app/actions/hotel-data";
 import {
+  clearGuestDevice,
+  fetchGuestDeviceRoom,
+} from "@/app/actions/guest-device";
+import {
   clearRegisteredGuestRoom,
   getRegisteredGuestRoom,
   GUEST_DEVICE_STORAGE_KEY,
@@ -45,6 +50,35 @@ import {
 } from "@/lib/room-session";
 
 const STORAGE_KEY = "hre-demo-v2";
+
+export type DomainMode = "guest" | "management" | "local";
+
+function resolveDomainMode(
+  useDatabase: boolean,
+  pathname: string,
+  domainModeProp?: DomainMode,
+): DomainMode {
+  if (domainModeProp) return domainModeProp;
+  if (!useDatabase) return "local";
+  if (pathname === "/management" || pathname === "/management/") return "local";
+  if (pathname.startsWith("/management")) return "management";
+  if (pathname.startsWith("/guest") || pathname === "/") return "guest";
+  return "local";
+}
+
+async function loadSnapshotForMode(
+  domainMode: DomainMode,
+  registeredRoom: string | null,
+): Promise<Awaited<ReturnType<typeof hotelSync.loadManagementDomainSnapshot>>> {
+  switch (domainMode) {
+    case "management":
+      return hotelSync.loadManagementDomainSnapshot();
+    case "guest":
+      return hotelSync.loadGuestDomainSnapshot(registeredRoom);
+    default:
+      throw new Error("No server snapshot in local mode");
+  }
+}
 
 /** Normalizes catalog/categories/locale from localStorage before HYDRATE. */
 export function normalizePersistedPayload(
@@ -407,7 +441,7 @@ type DbSyncCtx = {
 };
 
 function mergeDbHydrate(
-  server: Awaited<ReturnType<typeof hotelSync.loadDomainSnapshot>>,
+  server: Awaited<ReturnType<typeof hotelSync.loadGuestDomainSnapshot>>,
   local: {
     guestSession: GuestSession | null;
     cart: CartLine[];
@@ -583,11 +617,20 @@ const DemoContext = createContext<DemoContextValue | null>(null);
 export function DemoProvider({
   children,
   useDatabase = false,
+  domainMode: domainModeProp,
 }: {
   children: ReactNode;
   /** Set from `HRE_USE_DATABASE` in root layout — persists catalog, rooms, orders, etc. in SQLite/Postgres. */
   useDatabase?: boolean;
+  /** Overrides pathname-based domain detection when set from nested layouts. */
+  domainMode?: DomainMode;
 }) {
+  const pathname = usePathname();
+  const domainMode = useMemo(
+    () => resolveDomainMode(useDatabase, pathname, domainModeProp),
+    [useDatabase, pathname, domainModeProp],
+  );
+
   const [state, dispatchCore] = useReducer(reducer, undefined, defaultState);
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -607,19 +650,41 @@ export function DemoProvider({
   >(null);
   const [guestDeviceHydrated, setGuestDeviceHydrated] = useState(false);
 
-  const refreshRegisteredGuestRoom = useCallback(() => {
-    setRegisteredGuestRoomState(getRegisteredGuestRoom());
+  const refreshRegisteredGuestRoom = useCallback(async () => {
+    let serverRoom: string | null = null;
+    if (useDatabase) {
+      try {
+        serverRoom = await fetchGuestDeviceRoom();
+      } catch {
+        serverRoom = null;
+      }
+    }
+
+    const localRoom = getRegisteredGuestRoom();
+
+    if (serverRoom) {
+      if (localRoom !== serverRoom) {
+        setRegisteredGuestRoom(serverRoom);
+      }
+      setRegisteredGuestRoomState(serverRoom);
+    } else if (useDatabase && localRoom) {
+      clearRegisteredGuestRoom();
+      setRegisteredGuestRoomState(null);
+    } else {
+      setRegisteredGuestRoomState(localRoom);
+    }
+
     setGuestDeviceHydrated(true);
-  }, []);
+  }, [useDatabase]);
 
   useEffect(() => {
-    refreshRegisteredGuestRoom();
+    void refreshRegisteredGuestRoom();
   }, [refreshRegisteredGuestRoom]);
 
   useEffect(() => {
     function onDeviceStorage(e: StorageEvent) {
       if (e.key !== GUEST_DEVICE_STORAGE_KEY) return;
-      refreshRegisteredGuestRoom();
+      void refreshRegisteredGuestRoom();
     }
     window.addEventListener("storage", onDeviceStorage);
     return () => window.removeEventListener("storage", onDeviceStorage);
@@ -627,9 +692,11 @@ export function DemoProvider({
 
   const bindGuestDeviceRoom = useCallback(
     (roomNumber: string) => {
+      const n = roomNumber.trim();
+      if (!n) return;
       clearGuestLanguageChosen();
-      setRegisteredGuestRoom(roomNumber);
-      setRegisteredGuestRoomState(roomNumber.trim());
+      setRegisteredGuestRoom(n);
+      setRegisteredGuestRoomState(n);
       setGuestDeviceHydrated(true);
     },
     [],
@@ -638,7 +705,10 @@ export function DemoProvider({
   const unbindGuestDeviceRoom = useCallback(() => {
     clearRegisteredGuestRoom();
     setRegisteredGuestRoomState(null);
-  }, []);
+    if (useDatabase) {
+      void clearGuestDevice().catch((e) => console.error(e));
+    }
+  }, [useDatabase]);
 
   useEffect(() => {
     if (useDatabase) return;
@@ -672,10 +742,16 @@ export function DemoProvider({
     return () => window.removeEventListener("storage", onStorage);
   }, [useDatabase]);
 
+  const registeredGuestRoomRef = useRef(registeredGuestRoom);
+  registeredGuestRoomRef.current = registeredGuestRoom;
+
   const refreshDomainFromServer = useCallback(async () => {
-    if (!useDatabase) return;
+    if (!useDatabase || domainMode === "local") return;
     try {
-      const server = await hotelSync.loadDomainSnapshot();
+      const server = await loadSnapshotForMode(
+        domainMode,
+        registeredGuestRoomRef.current,
+      );
       dispatchCore({
         type: "HYDRATE",
         payload: mergeDbHydrate(server, {
@@ -688,10 +764,13 @@ export function DemoProvider({
     } catch (e) {
       console.error(e);
     }
-  }, [useDatabase]);
+  }, [useDatabase, domainMode]);
 
   useEffect(() => {
-    if (!useDatabase) return;
+    if (!useDatabase || domainMode === "local") {
+      setInitialDomainHydrated(true);
+      return;
+    }
     let cancelled = false;
     void (async () => {
       let guestSession: GuestSession | null = null;
@@ -717,7 +796,10 @@ export function DemoProvider({
         /* ignore */
       }
       try {
-        const server = await hotelSync.loadDomainSnapshot();
+        const server = await loadSnapshotForMode(
+          domainMode,
+          registeredGuestRoomRef.current,
+        );
         if (!cancelled) {
           dispatchCore({
             type: "HYDRATE",
@@ -743,7 +825,18 @@ export function DemoProvider({
     return () => {
       cancelled = true;
     };
-  }, [useDatabase]);
+  }, [useDatabase, domainMode]);
+
+  useEffect(() => {
+    if (!useDatabase || domainMode !== "guest" || !guestDeviceHydrated) return;
+    void refreshDomainFromServer();
+  }, [
+    useDatabase,
+    domainMode,
+    guestDeviceHydrated,
+    registeredGuestRoom,
+    refreshDomainFromServer,
+  ]);
 
   const dispatch = useCallback(
     (action: Action) => {
@@ -787,7 +880,10 @@ export function DemoProvider({
         setDatabaseSyncError(null);
         try {
           await pushActionToDatabase(effectiveAction, ctx);
-          const server = await hotelSync.loadDomainSnapshot();
+          const server = await loadSnapshotForMode(
+            domainMode,
+            registeredGuestRoomRef.current,
+          );
           dispatchCore({
             type: "HYDRATE",
             payload: mergeDbHydrate(server, {
@@ -803,7 +899,10 @@ export function DemoProvider({
             e instanceof Error ? e.message : "Database sync failed",
           );
           try {
-            const server = await hotelSync.loadDomainSnapshot();
+            const server = await loadSnapshotForMode(
+              domainMode,
+              registeredGuestRoomRef.current,
+            );
             dispatchCore({
               type: "HYDRATE",
               payload: mergeDbHydrate(server, {
@@ -821,7 +920,7 @@ export function DemoProvider({
         }
       })();
     },
-    [useDatabase],
+    [useDatabase, domainMode],
   );
 
   useEffect(() => {

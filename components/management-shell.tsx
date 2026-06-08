@@ -15,19 +15,37 @@ import {
 import { LanguageToggle } from "@/components/language-toggle";
 import { OfflineBanner } from "@/components/offline-banner";
 import { useTimeLeft } from "@/components/room-timer";
-import { signOutManagement } from "@/app/actions/management-auth";
+import {
+  fetchManagementSession,
+  signOutManagement,
+  type ManagementSessionInfo,
+} from "@/app/actions/management-auth";
+import { type ManagementPageKey } from "@/lib/management-permissions";
+import {
+  canReceiveOrderNotifications,
+  canReceiveRoomNotifications,
+  hasNotificationRelevantPages,
+} from "@/lib/notification-permissions";
 import { listRoomCheckInCodes } from "@/app/actions/checkin-codes";
 import { useDemo } from "@/contexts/demo-context";
 import { listActiveCheckInCodesLocal } from "@/lib/checkin-codes-local";
 import { formatSrd } from "@/lib/format";
 import { bcp47ForLocale } from "@/lib/locale-intl";
 import { t, type TKey } from "@/lib/i18n";
+import {
+  loadDismissedNotifKeys,
+  saveDismissedNotifKeys,
+} from "@/lib/mgmt-dismissed-notifs";
+import { orderTotals } from "@/lib/order-totals";
 import type { Order } from "@/lib/types";
 
 /** Same key as `STORAGE_KEY` in `contexts/demo-context.tsx`. */
 const DEMO_STORAGE_KEY = "hre-demo-v2";
 
 const GUEST_SESSION_LIVE_STORAGE_PREFIX = "hre-guest-sess-live-";
+
+/** Survives shell remounts so the sidebar does not flash empty while session revalidates. */
+let cachedManagementSession: ManagementSessionInfo | null = null;
 
 function clearGuestSessionLiveDedupe(roomNumber: string) {
   if (typeof sessionStorage === "undefined") return;
@@ -65,9 +83,10 @@ function claimGuestSessionLivePopup(
   }
 }
 
-const NAV: { key: TKey; href: string; icon: React.ReactNode }[] = [
+const NAV: { key: TKey; page: ManagementPageKey; href: string; icon: React.ReactNode }[] = [
   {
     key: "mgmtNavRooms",
+    page: "rooms",
     href: "/management/rooms",
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
@@ -77,6 +96,7 @@ const NAV: { key: TKey; href: string; icon: React.ReactNode }[] = [
   },
   {
     key: "mgmtNavOrders",
+    page: "orders",
     href: "/management/orders",
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
@@ -86,6 +106,7 @@ const NAV: { key: TKey; href: string; icon: React.ReactNode }[] = [
   },
   {
     key: "mgmtNavReports",
+    page: "reports",
     href: "/management/reports",
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
@@ -95,6 +116,7 @@ const NAV: { key: TKey; href: string; icon: React.ReactNode }[] = [
   },
   {
     key: "mgmtNavInventory",
+    page: "inventory",
     href: "/management/inventory",
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
@@ -104,6 +126,7 @@ const NAV: { key: TKey; href: string; icon: React.ReactNode }[] = [
   },
   {
     key: "mgmtNavUsers",
+    page: "users",
     href: "/management/users",
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
@@ -113,6 +136,7 @@ const NAV: { key: TKey; href: string; icon: React.ReactNode }[] = [
   },
   {
     key: "mgmtNavSettings",
+    page: "settings",
     href: "/management/settings",
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
@@ -219,11 +243,15 @@ export function ManagementShell({ children }: { children: ReactNode }) {
     databaseSyncError,
     refreshDomainFromServer,
     initialDomainHydrated,
+    hourlyRate,
   } = useDemo();
+  const [session, setSession] = useState<ManagementSessionInfo | null>(cachedManagementSession);
   const [notifOpen, setNotifOpen] = useState(false);
   const bellRef = useRef<HTMLDivElement>(null);
-  /** Hide in-room order rows without changing order status (until status changes). */
-  const [dismissedOrderNotifs, setDismissedOrderNotifs] = useState<Set<string>>(() => new Set());
+  /** Hide notification rows without changing underlying order/panic state. Persisted across refresh. */
+  const [dismissedNotifKeys, setDismissedNotifKeys] = useState<Set<string>>(
+    () => loadDismissedNotifKeys(),
+  );
 
   const [livePopup, setLivePopup] = useState<LivePopup | null>(null);
   const liveQueue = useRef<LivePopup[]>([]);
@@ -243,6 +271,29 @@ export function ManagementShell({ children }: { children: ReactNode }) {
   /** Same physical stay can surface with different `sessionStartedAt` (client vs server). */
   const GUEST_SESSION_START_JITTER_MS = 60_000;
   const seenCheckInIdsRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchManagementSession().then((info) => {
+      if (!cancelled) {
+        cachedManagementSession = info;
+        setSession(info);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const allowedPages = useMemo(
+    () => (session ? new Set(session.allowedPages) : null),
+    [session],
+  );
+
+  const visibleNav = useMemo(
+    () => (allowedPages ? NAV.filter((item) => allowedPages.has(item.page)) : []),
+    [allowedPages],
+  );
 
   /** Re-apply saved theme as early as possible on each management route (shell often remounts per page). */
   useLayoutEffect(() => {
@@ -280,47 +331,58 @@ export function ManagementShell({ children }: { children: ReactNode }) {
 
   const handleRoomExpired = useCallback(
     (roomNumber: string) => {
+      if (!canReceiveRoomNotifications(allowedPages)) return;
       dispatch({ type: "EXPIRE_ROOM_SESSION", roomNumber });
     },
-    [dispatch],
+    [allowedPages, dispatch],
   );
 
+  const canNotifyOrders = canReceiveOrderNotifications(allowedPages);
+  const canNotifyRooms = canReceiveRoomNotifications(allowedPages);
+  const showNotificationBell = hasNotificationRelevantPages(allowedPages);
+
   useEffect(() => {
+    if (!canNotifyOrders && !canNotifyRooms) return;
+
     const now = Date.now();
     const windowStart = pageMountAtRef.current - LIVE_EVENT_SKEW_MS;
     /** Ignore timestamps clearly in the future (seed data / clock skew). */
     const windowEnd = now + 15_000;
 
-    for (const o of orders) {
-      if (o.status !== "processing") continue;
-      if (o.createdAt < windowStart || o.createdAt > windowEnd) continue;
-      if (shownLiveOrderIdsRef.current.has(o.id)) continue;
-      shownLiveOrderIdsRef.current.add(o.id);
-      enqueueLive({ kind: "order", order: o });
+    if (canNotifyOrders) {
+      for (const o of orders) {
+        if (o.status !== "processing") continue;
+        if (o.createdAt < windowStart || o.createdAt > windowEnd) continue;
+        if (shownLiveOrderIdsRef.current.has(o.id)) continue;
+        shownLiveOrderIdsRef.current.add(o.id);
+        enqueueLive({ kind: "order", order: o });
+      }
     }
 
-    for (const r of rooms) {
-      if (r.status !== "occupied" || r.sessionStartedAt == null) {
-        clearGuestSessionLiveDedupe(r.number);
-        continue;
-      }
-      const key = `${r.number}-${r.sessionStartedAt}`;
-      if (r.sessionStartedAt < windowStart || r.sessionStartedAt > windowEnd) continue;
-      if (shownLiveSessionKeysRef.current.has(key)) continue;
+    if (canNotifyRooms) {
+      for (const r of rooms) {
+        if (r.status !== "occupied" || r.sessionStartedAt == null) {
+          clearGuestSessionLiveDedupe(r.number);
+          continue;
+        }
+        const key = `${r.number}-${r.sessionStartedAt}`;
+        if (r.sessionStartedAt < windowStart || r.sessionStartedAt > windowEnd) continue;
+        if (shownLiveSessionKeysRef.current.has(key)) continue;
 
-      if (!claimGuestSessionLivePopup(r.number, r.sessionStartedAt, GUEST_SESSION_START_JITTER_MS)) {
+        if (!claimGuestSessionLivePopup(r.number, r.sessionStartedAt, GUEST_SESSION_START_JITTER_MS)) {
+          shownLiveSessionKeysRef.current.add(key);
+          continue;
+        }
+
         shownLiveSessionKeysRef.current.add(key);
-        continue;
+        enqueueLive({
+          kind: "session",
+          roomNumber: r.number,
+          durationHours: r.durationHours,
+        });
       }
-
-      shownLiveSessionKeysRef.current.add(key);
-      enqueueLive({
-        kind: "session",
-        roomNumber: r.number,
-        durationHours: r.durationHours,
-      });
     }
-  }, [orders, rooms, enqueueLive]);
+  }, [canNotifyOrders, canNotifyRooms, orders, rooms, enqueueLive]);
 
   /** Guest tablet / other tabs update the DB — poll so rooms & orders stay current and popups fire. */
   useEffect(() => {
@@ -344,6 +406,7 @@ export function ManagementShell({ children }: { children: ReactNode }) {
   /** New guest tablet room-entry codes → same full-screen queue as orders / sessions. */
   useEffect(() => {
     if (!pathname.startsWith("/management")) return;
+    if (!canNotifyRooms) return;
 
     let cancelled = false;
     const windowStart = pageMountAtRef.current - LIVE_EVENT_SKEW_MS;
@@ -403,68 +466,98 @@ export function ManagementShell({ children }: { children: ReactNode }) {
       cancelled = true;
       clearInterval(id);
     };
-  }, [pathname, useDatabase, enqueueLive]);
+  }, [pathname, useDatabase, canNotifyRooms, enqueueLive]);
 
   useEffect(() => {
-    // Clean up dismissals when their underlying order leaves "processing".
-    // The functional updater bails out (returns `prev`) when nothing changed,
-    // so this does not trigger a cascading render — but the lint rule cannot
-    // statically prove that, hence the targeted disable.
+    saveDismissedNotifKeys(dismissedNotifKeys);
+  }, [dismissedNotifKeys]);
+
+  useEffect(() => {
+    // Wait until domain data is loaded — otherwise an empty orders/panic list
+    // would wipe persisted dismissals on every refresh.
+    if (!initialDomainHydrated) return;
+
+    // Clean up dismissals when their underlying order leaves "processing" or panic is gone.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setDismissedOrderNotifs((prev) => {
+    setDismissedNotifKeys((prev) => {
       const next = new Set(prev);
       let changed = false;
       for (const key of prev) {
-        const id = key.startsWith("order:") ? key.slice(6) : null;
-        if (!id) continue;
-        const o = orders.find((x) => x.id === id);
-        if (!o || o.status !== "processing") {
-          next.delete(key);
-          changed = true;
+        if (key.startsWith("order:")) {
+          const id = key.slice(6);
+          const o = orders.find((x) => x.id === id);
+          if (o && o.status !== "processing") {
+            next.delete(key);
+            changed = true;
+          }
+        } else if (key.startsWith("panic:")) {
+          const id = key.slice(6);
+          if (!panicAlerts.some((a) => a.id === id)) {
+            next.delete(key);
+            changed = true;
+          }
         }
       }
       return changed ? next : prev;
     });
-  }, [orders]);
+  }, [initialDomainHydrated, orders, panicAlerts]);
 
   const notifications = useMemo<Notification[]>(() => {
     const items: Notification[] = [];
-    for (const a of panicAlerts) {
-      items.push({ id: a.id, type: "panic", title: `${t(locale, "mgmtPanicRoom")} ${a.roomNumber}`, body: t(locale, "mgmtPanicBody"), time: a.at });
+    if (canNotifyRooms) {
+      for (const a of panicAlerts) {
+        items.push({ id: a.id, type: "panic", title: `${t(locale, "mgmtPanicRoom")} ${a.roomNumber}`, body: t(locale, "mgmtPanicBody"), time: a.at });
+      }
     }
-    for (const o of orders.slice(0, 5)) {
-      if (o.status === "processing") {
-        items.push({ id: o.id, type: "order", title: `${t(locale, "mgmtNewOrderRoom")} ${o.roomNumber}`, body: o.items.map((i) => `${i.qty}× ${i.name}`).join(", "), time: o.createdAt });
+    if (canNotifyOrders) {
+      for (const o of orders.slice(0, 5)) {
+        if (o.status === "processing") {
+          items.push({ id: o.id, type: "order", title: `${t(locale, "mgmtNewOrderRoom")} ${o.roomNumber}`, body: o.items.map((i) => `${i.qty}× ${i.name}`).join(", "), time: o.createdAt });
+        }
       }
     }
     return items.sort((a, b) => b.time - a.time).slice(0, 10);
-  }, [panicAlerts, orders, locale]);
+  }, [canNotifyOrders, canNotifyRooms, panicAlerts, orders, locale]);
 
   const visibleNotifications = useMemo(
-    () => notifications.filter((n) => !(n.type === "order" && dismissedOrderNotifs.has(`order:${n.id}`))),
-    [notifications, dismissedOrderNotifs]
+    () =>
+      notifications.filter(
+        (n) => !dismissedNotifKeys.has(`${n.type}:${n.id}`),
+      ),
+    [notifications, dismissedNotifKeys],
   );
 
   const clearAllNotifications = useCallback(() => {
-    dispatch({ type: "CLEAR_PANICS" });
-    setDismissedOrderNotifs((prev) => {
+    setDismissedNotifKeys((prev) => {
       const next = new Set(prev);
-      for (const o of orders) {
-        if (o.status === "processing") next.add(`order:${o.id}`);
+      if (canNotifyRooms) {
+        for (const a of panicAlerts) next.add(`panic:${a.id}`);
       }
+      if (canNotifyOrders) {
+        for (const o of orders) {
+          if (o.status === "processing") next.add(`order:${o.id}`);
+        }
+      }
+      saveDismissedNotifKeys(next);
       return next;
     });
-  }, [dispatch, orders]);
+    if (canNotifyRooms) {
+      dispatch({ type: "CLEAR_PANICS" });
+    }
+  }, [canNotifyOrders, canNotifyRooms, dispatch, orders, panicAlerts]);
 
   const dismissNotification = useCallback(
     (n: Notification) => {
+      setDismissedNotifKeys((prev) => {
+        const next = new Set(prev).add(`${n.type}:${n.id}`);
+        saveDismissedNotifKeys(next);
+        return next;
+      });
       if (n.type === "panic") {
         dispatch({ type: "CLEAR_PANIC_ALERT", id: n.id });
-      } else if (n.type === "order") {
-        setDismissedOrderNotifs((prev) => new Set(prev).add(`order:${n.id}`));
       }
     },
-    [dispatch]
+    [dispatch],
   );
 
   useEffect(() => {
@@ -476,6 +569,7 @@ export function ManagementShell({ children }: { children: ReactNode }) {
   }, []);
 
   async function logout() {
+    cachedManagementSession = null;
     await signOutManagement();
     router.push("/management");
     router.refresh();
@@ -508,7 +602,7 @@ export function ManagementShell({ children }: { children: ReactNode }) {
           </div>
         </div>
         <nav className="flex-1 space-y-1 px-2 py-4">
-          {NAV.map((item) => {
+          {visibleNav.map((item) => {
             const active = pathname.startsWith(item.href);
             return (
               <Link
@@ -527,6 +621,13 @@ export function ManagementShell({ children }: { children: ReactNode }) {
           })}
         </nav>
         <div className="space-y-2 border-t border-[var(--border)] px-3 py-4">
+          {session && (
+            <div className="rounded-lg bg-[var(--surface)]/60 px-2 py-2">
+              <p className="truncate text-xs font-semibold text-[var(--foreground)]">
+                {session.displayName || session.email}
+              </p>
+            </div>
+          )}
           <Link
             href="/"
             className="flex items-center gap-2 rounded-lg px-2 py-2 text-xs font-medium text-[var(--muted)] transition hover:bg-[var(--surface)] hover:text-[var(--foreground)]"
@@ -572,106 +673,111 @@ export function ManagementShell({ children }: { children: ReactNode }) {
             )}
           </button>
 
-          {/* Notification bell */}
-          <div ref={bellRef} className="relative">
-            <button
-              type="button"
-              onClick={() => setNotifOpen((v) => !v)}
-              className="relative flex h-9 w-9 items-center justify-center rounded-lg text-[var(--muted)] transition hover:bg-[var(--surface)] hover:text-[var(--gold)]"
-            >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
-              {notifCount > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[9px] font-bold text-white">
-                  {notifCount > 9 ? "9+" : notifCount}
-                </span>
-              )}
-            </button>
+          {/* Notification bell — hidden when user has no orders or rooms page access */}
+          {showNotificationBell && (
+            <div ref={bellRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setNotifOpen((v) => !v)}
+                className="relative flex h-9 w-9 items-center justify-center rounded-lg text-[var(--muted)] transition hover:bg-[var(--surface)] hover:text-[var(--gold)]"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                {notifCount > 0 && (
+                  <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[9px] font-bold text-white">
+                    {notifCount > 9 ? "9+" : notifCount}
+                  </span>
+                )}
+              </button>
 
-            {notifOpen && (
-              <div className="absolute right-0 top-full z-50 mt-2 w-80 animate-fade-in-scale rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-2xl shadow-black/40">
-                <div className="flex items-center justify-between gap-2 border-b border-[var(--border)] px-4 py-3">
-                  <p className="text-sm font-bold text-[var(--gold)]">{t(locale, "mgmtNotifications")}</p>
-                  {visibleNotifications.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        clearAllNotifications();
-                      }}
-                      className="shrink-0 rounded-lg px-2.5 py-1 text-xs font-bold text-[var(--muted)] transition hover:bg-[var(--surface)] hover:text-[var(--gold)]"
-                    >
-                      {t(locale, "mgmtClearAllNotifications")}
-                    </button>
-                  )}
-                </div>
-                <div className="max-h-80 overflow-y-auto">
-                  {visibleNotifications.length === 0 ? (
-                    <p className="px-4 py-6 text-center text-sm text-[var(--muted)]">{t(locale, "mgmtNoNotifications")}</p>
-                  ) : (
-                    visibleNotifications.map((n) => (
-                      <div key={`${n.type}-${n.id}`} className="flex items-start gap-2 border-b border-[var(--border)] px-3 py-3 last:border-0 sm:gap-3 sm:px-4">
-                        <div
-                          className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
-                            n.type === "panic" ? "bg-red-600" : n.type === "order" ? "bg-[var(--gold)]/15" : "bg-amber-500/15"
-                          }`}
-                        >
-                          {n.type === "panic" && (
-                            <svg className="h-3.5 w-3.5 text-white" viewBox="0 0 24 24" fill="currentColor">
-                              <path d="M12 2L1 21h22L12 2zm-1 9v4h2v-4h-2zm0 6v2h2v-2h-2z" />
+              {notifOpen && (
+                <div className="absolute right-0 top-full z-50 mt-2 w-80 animate-fade-in-scale rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-2xl shadow-black/40">
+                  <div className="flex items-center justify-between gap-2 border-b border-[var(--border)] px-4 py-3">
+                    <p className="text-sm font-bold text-[var(--gold)]">{t(locale, "mgmtNotifications")}</p>
+                    {visibleNotifications.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          clearAllNotifications();
+                        }}
+                        className="shrink-0 rounded-lg px-2.5 py-1 text-xs font-bold text-[var(--muted)] transition hover:bg-[var(--surface)] hover:text-[var(--gold)]"
+                      >
+                        {t(locale, "mgmtClearAllNotifications")}
+                      </button>
+                    )}
+                  </div>
+                  <div className="max-h-80 overflow-y-auto">
+                    {visibleNotifications.length === 0 ? (
+                      <p className="px-4 py-6 text-center text-sm text-[var(--muted)]">{t(locale, "mgmtNoNotifications")}</p>
+                    ) : (
+                      visibleNotifications.map((n) => (
+                        <div key={`${n.type}-${n.id}`} className="flex items-start gap-2 border-b border-[var(--border)] px-3 py-3 last:border-0 sm:gap-3 sm:px-4">
+                          <div
+                            className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
+                              n.type === "panic" ? "bg-red-600" : n.type === "order" ? "bg-[var(--gold)]/15" : "bg-amber-500/15"
+                            }`}
+                          >
+                            {n.type === "panic" && (
+                              <svg className="h-3.5 w-3.5 text-white" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2L1 21h22L12 2zm-1 9v4h2v-4h-2zm0 6v2h2v-2h-2z" />
+                              </svg>
+                            )}
+                            {n.type === "order" && (
+                              <svg className="h-3.5 w-3.5 text-[var(--gold)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
+                              </svg>
+                            )}
+                            {n.type === "expiry" && (
+                              <svg className="h-3.5 w-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1 pr-1">
+                            <p className="text-xs font-bold text-[var(--foreground)]">{n.title}</p>
+                            <p className="mt-0.5 truncate text-[11px] text-[var(--muted)]">{n.body}</p>
+                            <p className="mt-1 text-[10px] text-[var(--muted)]">
+                              {new Date(n.time).toLocaleTimeString(bcp47ForLocale(locale), { hour: "numeric", minute: "2-digit" })}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              dismissNotification(n);
+                            }}
+                            className="-mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--muted)] transition hover:bg-[var(--surface)] hover:text-[var(--foreground)]"
+                            aria-label={t(locale, "mgmtLiveDismiss")}
+                          >
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                             </svg>
-                          )}
-                          {n.type === "order" && (
-                            <svg className="h-3.5 w-3.5 text-[var(--gold)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
-                            </svg>
-                          )}
-                          {n.type === "expiry" && (
-                            <svg className="h-3.5 w-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                          )}
+                          </button>
                         </div>
-                        <div className="min-w-0 flex-1 pr-1">
-                          <p className="text-xs font-bold text-[var(--foreground)]">{n.title}</p>
-                          <p className="mt-0.5 truncate text-[11px] text-[var(--muted)]">{n.body}</p>
-                          <p className="mt-1 text-[10px] text-[var(--muted)]">
-                            {new Date(n.time).toLocaleTimeString(bcp47ForLocale(locale), { hour: "numeric", minute: "2-digit" })}
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            dismissNotification(n);
-                          }}
-                          className="-mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--muted)] transition hover:bg-[var(--surface)] hover:text-[var(--foreground)]"
-                          aria-label={t(locale, "mgmtLiveDismiss")}
-                        >
-                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                    ))
-                  )}
+                      ))
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </header>
 
-        {/* Expiry watchers — hidden hooks for notification generation */}
-        {rooms.filter((r) => r.status === "occupied" && r.sessionEndsAt).map((r) => (
-          <ExpiryWatcher
-            key={r.id}
-            endsAt={r.sessionEndsAt!}
-            roomNumber={r.number}
-            onNearExpiry={() => {}}
-            onExpired={handleRoomExpired}
-          />
-        ))}
+        {/* Expiry watchers — only for users who can manage rooms */}
+        {canNotifyRooms &&
+          rooms
+            .filter((r) => r.status === "occupied" && r.sessionEndsAt)
+            .map((r) => (
+              <ExpiryWatcher
+                key={r.id}
+                endsAt={r.sessionEndsAt!}
+                roomNumber={r.number}
+                onNearExpiry={() => {}}
+                onExpired={handleRoomExpired}
+              />
+            ))}
 
         {/* Main content */}
         <main className="flex-1">
@@ -735,6 +841,9 @@ export function ManagementShell({ children }: { children: ReactNode }) {
                 </div>
               </>
             ) : livePopup.kind === "order" ? (
+              (() => {
+                const totals = orderTotals(livePopup.order, rooms, hourlyRate);
+                return (
               <>
                 <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-3xl bg-emerald-500/20 text-emerald-500 sm:h-28 sm:w-28">
                   <svg className="h-14 w-14 sm:h-16 sm:w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
@@ -748,18 +857,49 @@ export function ManagementShell({ children }: { children: ReactNode }) {
                   {t(locale, "mgmtRoom")} {livePopup.order.roomNumber}
                 </p>
                 <ul className="mt-8 max-h-[min(40vh,320px)] space-y-3 overflow-y-auto rounded-2xl border-2 border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6">
-                  {livePopup.order.items.map((item) => (
-                    <li key={item.productId} className="flex justify-between gap-4 text-base sm:text-lg">
-                      <span className="text-[var(--foreground)]">
-                        {item.qty}× {item.name}
+                  {totals.durationHours > 0 && (
+                    <li className="flex justify-between gap-4 border-b border-[var(--border)]/60 pb-3 text-base sm:text-lg">
+                      <span className="min-w-0 text-[var(--foreground)]">
+                        <span className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)] sm:text-sm">
+                          {t(locale, "receiptRoomCharge")}
+                        </span>
+                        <span className="mt-0.5 block font-medium">
+                          {totals.durationHours} {t(locale, "hours")} × {formatSrd(hourlyRate)}
+                        </span>
                       </span>
-                      <span className="shrink-0 font-semibold text-[var(--muted)]">{formatSrd(item.qty * item.unitPrice)}</span>
+                      <span className="shrink-0 font-semibold text-[var(--muted)]">
+                        {formatSrd(totals.roomCostSrd)}
+                      </span>
                     </li>
-                  ))}
+                  )}
+                  {livePopup.order.items.length > 0 && (
+                    <li className="pt-1">
+                      <p className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] sm:text-sm">
+                        {t(locale, "receiptOrderItems")}
+                      </p>
+                      <ul className="mt-2 space-y-2.5">
+                        {livePopup.order.items.map((item) => (
+                          <li key={item.productId} className="flex justify-between gap-4 text-base sm:text-lg">
+                            <span className="text-[var(--foreground)]">
+                              {item.qty}× {item.name}
+                            </span>
+                            <span className="shrink-0 font-semibold text-[var(--muted)]">
+                              {formatSrd(item.qty * item.unitPrice)}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </li>
+                  )}
                 </ul>
-                <p className="mt-6 text-right text-2xl font-black text-[var(--gold)] sm:text-3xl">
-                  {formatSrd(livePopup.order.items.reduce((s, i) => s + i.qty * i.unitPrice, 0))}
-                </p>
+                <div className="mt-6 flex items-baseline justify-end gap-3">
+                  <span className="text-sm font-bold uppercase tracking-wider text-[var(--muted)] sm:text-base">
+                    {t(locale, "total")}
+                  </span>
+                  <p className="text-2xl font-black text-[var(--gold)] sm:text-3xl">
+                    {formatSrd(totals.grandTotal)}
+                  </p>
+                </div>
                 <div className="mt-10 flex flex-col gap-4 sm:mt-12 sm:flex-row sm:justify-center">
                   <Link
                     href="/management/orders"
@@ -777,6 +917,8 @@ export function ManagementShell({ children }: { children: ReactNode }) {
                   </button>
                 </div>
               </>
+                );
+              })()
             ) : (
               <>
                 <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-3xl bg-sky-500/20 text-sky-500 sm:h-28 sm:w-28">

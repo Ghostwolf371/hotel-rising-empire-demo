@@ -42,6 +42,8 @@ export default function GuestMainPage() {
     leftMs,
     confirmExtend,
     endSession,
+    dismissCheckoutSent,
+    checkoutRoomNumber,
     panic,
   } = useGuestSessionUi();
   const [category, setCategory] = useState<"all" | ProductCategory>("all");
@@ -49,12 +51,13 @@ export default function GuestMainPage() {
 
   useEffect(() => {
     if (guestSession) return;
+    if (modal === "checkout-sent") return;
     if (guestPostSessionEndNavRef.current.skipDurationRedirectOnce) {
       guestPostSessionEndNavRef.current.skipDurationRedirectOnce = false;
       return;
     }
     router.replace(guestPath("/guest/language"));
-  }, [guestSession, router, guestPostSessionEndNavRef]);
+  }, [guestSession, modal, router, guestPostSessionEndNavRef]);
 
   const effectiveCategory = useMemo(() => {
     if (category === "all") return "all";
@@ -88,10 +91,30 @@ export default function GuestMainPage() {
 
   // Brief render with guestSession=null while navigating after checkout.
   // Show a lightweight loader so the transition reads as "in flight".
-  if (!guestSession) {
+  if (!guestSession && modal !== "checkout-sent") {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-[var(--background)]">
         <div className="h-8 w-8 animate-pulse rounded-full bg-[var(--gold)]/30" />
+      </div>
+    );
+  }
+
+  if (!guestSession) {
+    return (
+      <div className="min-h-dvh bg-[var(--background)]">
+        <GuestSessionModals
+          modal={modal}
+          setModal={setModal}
+          guestSession={null}
+          checkoutRoomNumber={checkoutRoomNumber}
+          locale={locale}
+          extendHours={extendHours}
+          setExtendHours={setExtendHours}
+          hourlyRate={hourlyRate}
+          confirmExtend={confirmExtend}
+          endSession={endSession}
+          dismissCheckoutSent={dismissCheckoutSent}
+        />
       </div>
     );
   }
@@ -301,12 +324,14 @@ export default function GuestMainPage() {
         modal={modal}
         setModal={setModal}
         guestSession={guestSession}
+        checkoutRoomNumber={checkoutRoomNumber}
         locale={locale}
         extendHours={extendHours}
         setExtendHours={setExtendHours}
         hourlyRate={hourlyRate}
         confirmExtend={confirmExtend}
         endSession={endSession}
+        dismissCheckoutSent={dismissCheckoutSent}
       />
     </div>
   );

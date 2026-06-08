@@ -10,31 +10,74 @@ import type { GuestModal } from "@/hooks/use-guest-session-ui";
 interface GuestSessionModalsProps {
   modal: GuestModal;
   setModal: (m: GuestModal) => void;
-  guestSession: GuestSession;
+  guestSession: GuestSession | null;
+  checkoutRoomNumber: string | null;
   locale: Locale;
   extendHours: number;
   setExtendHours: (n: number) => void;
   hourlyRate: number;
   confirmExtend: () => void;
   endSession: () => void;
+  dismissCheckoutSent: () => void;
 }
 
 export function GuestSessionModals({
   modal,
   setModal,
   guestSession,
+  checkoutRoomNumber,
   locale,
   extendHours,
   setExtendHours,
   hourlyRate,
   confirmExtend,
   endSession,
+  dismissCheckoutSent,
 }: GuestSessionModalsProps) {
   const extendCost = extendHours * hourlyRate;
+  const roomNumber = guestSession?.roomNumber ?? checkoutRoomNumber;
 
   return (
     <>
-      {modal === "panic-sent" && (
+      {modal === "checkout-sent" && roomNumber && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/65 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-md sm:px-6 sm:pt-[max(1.5rem,env(safe-area-inset-top))] sm:pb-[max(1.5rem,env(safe-area-inset-bottom))]"
+          onClick={dismissCheckoutSent}
+          role="presentation"
+        >
+          <div
+            className="animate-fade-in-scale w-full max-w-md rounded-3xl border border-[var(--gold)]/25 bg-[var(--card)] px-6 py-9 text-center shadow-2xl shadow-black/30 sm:px-8 sm:py-10"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="checkout-sent-title"
+          >
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[var(--gold)]/15 text-[var(--gold)] ring-2 ring-[var(--gold)]/20">
+              <svg className="h-11 w-11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </div>
+            <p id="checkout-sent-title" className="mt-6 text-2xl font-black tracking-tight text-[var(--foreground)]">
+              {t(locale, "checkoutSentTitle")}
+            </p>
+            <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-[var(--gold)]/30 bg-[var(--gold)]/10 px-4 py-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">{t(locale, "roomNumber")}</span>
+              <span className="text-lg font-black text-[var(--gold)]">{roomNumber}</span>
+            </div>
+            <p className="mt-5 text-left text-base leading-relaxed text-[var(--muted)]">{t(locale, "checkoutSentBody")}</p>
+            <p className="mt-4 text-xs font-medium text-[var(--muted)]">{t(locale, "checkoutSentDemo")}</p>
+            <button
+              type="button"
+              onClick={dismissCheckoutSent}
+              className="mt-8 w-full touch-manipulation rounded-2xl bg-[var(--gold)] py-4 text-lg font-bold text-[var(--dark)] shadow-lg transition hover:bg-[var(--gold-light)] active:scale-[0.98] sm:py-5"
+            >
+              {t(locale, "checkoutSentDismiss")}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {modal === "panic-sent" && guestSession && (
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black/65 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-md sm:px-6 sm:pt-[max(1.5rem,env(safe-area-inset-top))] sm:pb-[max(1.5rem,env(safe-area-inset-bottom))]"
           onClick={() => setModal(null)}
@@ -75,7 +118,7 @@ export function GuestSessionModals({
         </div>
       )}
 
-      {modal === "confirm-end" && (
+      {modal === "confirm-end" && guestSession && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] backdrop-blur-md">
           <div className="animate-fade-in-scale w-full max-w-md rounded-3xl border border-[var(--border)] bg-[var(--card)] px-8 py-10 text-center shadow-2xl">
             <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-red-500/10 text-red-400">
@@ -108,7 +151,7 @@ export function GuestSessionModals({
         </div>
       )}
 
-      {modal === "extend" && (
+      {modal === "extend" && guestSession && (
         <div className="fixed inset-0 z-50 flex touch-none items-center justify-center overflow-hidden bg-black/60 px-6 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] backdrop-blur-md">
           <div className="animate-fade-in-scale max-h-[min(88dvh,720px)] w-full max-w-md overflow-y-auto overscroll-contain rounded-3xl border border-[var(--border)] bg-[var(--card)] px-8 py-8 shadow-2xl max-h-[850px]:py-6">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--gold)]/10 text-[var(--gold)]">

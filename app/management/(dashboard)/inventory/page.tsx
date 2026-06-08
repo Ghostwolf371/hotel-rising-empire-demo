@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ManagementShell } from "@/components/management-shell";
 import {
   MAX_PRODUCT_IMAGE_FILE_BYTES,
   ProductThumb,
@@ -36,7 +35,6 @@ export default function ManagementInventoryPage() {
   const { locale, catalog, categories, dispatch } = useDemo();
 
   return (
-    <ManagementShell>
       <div className="px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-black text-[var(--gold)]">
@@ -58,7 +56,6 @@ export default function ManagementInventoryPage() {
           dispatch={dispatch}
         />
       </div>
-    </ManagementShell>
   );
 }
 

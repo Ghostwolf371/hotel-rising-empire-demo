@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useMemo, useState, type ReactNode } from "react";
-import { ManagementShell } from "@/components/management-shell";
 import { useDemo } from "@/contexts/demo-context";
 import { formatSrd } from "@/lib/format";
 import { t, type TKey } from "@/lib/i18n";
@@ -330,7 +329,6 @@ export default function ManagementReportsPage() {
   const hasRoomSort = roomSort !== null;
 
   return (
-    <ManagementShell>
       <div className="reports-page px-4 py-8 sm:px-8">
         <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
@@ -634,7 +632,6 @@ export default function ManagementReportsPage() {
           </section>
         </div>
       </div>
-    </ManagementShell>
   );
 }
 

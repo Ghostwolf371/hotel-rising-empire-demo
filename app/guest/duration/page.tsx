@@ -306,7 +306,7 @@ function DurationContent() {
                 if (!canStart || effectiveHours == null) return;
                 goToStart(effectiveHours);
               }}
-              className="animate-gold-pulse mt-5 w-full rounded-2xl bg-[var(--gold)] py-6 text-xl font-bold text-black shadow-xl shadow-[var(--gold)]/25 transition-[transform,box-shadow,opacity] duration-300 motion-safe:ease-out hover:bg-[var(--gold-light)] hover:shadow-2xl focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--gold)]/65 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] motion-safe:active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none disabled:hover:bg-[var(--gold)] motion-safe:disabled:active:scale-100"
+              className="animate-gold-pulse mt-5 w-full min-h-[4.5rem] rounded-2xl bg-[var(--gold)] py-8 text-2xl font-bold text-black shadow-xl shadow-[var(--gold)]/25 transition-[transform,box-shadow,opacity] duration-300 motion-safe:ease-out hover:bg-[var(--gold-light)] hover:shadow-2xl focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--gold)]/65 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] motion-safe:active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none disabled:hover:bg-[var(--gold)] motion-safe:disabled:active:scale-100 sm:min-h-[5rem] sm:py-9 sm:text-3xl"
             >
               {t(locale, "startSession")} →
             </button>

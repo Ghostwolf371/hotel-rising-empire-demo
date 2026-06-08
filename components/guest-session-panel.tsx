@@ -44,9 +44,9 @@ export function GuestSessionPanel({
       {/* Vertical padding and type scale tightened so the full panel
           (room number + countdown + 3 action buttons) fits inside an 11"
           landscape tablet (~800 CSS px tall) without forcing a scroll. */}
-      <div className={`shrink-0 border-b border-[var(--border)] ${isFs ? "px-6 py-4 text-center sm:px-8 sm:py-5" : "px-5 py-4"}`}>
-        <p className={`font-bold uppercase tracking-wider text-[var(--muted)] ${isFs ? "text-sm" : "text-xs"}`}>{t(locale, "roomNumber")}</p>
-        <p className={`mt-1 font-black text-[var(--gold)] ${isFs ? "text-4xl sm:text-5xl" : "mt-1 text-3xl"}`}>{guestSession.roomNumber}</p>
+      <div className={`shrink-0 border-b border-[var(--border)] ${isFs ? "px-6 py-5 text-center sm:px-8 sm:py-6" : "px-5 py-4"}`}>
+        <p className={`font-bold uppercase tracking-wider text-[var(--muted)] ${isFs ? "text-base sm:text-lg" : "text-xs"}`}>{t(locale, "roomNumber")}</p>
+        <p className={`mt-1 font-black text-[var(--gold)] ${isFs ? "text-5xl sm:text-6xl" : "mt-1 text-3xl"}`}>{guestSession.roomNumber}</p>
         <p className={`mt-2 flex items-center justify-center gap-1.5 text-[var(--muted)] ${isFs ? "text-sm" : "mt-2 text-xs"}`}>
           <svg className={isFs ? "h-4 w-4" : "h-3.5 w-3.5"} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -55,11 +55,13 @@ export function GuestSessionPanel({
         </p>
       </div>
 
-      <div className={`shrink-0 border-b border-[var(--border)] text-center ${isFs ? "px-6 py-4 sm:px-8 sm:py-5" : "px-5 py-4"}`}>
-        <p className={`font-bold uppercase tracking-wider text-[var(--muted)] ${isFs ? "text-sm" : "text-xs"}`}>{t(locale, "timeLeft")}</p>
+      <div
+        className={`@container shrink-0 border-b border-[var(--border)] text-center ${isFs ? "px-3 py-6 sm:px-6 sm:py-8" : "px-5 py-4"}`}
+      >
+        <p className={`font-bold uppercase tracking-wider text-[var(--muted)] ${isFs ? "text-base sm:text-lg" : "text-xs"}`}>{t(locale, "timeLeft")}</p>
         <div className={underOneMinute ? "animate-countdown-urgent" : undefined}>
           <p
-            className={`mt-2 font-mono font-black tabular-nums ${isFs ? "text-5xl sm:text-6xl" : "mt-2 text-4xl"} ${
+            className={`mt-2 w-full max-w-full font-mono font-black tabular-nums leading-none tracking-tight ${isFs ? "text-[clamp(3rem,20cqw,7.5rem)]" : "mt-2 text-4xl"} ${
               leftMs <= 0 ? "text-red-500" : underOneMinute ? "text-amber-500" : "text-[var(--gold)]"
             }`}
           >

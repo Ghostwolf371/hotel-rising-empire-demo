@@ -127,9 +127,12 @@ export default function RoomEntryPage() {
     const n = room.trim();
     let ok = false;
     try {
-      ok = useDatabase
-        ? await verifyRoomCheckInCode(n, code)
-        : verifyCheckInCodeLocal(n, code);
+      if (useDatabase) {
+        const result = await verifyRoomCheckInCode(n, code);
+        ok = result.ok;
+      } else {
+        ok = verifyCheckInCodeLocal(n, code);
+      }
     } catch {
       ok = false;
     }

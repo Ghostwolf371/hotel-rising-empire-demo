@@ -1,6 +1,7 @@
 import { assertApiAuthorized } from "@/lib/server/api-auth";
 import { jsonError, jsonOk, readJson } from "@/lib/server/http";
 import { toDomainOrder } from "@/lib/server/mappers";
+import { resolveOrderLinesFromCatalog } from "@/lib/server/order-pricing";
 import { getPrisma } from "@/lib/server/prisma";
 import { createOrderZ } from "@/lib/server/schemas";
 
@@ -36,6 +37,16 @@ export async function POST(request: Request) {
   const prisma = getPrisma();
   const d = parsed.data;
 
+  let items;
+  try {
+    items = await resolveOrderLinesFromCatalog(
+      d.items.map((it) => ({ productId: it.productId, qty: it.qty })),
+    );
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Invalid order items";
+    return jsonError(400, msg);
+  }
+
   const order = await prisma.order.create({
     data: {
       id,
@@ -44,7 +55,7 @@ export async function POST(request: Request) {
       status: d.status,
       notes: d.notes ?? null,
       lines: {
-        create: d.items.map((it) => ({
+        create: items.map((it) => ({
           productId: it.productId,
           name: it.name,
           qty: it.qty,

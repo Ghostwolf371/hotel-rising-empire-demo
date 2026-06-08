@@ -7,13 +7,14 @@ import { useDemo } from "@/contexts/demo-context";
 import { clearGuestLanguageChosen } from "@/lib/guest-language-chosen";
 import { guestPath } from "@/lib/guest-routes";
 
-export type GuestModal = "extend" | "confirm-end" | "panic-sent" | null;
+export type GuestModal = "extend" | "confirm-end" | "panic-sent" | "checkout-sent" | null;
 
 export function useGuestSessionUi() {
   const router = useRouter();
   const { guestSession, dispatch, hourlyRate, guestPostSessionEndNavRef } = useDemo();
   const [modal, setModal] = useState<GuestModal>(null);
   const [extendHours, setExtendHours] = useState(2);
+  const [checkoutRoomNumber, setCheckoutRoomNumber] = useState<string | null>(null);
 
   const endsAt = guestSession?.sessionEndsAt ?? 0;
   const leftMs = useTimeLeft(endsAt);
@@ -30,8 +31,15 @@ export function useGuestSessionUi() {
     clearGuestLanguageChosen();
     guestPostSessionEndNavRef.current.skipDurationRedirectOnce = true;
     dispatch({ type: "END_GUEST_SESSION" });
+    setCheckoutRoomNumber(room);
+    setModal("checkout-sent");
+  }
+
+  function dismissCheckoutSent() {
+    const room = checkoutRoomNumber;
     setModal(null);
-    router.replace(guestPath("/guest/language", room));
+    setCheckoutRoomNumber(null);
+    router.replace(guestPath("/guest/language", room ?? undefined));
   }
 
   function panic() {
@@ -50,6 +58,8 @@ export function useGuestSessionUi() {
     leftMs,
     confirmExtend,
     endSession,
+    dismissCheckoutSent,
+    checkoutRoomNumber,
     panic,
   };
 }

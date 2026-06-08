@@ -12,7 +12,7 @@ import { clearGuestLanguageChosen } from "@/lib/guest-language-chosen";
 import { guestPath } from "@/lib/guest-routes";
 import { t } from "@/lib/i18n";
 
-type ExpiredView = "choice" | "extend";
+type ExpiredView = "choice" | "extend" | "checkout-sent";
 
 /** After 5 minutes of no touch, end session and go to feedback. Resets on activity. */
 function ExpiredModalIdleTimeout({ onIdleEnd }: { onIdleEnd: () => void }) {
@@ -66,28 +66,29 @@ export function GuestSessionExpiredModal() {
   } = useDemo();
   const [view, setView] = useState<ExpiredView>("choice");
   const [extendHours, setExtendHours] = useState(2);
+  const [checkoutRoomNumber, setCheckoutRoomNumber] = useState<string | null>(null);
 
   const endsAt = guestSession?.sessionEndsAt ?? 0;
   const leftMs = useTimeLeft(endsAt);
   const extendCost = extendHours * hourlyRate;
 
-  const finishCheckout = useCallback(() => {
+  const dismissCheckoutSent = useCallback(() => {
+    closeSessionExpiredModal();
+    setView("choice");
+    setCheckoutRoomNumber(null);
+    router.replace(guestPath("/guest/language", checkoutRoomNumber ?? registeredGuestRoom));
+  }, [closeSessionExpiredModal, router, checkoutRoomNumber, registeredGuestRoom]);
+
+  const requestCheckout = useCallback(() => {
+    const room = guestSession?.roomNumber ?? registeredGuestRoom;
     if (guestSession) {
       clearGuestLanguageChosen();
       guestPostSessionEndNavRef.current.skipDurationRedirectOnce = true;
       dispatch({ type: "END_GUEST_SESSION" });
     }
-    closeSessionExpiredModal();
-    setView("choice");
-    router.replace(guestPath("/guest/language", registeredGuestRoom));
-  }, [
-    guestSession,
-    guestPostSessionEndNavRef,
-    dispatch,
-    closeSessionExpiredModal,
-    router,
-    registeredGuestRoom,
-  ]);
+    setCheckoutRoomNumber(room);
+    setView("checkout-sent");
+  }, [guestSession, guestPostSessionEndNavRef, dispatch, registeredGuestRoom]);
 
   useEffect(() => {
     if (!sessionExpiredOpen) return;
@@ -103,16 +104,19 @@ export function GuestSessionExpiredModal() {
       setView("choice");
       return;
     }
-    if (!guestSession) {
+    if (!guestSession && view !== "checkout-sent") {
       closeSessionExpiredModal();
       return;
     }
-    if (leftMs > 0) {
+    if (guestSession && leftMs > 0) {
       closeSessionExpiredModal();
     }
-  }, [sessionExpiredOpen, guestSession, leftMs, closeSessionExpiredModal]);
+  }, [sessionExpiredOpen, guestSession, leftMs, view, closeSessionExpiredModal]);
 
-  if (!sessionExpiredOpen || !guestSession) return null;
+  if (!sessionExpiredOpen) return null;
+  if (!guestSession && view !== "checkout-sent") return null;
+
+  const roomNumber = guestSession?.roomNumber ?? checkoutRoomNumber;
 
   return (
     <>
@@ -127,7 +131,31 @@ export function GuestSessionExpiredModal() {
           aria-modal="true"
           aria-labelledby="session-expired-title"
         >
-          {view === "choice" ? (
+          {view === "checkout-sent" && roomNumber ? (
+            <>
+              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[var(--gold)]/15 text-[var(--gold)] ring-2 ring-[var(--gold)]/20">
+                <svg className="h-11 w-11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </div>
+              <p className="mt-6 text-2xl font-black tracking-tight text-[var(--foreground)]">
+                {t(locale, "checkoutSentTitle")}
+              </p>
+              <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-[var(--gold)]/30 bg-[var(--gold)]/10 px-4 py-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">{t(locale, "roomNumber")}</span>
+                <span className="text-lg font-black text-[var(--gold)]">{roomNumber}</span>
+              </div>
+              <p className="mt-5 text-left text-base leading-relaxed text-[var(--muted)]">{t(locale, "checkoutSentBody")}</p>
+              <p className="mt-4 text-xs font-medium text-[var(--muted)]">{t(locale, "checkoutSentDemo")}</p>
+              <button
+                type="button"
+                onClick={dismissCheckoutSent}
+                className="mt-8 w-full touch-manipulation rounded-2xl bg-[var(--gold)] py-4 text-lg font-bold text-[var(--dark)] shadow-lg transition hover:bg-[var(--gold-light)] active:scale-[0.98] sm:py-5"
+              >
+                {t(locale, "checkoutSentDismiss")}
+              </button>
+            </>
+          ) : view === "choice" ? (
             <>
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-400">
                 <svg className="h-9 w-9" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
@@ -153,7 +181,7 @@ export function GuestSessionExpiredModal() {
                 </button>
                 <button
                   type="button"
-                  onClick={finishCheckout}
+                  onClick={requestCheckout}
                   className="min-h-[52px] flex-1 rounded-2xl border-2 border-[var(--border-light)] bg-[var(--surface)] px-6 py-4 text-lg font-bold text-[var(--foreground)] transition hover:border-[var(--gold)]/40 hover:bg-[var(--card-hover)] active:scale-[0.99] sm:min-w-[200px] sm:flex-none"
                 >
                   {t(locale, "endNow")}
@@ -240,7 +268,7 @@ export function GuestSessionExpiredModal() {
         </div>
       </div>
 
-      <ExpiredModalIdleTimeout onIdleEnd={finishCheckout} />
+      {view !== "checkout-sent" && <ExpiredModalIdleTimeout onIdleEnd={requestCheckout} />}
     </>
   );
 }

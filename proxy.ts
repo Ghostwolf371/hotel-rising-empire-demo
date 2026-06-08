@@ -17,9 +17,6 @@ export async function proxy(request: NextRequest) {
   const authenticated = await isManagementSessionCookie(cookieValue);
 
   if (isLoginRoute) {
-    if (authenticated) {
-      return NextResponse.redirect(new URL("/management/rooms", request.url));
-    }
     return NextResponse.next();
   }
 

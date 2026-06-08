@@ -1,14 +1,14 @@
 "use client";
 
 import { useMemo } from "react";
-import { ManagementShell } from "@/components/management-shell";
 import { useDemo } from "@/contexts/demo-context";
 import { formatSrd } from "@/lib/format";
 import { bcp47ForLocale } from "@/lib/locale-intl";
 import { t } from "@/lib/i18n";
+import { orderTotals } from "@/lib/order-totals";
 
 export default function ManagementOrdersPage() {
-  const { orders, dispatch, panicAlerts, locale } = useDemo();
+  const { orders, dispatch, panicAlerts, locale, rooms, hourlyRate } = useDemo();
   const timeLoc = bcp47ForLocale(locale);
 
   const sorted = useMemo(
@@ -24,7 +24,6 @@ export default function ManagementOrdersPage() {
   }
 
   return (
-    <ManagementShell>
       <div className="px-8 py-8">
         <div className="mb-8 flex items-center justify-between">
           <div>
@@ -73,7 +72,7 @@ export default function ManagementOrdersPage() {
 
         <div className="space-y-4">
           {sorted.map((order) => {
-            const total = order.items.reduce((s, i) => s + i.qty * i.unitPrice, 0);
+            const totals = orderTotals(order, rooms, hourlyRate);
             const isProcessing = order.status === "processing";
             const time = new Date(order.createdAt);
 
@@ -122,23 +121,54 @@ export default function ManagementOrdersPage() {
                   </div>
                 </div>
 
-                <div className="mt-4 flex flex-wrap gap-3">
-                  {order.items.map((item) => (
-                    <span
-                      key={item.productId}
-                      className="rounded-lg bg-[var(--surface)] px-3 py-1.5 text-sm text-[var(--foreground)]"
-                    >
-                      {item.qty}× {item.name}
-                    </span>
-                  ))}
+                <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
+                  {totals.durationHours > 0 && (
+                    <div className="flex justify-between gap-4 border-b border-[var(--border)]/60 pb-3 text-sm">
+                      <span className="min-w-0 text-[var(--foreground)]">
+                        <span className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+                          {t(locale, "receiptRoomCharge")}
+                        </span>
+                        <span className="mt-0.5 block font-medium">
+                          {totals.durationHours} {t(locale, "hours")} × {formatSrd(hourlyRate)}
+                        </span>
+                      </span>
+                      <span className="shrink-0 font-semibold text-[var(--muted)]">
+                        {formatSrd(totals.roomCostSrd)}
+                      </span>
+                    </div>
+                  )}
+                  {order.items.length > 0 && (
+                    <div className={totals.durationHours > 0 ? "pt-3" : ""}>
+                      <p className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+                        {t(locale, "receiptOrderItems")}
+                      </p>
+                      <ul className="mt-2 space-y-1.5">
+                        {order.items.map((item) => (
+                          <li key={item.productId} className="flex justify-between gap-4 text-sm">
+                            <span className="text-[var(--foreground)]">
+                              {item.qty}× {item.name}
+                            </span>
+                            <span className="shrink-0 text-[var(--muted)]">
+                              {formatSrd(item.qty * item.unitPrice)}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
 
                 {order.notes && (
                   <p className="mt-3 text-sm italic text-[var(--muted)]">&ldquo;{order.notes}&rdquo;</p>
                 )}
 
-                <div className="mt-4 flex justify-end text-lg font-bold text-[var(--gold)]">
-                  {formatSrd(total)}
+                <div className="mt-4 flex items-baseline justify-end gap-3">
+                  <span className="text-sm font-bold uppercase tracking-wider text-[var(--muted)]">
+                    {t(locale, "total")}
+                  </span>
+                  <span className="text-lg font-bold text-[var(--gold)]">
+                    {formatSrd(totals.grandTotal)}
+                  </span>
                 </div>
               </div>
             );
@@ -151,6 +181,5 @@ export default function ManagementOrdersPage() {
           )}
         </div>
       </div>
-    </ManagementShell>
   );
 }

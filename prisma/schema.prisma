@@ -75,6 +75,10 @@ model ManagementUser {
   email        String  @unique
   passwordHash String
   displayName  String?
+  /// admin | manager | staff — preset label; actual access is in allowedPages when set.
+  role         String  @default("staff")
+  /// JSON array of page keys, e.g. ["rooms","orders"]. Null = use role defaults.
+  allowedPages String?
   active       Boolean @default(true)
   createdAt    BigInt
 }

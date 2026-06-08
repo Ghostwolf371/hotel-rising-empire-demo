@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { LanguageToggle } from "@/components/language-toggle";
-import { ManagementShell } from "@/components/management-shell";
 import { useDemo, type Action } from "@/contexts/demo-context";
 import { formatSrd } from "@/lib/format";
 import { t } from "@/lib/i18n";
@@ -88,7 +87,6 @@ export default function ManagementSettingsPage() {
   }
 
   return (
-    <ManagementShell>
       <div className="px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-black text-[var(--gold)]">{t(locale, "mgmtSettings")}</h1>
@@ -129,7 +127,6 @@ export default function ManagementSettingsPage() {
           )}
         </div>
       </div>
-    </ManagementShell>
   );
 }
 
